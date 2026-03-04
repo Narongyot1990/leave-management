@@ -23,6 +23,18 @@ No test framework is configured.
 
 To seed a leader account (POST to `/api/seed` with `secretKey: "itl-leave-system-secret-2024"`), or reset all data with `action: "reset"`.
 
+## Deployment
+
+GitHub repo: https://github.com/Narongyot1990/fls-driver (connected to Vercel project `drivers`)
+
+Push to `master` → Vercel auto-deploys to https://drivers-tau.vercel.app
+
+```bash
+git add <files>
+git commit -m "feat: ..."
+git push
+```
+
 ## Architecture
 
 ### Auth System (Custom JWT, not NextAuth)
@@ -33,6 +45,8 @@ Two separate JWT libraries are used intentionally:
 
 Tokens stored as httpOnly cookies: `accessToken` (15 min) + `refreshToken` (7 days). The middleware silently rotates tokens on refresh.
 
+> **Note:** NextAuth (`src/lib/auth.ts` + `/api/auth/[...nextauth]`) is installed but **completely unused** — the custom JWT system is the real implementation. Treat it as dead code.
+
 ### Two User Roles
 
 | Role | Login | Auth |
@@ -40,7 +54,7 @@ Tokens stored as httpOnly cookies: `accessToken` (15 min) + `refreshToken` (7 da
 | Driver | LINE OAuth → `/api/auth/line` | Custom JWT |
 | Leader | Email/Password → `/api/auth/leader-login` | Custom JWT |
 
-New Driver accounts start with `status: 'pending'` and must be activated by a Leader before they can submit leave requests. Pusher triggers a real-time notification to the driver on activation.
+New Driver accounts start with `status: 'pending'` and must be activated by a Leader before they can submit leave requests. Drivers with `status: 'pending'` are blocked from creating leave requests at the API level. Pusher triggers a real-time notification to the driver on activation.
 
 ### Middleware (`src/middleware.ts`)
 
@@ -49,7 +63,7 @@ Runs on all routes except static files. Handles:
 2. Token verification → role-based redirect enforcement
 3. Automatic access token refresh from refresh token
 
-Leaders are redirected to `/leader/home`; drivers attempting `/leader/*` paths are redirected to `/home`.
+Leaders are redirected to `/leader/home`; drivers attempting `/leader/*` paths are redirected to `/home`. `/dashboard` is accessible by both roles.
 
 ### Real-time Notifications (Pusher)
 
@@ -64,7 +78,36 @@ All API routes use `src/lib/api-auth.ts` helpers:
 - `requireLeader(request)` — leaders only
 - `requireDriver(request)` — drivers only
 
+Each helper returns a discriminated union: `{ payload }` on success or `{ error: NextResponse }` on failure.
+
 Always call `await dbConnect()` before any Mongoose operation.
+
+### Data Models
+
+**User** — Both driver and leader profiles share the User concept, but drivers are stored in `User` and leaders in `Leader`.
+
+- Driver `status`: `'pending'` | `'active'` — pending users cannot submit leave requests
+- Leave quotas tracked as fields: `vacationDays`, `sickDays`, `personalDays`
+- Leaders can only delete users with `status: 'pending'`; active driver records are protected
+
+**LeaveRequest** — `leaveType`: `vacation` | `sick` | `personal` | `unpaid`; `status`: `pending` | `approved` | `rejected` | `cancelled`
+
+**SubstituteRecord** — Records non-leave driver incidents managed by leaders (`/leader/substitute`):
+- `recordType`: `vacation` | `sick` | `personal` | `unpaid` | `absent` | `late` | `accident` | `damage`
+- Fields: `userId`, `recordType`, `description`, `date`, `createdBy`
+- API: `GET/POST /api/substitute`
+
+**Leader** — `email`, `password` (bcrypt), `name`
+
+### Leave Request Validation (`POST /api/leave`)
+
+The API enforces in order:
+1. Driver must have `name + surname` set (profile completion required)
+2. Driver `status` must be `'active'`
+3. No overlapping leave dates
+4. Sufficient quota remaining (`vacationDays` / `sickDays` / `personalDays`)
+
+Error messages are returned in Thai.
 
 ## Key Conventions
 
@@ -73,10 +116,12 @@ Always call `await dbConnect()` before any Mongoose operation.
 - Mongoose models use the pattern `mongoose.models.ModelName || mongoose.model(...)` to avoid re-registration in dev HMR
 - `mongoose`, `mongodb`, and `bcryptjs` are listed as `serverExternalPackages` in `next.config.ts` — they must never be imported in client components or edge runtime code
 - API responses: `{ success: true, data }` on success, `{ error: "message" }` with status code on error
+- Driver pages use `localStorage` to cache user state and display cached data if API calls fail
+- All user-facing labels (leave types, status, record types) are in Thai and defined in `src/lib/types.ts` (`leaveTypeLabels`, `substituteTypeLabels`, `statusLabels`, etc.)
 
 ## UI Design System — Minimalist Pro Theme
 
-The entire app uses a consistent design system with:
+The entire app uses a consistent design system with light/dark mode support via `ThemeProvider` (`next-themes`).
 
 ### CSS Variables (`src/app/globals.css`)
 - **Colors**: `--accent`, `--success`, `--warning`, `--danger`, `--text-primary`, `--text-secondary`, `--text-muted`
@@ -85,9 +130,10 @@ The entire app uses a consistent design system with:
 - **Typography**: Fluid sizing with `clamp()` — `--text-fluid-xs` through `--text-fluid-3xl`
 
 ### Shared Components
-- **`PageHeader`** — Consistent page titles with optional subtitle and back button
+- **`PageHeader`** — Sticky header with title, optional subtitle, back button, and theme toggle
 - **`Sidebar`** — Desktop navigation (hidden on mobile)
 - **`BottomNav`** — Mobile navigation (hidden on desktop)
+- **`DatePickerModal`** — Date range picker using `react-day-picker`
 
 ### Utility Classes
 - `.card` / `.card-neo` — Elevated containers with shadows
@@ -96,31 +142,10 @@ The entire app uses a consistent design system with:
 - `.badge` / `.badge-success` / `.badge-warning` / `.badge-danger` / `.badge-accent` — Status indicators
 
 ### Icons
-- **Lucide React** icons used throughout (replaced inline SVGs)
+- **Lucide React** icons used throughout
 - Leave type icons: `Umbrella` (vacation), `Thermometer` (sick), `Briefcase` (personal), `Ban` (unpaid)
 
-### Recent UI Enhancements (March 2025)
-
-1. **Settings Page** (`/settings`)
-   - Removed `employeeId` field
-   - Now shows: name (ชื่อ-นามสกุล) + phone number only
-
-2. **Dashboard Calendar Popup** (`/dashboard`)
-   - Shows small round profile image (32px)
-   - Displays full name + surname (fallback to LINE display name)
-   - Leave type badge with date range
-
-3. **Approve Page** (`/leader/approve`)
-   - Profile images for all leave requests (round, 40px)
-   - First line: Full name + surname
-   - Second line: @LINE display name
-
-4. **Drivers Management & Leader History** (`/leader/drivers`, `/leader/history`)
-   - Tabs and summary stats remain sticky at top
-   - List section scrolls independently with `overflow-y-auto`
-   - Profile images shown in driver cards
-
-### User Data Model
+### User Display Pattern
 ```typescript
 interface User {
   lineDisplayName: string;      // LINE account name
@@ -132,7 +157,10 @@ interface User {
 }
 ```
 
-Display priority: Show `name + surname` if available, otherwise fall back to `lineDisplayName`.
+Display priority: Show `name + surname` if available, otherwise fall back to `lineDisplayName`. Profile images are shown as round avatars (32px in calendar popups, 40px in leader pages).
+
+### Layout Patterns
+- Leader list pages (`/leader/drivers`, `/leader/history`): tabs and summary stats are sticky; the list scrolls independently with `overflow-y-auto`
 
 ## Environment Variables
 
