@@ -20,6 +20,7 @@ import {
   Pencil,
   X,
   Flag,
+  Hash,
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
@@ -28,6 +29,18 @@ import Sidebar from '@/components/Sidebar';
 dayjs.extend(isoWeek);
 dayjs.extend(relativeTime);
 dayjs.locale('th');
+
+const activityTypeLabels: Record<string, string> = {
+  'car-wash': 'ล้างรถ',
+  'maintenance': 'ซ่อมบำรุง',
+  'inspection': 'ตรวจสภาพ',
+  'refuel': 'เติมน้ำมัน',
+};
+
+function getImageUrl(url: string) {
+  if (!url) return '';
+  return `/api/car-wash/image?url=${encodeURIComponent(url)}`;
+}
 
 interface UserInfo {
   _id: string;
@@ -434,6 +447,15 @@ export default function LeaderCarWashPage() {
                           </p>
                         </div>
 
+                        {/* Activity type tag */}
+                        <span
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                          style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+                        >
+                          <Hash className="w-2.5 h-2.5" />
+                          {activityTypeLabels[activity.activityType] || activity.activityType}
+                        </span>
+
                         {/* Marked badge */}
                         {activity.marked && (
                           <div className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold" style={{ background: 'var(--success-light)', color: 'var(--success)' }}>
@@ -497,8 +519,8 @@ export default function LeaderCarWashPage() {
                       )}
 
                       {/* Image */}
-                      <button onClick={() => setViewImage(activity.imageUrl)} className="w-full">
-                        <img src={activity.imageUrl} alt="" className="w-full object-cover" style={{ maxHeight: '400px', background: 'var(--bg-inset)' }} />
+                      <button onClick={() => setViewImage(getImageUrl(activity.imageUrl))} className="w-full">
+                        <img src={getImageUrl(activity.imageUrl)} alt="" className="w-full object-cover" style={{ maxHeight: '400px', background: 'var(--bg-inset)' }} />
                       </button>
 
                       {/* Like & Comment counts */}

@@ -15,9 +15,9 @@ import {
   Pencil,
   X,
   Car,
-  CheckCircle2,
   Flag,
   Plus,
+  Hash,
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
@@ -25,6 +25,18 @@ import Sidebar from '@/components/Sidebar';
 
 dayjs.extend(relativeTime);
 dayjs.locale('th');
+
+const activityTypeLabels: Record<string, string> = {
+  'car-wash': 'ล้างรถ',
+  'maintenance': 'ซ่อมบำรุง',
+  'inspection': 'ตรวจสภาพ',
+  'refuel': 'เติมน้ำมัน',
+};
+
+function getImageUrl(url: string) {
+  if (!url) return '';
+  return `/api/car-wash/image?url=${encodeURIComponent(url)}`;
+}
 
 interface UserInfo {
   _id: string;
@@ -248,15 +260,6 @@ export default function CarWashFeedPage() {
         <PageHeader
           title="Moments"
           backHref="/home"
-          rightContent={
-            <button
-              onClick={() => router.push('/car-wash')}
-              className="btn btn-primary text-fluid-xs flex items-center gap-1.5 py-1.5 px-3"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              โพสต์
-            </button>
-          }
         />
 
         <div className="px-4 lg:px-8 py-4">
@@ -299,6 +302,15 @@ export default function CarWashFeedPage() {
                             {dayjs(activity.createdAt).fromNow()} · {activity.activityTime} น.
                           </p>
                         </div>
+
+                        {/* Activity type tag */}
+                        <span
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                          style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+                        >
+                          <Hash className="w-2.5 h-2.5" />
+                          {activityTypeLabels[activity.activityType] || activity.activityType}
+                        </span>
 
                         {/* Marked badge */}
                         {activity.marked && (
@@ -357,9 +369,9 @@ export default function CarWashFeedPage() {
                       )}
 
                       {/* Image */}
-                      <button onClick={() => setViewImage(activity.imageUrl)} className="w-full">
+                      <button onClick={() => setViewImage(getImageUrl(activity.imageUrl))} className="w-full">
                         <img
-                          src={activity.imageUrl}
+                          src={getImageUrl(activity.imageUrl)}
                           alt=""
                           className="w-full object-cover"
                           style={{ maxHeight: '400px', background: 'var(--bg-inset)' }}
@@ -538,6 +550,16 @@ export default function CarWashFeedPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* FAB — Floating Action Button */}
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={() => router.push('/car-wash')}
+        className="fixed z-30 flex items-center justify-center w-14 h-14 rounded-full shadow-lg lg:hidden"
+        style={{ background: 'var(--accent)', color: '#fff', bottom: '5.5rem', right: '1.25rem' }}
+      >
+        <Plus className="w-6 h-6" />
+      </motion.button>
 
       <BottomNav role="driver" />
     </div>
