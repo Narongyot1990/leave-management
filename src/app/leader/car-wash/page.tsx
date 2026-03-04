@@ -21,7 +21,10 @@ import {
   X,
   Flag,
   Hash,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
+import Pusher from 'pusher-js';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -36,11 +39,6 @@ const activityTypeLabels: Record<string, string> = {
   'inspection': 'ตรวจสภาพ',
   'refuel': 'เติมน้ำมัน',
 };
-
-function getImageUrl(url: string) {
-  if (!url) return '';
-  return `/api/car-wash/image?url=${encodeURIComponent(url)}`;
-}
 
 interface UserInfo {
   _id: string;
@@ -61,7 +59,7 @@ interface Activity {
   _id: string;
   userId: UserInfo;
   activityType: string;
-  imageUrl: string;
+  imageUrls: string[];
   caption: string;
   activityDate: string;
   activityTime: string;
@@ -102,6 +100,63 @@ function Avatar({ user, size = 'md' }: { user?: UserInfo; size?: 'sm' | 'md' | '
   );
 }
 
+function ImageGrid({ images, onClickImage }: { images: string[]; onClickImage: (index: number) => void }) {
+  if (!images || images.length === 0) return null;
+  const maxShow = 4;
+  const extra = images.length - maxShow;
+
+  if (images.length === 1) {
+    return (
+      <button onClick={() => onClickImage(0)} className="w-full">
+        <img src={images[0]} alt="" className="w-full object-cover" style={{ maxHeight: '400px', background: 'var(--bg-inset)' }} />
+      </button>
+    );
+  }
+
+  if (images.length === 2) {
+    return (
+      <div className="grid grid-cols-2 gap-0.5">
+        {images.map((src, i) => (
+          <button key={i} onClick={() => onClickImage(i)} className="aspect-square overflow-hidden">
+            <img src={src} alt="" className="w-full h-full object-cover" style={{ background: 'var(--bg-inset)' }} />
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  if (images.length === 3) {
+    return (
+      <div className="grid grid-cols-2 gap-0.5" style={{ height: '300px' }}>
+        <button onClick={() => onClickImage(0)} className="row-span-2 overflow-hidden">
+          <img src={images[0]} alt="" className="w-full h-full object-cover" style={{ background: 'var(--bg-inset)' }} />
+        </button>
+        <button onClick={() => onClickImage(1)} className="overflow-hidden">
+          <img src={images[1]} alt="" className="w-full h-full object-cover" style={{ background: 'var(--bg-inset)' }} />
+        </button>
+        <button onClick={() => onClickImage(2)} className="overflow-hidden">
+          <img src={images[2]} alt="" className="w-full h-full object-cover" style={{ background: 'var(--bg-inset)' }} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-0.5">
+      {images.slice(0, maxShow).map((src, i) => (
+        <button key={i} onClick={() => onClickImage(i)} className="relative aspect-square overflow-hidden">
+          <img src={src} alt="" className="w-full h-full object-cover" style={{ background: 'var(--bg-inset)' }} />
+          {i === maxShow - 1 && extra > 0 && (
+            <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
+              <span className="text-white text-2xl font-bold">+{extra}</span>
+            </div>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function LeaderCarWashPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
@@ -129,8 +184,12 @@ export default function LeaderCarWashPage() {
   const [editCaption, setEditCaption] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Image modal
-  const [viewImage, setViewImage] = useState<string | null>(null);
+  // Gallery preview
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+
+  // Activity type filter
+  const [filterActivityType, setFilterActivityType] = useState('');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('leaderUser');
@@ -156,7 +215,40 @@ export default function LeaderCarWashPage() {
   useEffect(() => {
     if (!user) return;
     fetchActivities();
-  }, [user, selectedDriver, startDate, endDate]);
+  }, [user, selectedDriver, startDate, endDate, filterActivityType]);
+
+  // Pusher realtime
+  useEffect(() => {
+    if (!user) return;
+
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap1',
+    });
+
+    const channel = pusher.subscribe('car-wash-feed');
+
+    channel.bind('new-activity', (data: { activity: Activity }) => {
+      if (!filterActivityType || data.activity.activityType === filterActivityType) {
+        setActivities((prev) => {
+          if (prev.some((a) => a._id === data.activity._id)) return prev;
+          return [data.activity, ...prev];
+        });
+      }
+    });
+
+    channel.bind('update-activity', (data: { activityId: string; activity: Activity }) => {
+      setActivities((prev) => prev.map((a) => (a._id === data.activityId ? data.activity : a)));
+    });
+
+    channel.bind('delete-activity', (data: { activityId: string }) => {
+      setActivities((prev) => prev.filter((a) => a._id !== data.activityId));
+    });
+
+    return () => {
+      pusher.unsubscribe('car-wash-feed');
+      pusher.disconnect();
+    };
+  }, [user, filterActivityType]);
 
   const fetchActivities = async () => {
     setLoading(true);
@@ -165,6 +257,7 @@ export default function LeaderCarWashPage() {
       if (selectedDriver) params.set('userId', selectedDriver);
       if (startDate) params.set('startDate', startDate);
       if (endDate) params.set('endDate', endDate);
+      if (filterActivityType) params.set('activityType', filterActivityType);
 
       const res = await fetch(`/api/car-wash?${params.toString()}`);
       const data = await res.json();
@@ -304,6 +397,11 @@ export default function LeaderCarWashPage() {
     setMenuOpen(null);
   };
 
+  const openGallery = (images: string[], startIndex: number) => {
+    setGalleryImages(images);
+    setGalleryIndex(startIndex);
+  };
+
   const toggleComments = (activityId: string) => {
     if (commentingOn === activityId) {
       setCommentingOn(null);
@@ -341,7 +439,33 @@ export default function LeaderCarWashPage() {
           }
         />
 
-        <div className="px-4 lg:px-8 py-4">
+        {/* Activity type filter tabs */}
+        <div className="px-4 lg:px-8 pt-2 pb-1">
+          <div className="max-w-2xl mx-auto flex gap-2 overflow-x-auto no-scrollbar">
+            {[
+              { key: '', label: 'ทั้งหมด' },
+              { key: 'car-wash', label: 'ล้างรถ' },
+              { key: 'maintenance', label: 'ซ่อมบำรุง' },
+              { key: 'inspection', label: 'ตรวจสภาพ' },
+              { key: 'refuel', label: 'เติมน้ำมัน' },
+            ].map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setFilterActivityType(opt.key)}
+                className="shrink-0 px-3.5 py-1.5 rounded-full text-fluid-xs font-medium transition-colors"
+                style={{
+                  background: filterActivityType === opt.key ? 'var(--accent)' : 'var(--bg-surface)',
+                  color: filterActivityType === opt.key ? '#fff' : 'var(--text-secondary)',
+                  border: filterActivityType === opt.key ? 'none' : '1px solid var(--border)',
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-2xl mx-auto flex flex-col gap-4">
 
             {/* Stats */}
@@ -426,6 +550,7 @@ export default function LeaderCarWashPage() {
               <div className="space-y-4">
                 {activities.map((activity, index) => {
                   const liked = isLiked(activity);
+                  const images = activity.imageUrls || [];
 
                   return (
                     <motion.div
@@ -518,10 +643,8 @@ export default function LeaderCarWashPage() {
                         </div>
                       )}
 
-                      {/* Image */}
-                      <button onClick={() => setViewImage(getImageUrl(activity.imageUrl))} className="w-full">
-                        <img src={getImageUrl(activity.imageUrl)} alt="" className="w-full object-cover" style={{ maxHeight: '400px', background: 'var(--bg-inset)' }} />
-                      </button>
+                      {/* Multi-image grid */}
+                      <ImageGrid images={images} onClickImage={(i) => openGallery(images, i)} />
 
                       {/* Like & Comment counts */}
                       {(activity.likes.length > 0 || activity.comments.length > 0) && (
@@ -684,18 +807,73 @@ export default function LeaderCarWashPage() {
         )}
       </AnimatePresence>
 
-      {/* Image preview modal */}
+      {/* Gallery preview modal */}
       <AnimatePresence>
-        {viewImage && (
+        {galleryImages.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.9)' }}
-            onClick={() => setViewImage(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.95)' }}
+            onClick={() => setGalleryImages([])}
           >
-            <img src={viewImage} alt="" className="max-w-full max-h-[85vh] rounded-[var(--radius-lg)] object-contain" onClick={(e) => e.stopPropagation()} />
+            <button
+              onClick={() => setGalleryImages([])}
+              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full"
+              style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="absolute top-5 left-0 right-0 text-center text-white text-fluid-xs font-medium">
+              {galleryIndex + 1} / {galleryImages.length}
+            </div>
+
+            <img
+              src={galleryImages[galleryIndex]}
+              alt=""
+              className="max-w-[90vw] max-h-[80vh] rounded-[var(--radius-lg)] object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {galleryIndex > 0 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setGalleryIndex((p) => p - 1); }}
+                className="absolute left-3 w-10 h-10 flex items-center justify-center rounded-full"
+                style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            )}
+
+            {galleryIndex < galleryImages.length - 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setGalleryIndex((p) => p + 1); }}
+                className="absolute right-3 w-10 h-10 flex items-center justify-center rounded-full"
+                style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            )}
+
+            {galleryImages.length > 1 && (
+              <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 px-4">
+                {galleryImages.map((src, i) => (
+                  <button
+                    key={i}
+                    onClick={(e) => { e.stopPropagation(); setGalleryIndex(i); }}
+                    className="w-12 h-12 rounded-[var(--radius-sm)] overflow-hidden shrink-0 transition-all"
+                    style={{
+                      border: i === galleryIndex ? '2px solid #fff' : '2px solid transparent',
+                      opacity: i === galleryIndex ? 1 : 0.5,
+                    }}
+                  >
+                    <img src={src} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
 import 'dayjs/locale/th';
-import { Camera, Car, CalendarDays, Clock, CheckCircle2, AlertCircle, ImageIcon, Send } from 'lucide-react';
+import { Camera, Car, CalendarDays, Clock, CheckCircle2, AlertCircle, ImageIcon, Send, X, Plus } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -82,8 +82,8 @@ export default function CarWashPage() {
   const [user, setUser] = useState<DriverUser | null>(null);
 
   const [activityType, setActivityType] = useState('');
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<Blob | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<Blob[]>([]);
   const [caption, setCaption] = useState('');
   const [activityDate, setActivityDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [activityTime, setActivityTime] = useState(() => {
@@ -106,21 +106,33 @@ export default function CarWashPage() {
   }, [router]);
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     try {
-      const resized = await resizeImage(file);
-      setImageFile(resized);
-      setImagePreview(URL.createObjectURL(resized));
+      const newFiles: Blob[] = [];
+      const newPreviews: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const resized = await resizeImage(files[i]);
+        newFiles.push(resized);
+        newPreviews.push(URL.createObjectURL(resized));
+      }
+      setImageFiles((prev) => [...prev, ...newFiles]);
+      setImagePreviews((prev) => [...prev, ...newPreviews]);
       setError('');
     } catch {
       setError('ไม่สามารถประมวลผลรูปภาพได้');
     }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
-    if (!user || !imageFile) return;
+    if (!user || imageFiles.length === 0) return;
 
     setLoading(true);
     setError('');
@@ -128,7 +140,9 @@ export default function CarWashPage() {
 
     try {
       const formData = new FormData();
-      formData.append('image', imageFile, 'activity.jpg');
+      imageFiles.forEach((file, i) => {
+        formData.append('images', file, `activity-${i}.jpg`);
+      });
       formData.append('userId', user.id);
       formData.append('activityType', activityType);
       formData.append('caption', caption);
@@ -144,8 +158,8 @@ export default function CarWashPage() {
 
       if (data.success) {
         setSuccess(true);
-        setImagePreview(null);
-        setImageFile(null);
+        setImagePreviews([]);
+        setImageFiles([]);
         setCaption('');
         if (fileInputRef.current) fileInputRef.current.value = '';
       } else {
@@ -158,7 +172,7 @@ export default function CarWashPage() {
     }
   };
 
-  const canSubmit = !!activityType && !!imageFile && !!activityDate && !!activityTime && !loading;
+  const canSubmit = !!activityType && imageFiles.length > 0 && !!activityDate && !!activityTime && !loading;
 
   if (!user) return null;
 
@@ -247,25 +261,38 @@ export default function CarWashPage() {
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
-                      capture="environment"
+                      multiple
                       className="hidden"
                       onChange={handleImageSelect}
                     />
-                    {imagePreview ? (
-                      <div className="relative">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="w-full rounded-[var(--radius-md)] object-contain max-h-[300px]"
-                          style={{ background: 'var(--bg-inset)' }}
-                        />
-                        <button
-                          onClick={() => fileInputRef.current?.click()}
-                          className="absolute bottom-3 right-3 btn btn-secondary text-fluid-xs flex items-center gap-1.5"
-                        >
-                          <Camera className="w-3.5 h-3.5" />
-                          เปลี่ยนรูป
-                        </button>
+                    {imagePreviews.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-3 gap-2">
+                          {imagePreviews.map((src, i) => (
+                            <div key={i} className="relative aspect-square rounded-[var(--radius-md)] overflow-hidden" style={{ background: 'var(--bg-inset)' }}>
+                              <img src={src} alt="" className="w-full h-full object-cover" />
+                              <button
+                                onClick={() => removeImage(i)}
+                                className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full"
+                                style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                          {/* Add more button */}
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="aspect-square flex flex-col items-center justify-center rounded-[var(--radius-md)] border-2 border-dashed transition-colors"
+                            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+                          >
+                            <Plus className="w-5 h-5" />
+                            <span className="text-[10px] mt-1">เพิ่มรูป</span>
+                          </button>
+                        </div>
+                        <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>
+                          เลือกแล้ว {imagePreviews.length} รูป
+                        </p>
                       </div>
                     ) : (
                       <button
@@ -278,7 +305,7 @@ export default function CarWashPage() {
                         </div>
                         <div className="text-center">
                           <p className="text-fluid-sm font-medium">แตะเพื่อถ่ายรูปหรืออัปโหลด</p>
-                          <p className="text-fluid-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>รูปจะถูก resize อัตโนมัติ</p>
+                          <p className="text-fluid-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>รองรับหลายรูป · resize อัตโนมัติ</p>
                         </div>
                       </button>
                     )}

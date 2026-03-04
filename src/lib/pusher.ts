@@ -10,4 +10,5 @@ export const pusher = new Pusher({
 
 export const CHANNELS = {
   LEAVE_REQUESTS: 'leave-requests',
+  CAR_WASH: 'car-wash-feed',
 };

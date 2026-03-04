@@ -3,6 +3,7 @@ import { del } from '@vercel/blob';
 import dbConnect from '@/lib/mongodb';
 import { CarWashActivity } from '@/models/CarWashActivity';
 import { requireAuth } from '@/lib/api-auth';
+import { pusher, CHANNELS } from '@/lib/pusher';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +78,16 @@ export async function PATCH(
       await activity.save();
       await activity.populate('userId', 'lineDisplayName lineProfileImage name surname');
       await activity.populate('comments.userId', 'lineDisplayName lineProfileImage name surname');
+
+      try {
+        await pusher.trigger(CHANNELS.CAR_WASH, 'update-activity', {
+          activityId: id,
+          activity: JSON.parse(JSON.stringify(activity)),
+        });
+      } catch (pusherError) {
+        console.error('Pusher Error:', pusherError);
+      }
+
       return NextResponse.json({ success: true, activity });
     }
 
@@ -96,6 +107,16 @@ export async function PATCH(
       await activity.save();
       await activity.populate('userId', 'lineDisplayName lineProfileImage name surname');
       await activity.populate('comments.userId', 'lineDisplayName lineProfileImage name surname');
+
+      try {
+        await pusher.trigger(CHANNELS.CAR_WASH, 'update-activity', {
+          activityId: id,
+          activity: JSON.parse(JSON.stringify(activity)),
+        });
+      } catch (pusherError) {
+        console.error('Pusher Error:', pusherError);
+      }
+
       return NextResponse.json({ success: true, activity });
     }
 
@@ -194,14 +215,25 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Try to delete blob image
-    try {
-      await del(activity.imageUrl, { token: process.env.itl_READ_WRITE_TOKEN });
-    } catch (blobErr) {
-      console.error('Blob delete error (non-fatal):', blobErr);
+    // Try to delete blob images
+    if (activity.imageUrls && activity.imageUrls.length > 0) {
+      for (const url of activity.imageUrls) {
+        try {
+          await del(url, { token: process.env.itl_READ_WRITE_TOKEN });
+        } catch (blobErr) {
+          console.error('Blob delete error (non-fatal):', blobErr);
+        }
+      }
     }
 
     await CarWashActivity.findByIdAndDelete(id);
+
+    // Pusher realtime — delete
+    try {
+      await pusher.trigger(CHANNELS.CAR_WASH, 'delete-activity', { activityId: id });
+    } catch (pusherError) {
+      console.error('Pusher Error:', pusherError);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
