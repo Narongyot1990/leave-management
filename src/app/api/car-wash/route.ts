@@ -37,7 +37,9 @@ export async function GET(request: NextRequest) {
 
     const activities = await CarWashActivity.find(query)
       .populate('userId', 'lineDisplayName lineProfileImage name surname employeeId')
-      .sort({ activityDate: -1, createdAt: -1 });
+      .populate('comments.userId', 'lineDisplayName lineProfileImage name surname')
+      .populate('markedBy', 'lineDisplayName name surname')
+      .sort({ createdAt: -1 });
 
     return NextResponse.json({ success: true, activities });
   } catch (error) {

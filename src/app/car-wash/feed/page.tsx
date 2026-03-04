@@ -4,14 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
-import isoWeek from 'dayjs/plugin/isoWeek';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/th';
 import {
-  Car,
-  CalendarDays,
-  Filter,
-  Users,
   Heart,
   MessageCircle,
   MoreHorizontal,
@@ -19,13 +14,15 @@ import {
   Trash2,
   Pencil,
   X,
+  Car,
+  CheckCircle2,
   Flag,
+  Plus,
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 
-dayjs.extend(isoWeek);
 dayjs.extend(relativeTime);
 dayjs.locale('th');
 
@@ -60,13 +57,6 @@ interface Activity {
   createdAt: string;
 }
 
-interface DriverOption {
-  _id: string;
-  lineDisplayName: string;
-  name?: string;
-  surname?: string;
-}
-
 function getDisplayName(u: UserInfo | undefined) {
   if (!u) return 'Unknown';
   if (u.name && u.surname) return `${u.name} ${u.surname}`;
@@ -89,18 +79,11 @@ function Avatar({ user, size = 'md' }: { user?: UserInfo; size?: 'sm' | 'md' | '
   );
 }
 
-export default function LeaderCarWashPage() {
+export default function CarWashFeedPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string; lineDisplayName: string; lineProfileImage?: string; name?: string; surname?: string } | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [drivers, setDrivers] = useState<DriverOption[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Filters
-  const [selectedDriver, setSelectedDriver] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
 
   // Comment states
   const [commentingOn, setCommentingOn] = useState<string | null>(null);
@@ -116,44 +99,26 @@ export default function LeaderCarWashPage() {
   const [editCaption, setEditCaption] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Image modal
+  // Image preview
   const [viewImage, setViewImage] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('leaderUser');
+    const storedUser = localStorage.getItem('driverUser');
     if (!storedUser) {
-      router.push('/leader/login');
+      router.push('/login');
       return;
     }
     setUser(JSON.parse(storedUser));
   }, [router]);
 
-  // Fetch drivers list
   useEffect(() => {
     if (!user) return;
-    fetch('/api/users?status=active')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) setDrivers(data.users || []);
-      })
-      .catch(console.error);
+    fetchFeed();
   }, [user]);
 
-  // Fetch activities
-  useEffect(() => {
-    if (!user) return;
-    fetchActivities();
-  }, [user, selectedDriver, startDate, endDate]);
-
-  const fetchActivities = async () => {
-    setLoading(true);
+  const fetchFeed = async () => {
     try {
-      const params = new URLSearchParams();
-      if (selectedDriver) params.set('userId', selectedDriver);
-      if (startDate) params.set('startDate', startDate);
-      if (endDate) params.set('endDate', endDate);
-
-      const res = await fetch(`/api/car-wash?${params.toString()}`);
+      const res = await fetch('/api/car-wash');
       const data = await res.json();
       if (data.success) setActivities(data.activities || []);
     } catch (err) {
@@ -167,25 +132,6 @@ export default function LeaderCarWashPage() {
     setActivities((prev) => prev.map((a) => (a._id === updated._id ? updated : a)));
   };
 
-  // Stats
-  const today = dayjs().startOf('day');
-  const weekStart = dayjs().startOf('isoWeek');
-  const monthStart = dayjs().startOf('month');
-
-  const todayCount = activities.filter((a) => dayjs(a.activityDate).isSame(today, 'day')).length;
-  const weekCount = activities.filter((a) => dayjs(a.activityDate).isAfter(weekStart.subtract(1, 'day'))).length;
-  const monthCount = activities.filter((a) => dayjs(a.activityDate).isAfter(monthStart.subtract(1, 'day'))).length;
-  const markedCount = activities.filter((a) => a.marked).length;
-
-  const clearFilters = () => {
-    setSelectedDriver('');
-    setStartDate('');
-    setEndDate('');
-  };
-
-  const hasFilters = selectedDriver || startDate || endDate;
-
-  // --- Actions ---
   const handleLike = async (activityId: string) => {
     if (!user) return;
     try {
@@ -237,27 +183,14 @@ export default function LeaderCarWashPage() {
     }
   };
 
-  const handleMark = async (activityId: string) => {
-    if (!user) return;
-    try {
-      const res = await fetch(`/api/car-wash/${activityId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'mark', leaderId: user.id }),
-      });
-      const data = await res.json();
-      if (data.success) updateActivity(data.activity);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const handleDelete = async (activityId: string) => {
     if (!user || !confirm('ต้องการลบกิจกรรมนี้?')) return;
     try {
       const res = await fetch(`/api/car-wash/${activityId}?visitorId=${user.id}`, { method: 'DELETE' });
       const data = await res.json();
-      if (data.success) setActivities((prev) => prev.filter((a) => a._id !== activityId));
+      if (data.success) {
+        setActivities((prev) => prev.filter((a) => a._id !== activityId));
+      }
     } catch (err) {
       console.error(err);
     }
@@ -309,97 +242,26 @@ export default function LeaderCarWashPage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
-      <Sidebar role="leader" />
+      <Sidebar role="driver" />
 
       <div className="lg:pl-[240px] pb-20 lg:pb-6">
         <PageHeader
-          title="Moments กิจกรรม"
-          backHref="/leader/home"
+          title="Moments"
+          backHref="/home"
           rightContent={
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="btn btn-secondary text-fluid-xs flex items-center gap-1.5"
-              style={hasFilters ? { background: 'var(--accent-light)', color: 'var(--accent)', borderColor: 'var(--accent)' } : {}}
+              onClick={() => router.push('/car-wash')}
+              className="btn btn-primary text-fluid-xs flex items-center gap-1.5 py-1.5 px-3"
             >
-              <Filter className="w-3.5 h-3.5" />
-              ตัวกรอง
-              {hasFilters && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} />}
+              <Plus className="w-3.5 h-3.5" />
+              โพสต์
             </button>
           }
         />
 
         <div className="px-4 lg:px-8 py-4">
-          <div className="max-w-2xl mx-auto flex flex-col gap-4">
+          <div className="max-w-2xl mx-auto">
 
-            {/* Stats */}
-            <div className="card p-4">
-              <div className="grid grid-cols-4 gap-2">
-                <div className="text-center p-2.5 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
-                  <p className="text-fluid-xl font-extrabold" style={{ color: 'var(--accent)' }}>{todayCount}</p>
-                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>วันนี้</p>
-                </div>
-                <div className="text-center p-2.5 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
-                  <p className="text-fluid-xl font-extrabold" style={{ color: 'var(--success)' }}>{weekCount}</p>
-                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>สัปดาห์</p>
-                </div>
-                <div className="text-center p-2.5 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
-                  <p className="text-fluid-xl font-extrabold" style={{ color: 'var(--warning)' }}>{monthCount}</p>
-                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>เดือน</p>
-                </div>
-                <div className="text-center p-2.5 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
-                  <p className="text-fluid-xl font-extrabold" style={{ color: 'var(--success)' }}>{markedCount}</p>
-                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Approved</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Filters panel */}
-            <AnimatePresence>
-              {showFilters && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="card p-4 space-y-3 overflow-hidden"
-                >
-                  <div>
-                    <label className="block text-fluid-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                      <Users className="w-3.5 h-3.5 inline mr-1" />
-                      เลือกพนักงาน
-                    </label>
-                    <select value={selectedDriver} onChange={(e) => setSelectedDriver(e.target.value)} className="input">
-                      <option value="">ทั้งหมด</option>
-                      {drivers.map((d) => (
-                        <option key={d._id} value={d._id}>
-                          {d.name && d.surname ? `${d.name} ${d.surname}` : d.lineDisplayName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-fluid-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                        <CalendarDays className="w-3.5 h-3.5 inline mr-1" />
-                        ตั้งแต่
-                      </label>
-                      <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input" />
-                    </div>
-                    <div>
-                      <label className="block text-fluid-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                        <CalendarDays className="w-3.5 h-3.5 inline mr-1" />
-                        ถึง
-                      </label>
-                      <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input" />
-                    </div>
-                  </div>
-                  {hasFilters && (
-                    <button onClick={clearFilters} className="btn btn-secondary w-full text-fluid-xs">ล้างตัวกรอง</button>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Moments Feed */}
             {loading ? (
               <div className="flex justify-center py-16">
                 <div className="w-10 h-10 rounded-full border-[3px] animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
@@ -407,11 +269,15 @@ export default function LeaderCarWashPage() {
             ) : activities.length === 0 ? (
               <div className="card p-12 text-center">
                 <Car className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
-                <p className="text-fluid-sm font-medium" style={{ color: 'var(--text-muted)' }}>ไม่มีกิจกรรม</p>
+                <p className="text-fluid-sm font-medium" style={{ color: 'var(--text-muted)' }}>ยังไม่มีกิจกรรม</p>
+                <button onClick={() => router.push('/car-wash')} className="btn btn-primary mt-4 text-fluid-xs">
+                  โพสต์กิจกรรมแรก
+                </button>
               </div>
             ) : (
               <div className="space-y-4">
                 {activities.map((activity, index) => {
+                  const isOwner = activity.userId?._id === user.id;
                   const liked = isLiked(activity);
 
                   return (
@@ -442,51 +308,45 @@ export default function LeaderCarWashPage() {
                           </div>
                         )}
 
-                        {/* Menu — leader can edit/delete any */}
-                        <div className="relative">
-                          <button
-                            onClick={() => setMenuOpen(menuOpen === activity._id ? null : activity._id)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full"
-                            style={{ color: 'var(--text-muted)' }}
-                          >
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
-                          <AnimatePresence>
-                            {menuOpen === activity._id && (
-                              <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                className="absolute right-0 top-9 z-20 card p-1 min-w-[160px] shadow-lg"
-                              >
-                                <button
-                                  onClick={() => { handleMark(activity._id); setMenuOpen(null); }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-fluid-xs text-left transition-colors hover:opacity-80"
-                                  style={{ color: activity.marked ? 'var(--warning)' : 'var(--success)' }}
+                        {/* Menu for own posts */}
+                        {isOwner && (
+                          <div className="relative">
+                            <button
+                              onClick={() => setMenuOpen(menuOpen === activity._id ? null : activity._id)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full"
+                              style={{ color: 'var(--text-muted)' }}
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
+                            <AnimatePresence>
+                              {menuOpen === activity._id && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.9 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 0.9 }}
+                                  className="absolute right-0 top-9 z-20 card p-1 min-w-[140px] shadow-lg"
                                 >
-                                  <Flag className="w-3.5 h-3.5" />
-                                  {activity.marked ? 'ยกเลิก Approve' : 'Approve (Flag)'}
-                                </button>
-                                <button
-                                  onClick={() => openEdit(activity)}
-                                  className="w-full flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-fluid-xs text-left transition-colors hover:opacity-80"
-                                  style={{ color: 'var(--text-secondary)' }}
-                                >
-                                  <Pencil className="w-3.5 h-3.5" />
-                                  แก้ไข
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(activity._id)}
-                                  className="w-full flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-fluid-xs text-left transition-colors hover:opacity-80"
-                                  style={{ color: 'var(--danger)' }}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  ลบ
-                                </button>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
+                                  <button
+                                    onClick={() => openEdit(activity)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-fluid-xs text-left transition-colors hover:opacity-80"
+                                    style={{ color: 'var(--text-secondary)' }}
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                    แก้ไข
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(activity._id)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-fluid-xs text-left transition-colors hover:opacity-80"
+                                    style={{ color: 'var(--danger)' }}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    ลบ
+                                  </button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        )}
                       </div>
 
                       {/* Caption */}
@@ -498,7 +358,12 @@ export default function LeaderCarWashPage() {
 
                       {/* Image */}
                       <button onClick={() => setViewImage(activity.imageUrl)} className="w-full">
-                        <img src={activity.imageUrl} alt="" className="w-full object-cover" style={{ maxHeight: '400px', background: 'var(--bg-inset)' }} />
+                        <img
+                          src={activity.imageUrl}
+                          alt=""
+                          className="w-full object-cover"
+                          style={{ maxHeight: '400px', background: 'var(--bg-inset)' }}
+                        />
                       </button>
 
                       {/* Like & Comment counts */}
@@ -512,7 +377,9 @@ export default function LeaderCarWashPage() {
                               </span>
                             )}
                           </span>
-                          <span>{activity.comments.length > 0 && `${activity.comments.length} ความคิดเห็น`}</span>
+                          <span>
+                            {activity.comments.length > 0 && `${activity.comments.length} ความคิดเห็น`}
+                          </span>
                         </div>
                       )}
 
@@ -534,14 +401,6 @@ export default function LeaderCarWashPage() {
                           <MessageCircle className="w-4 h-4" />
                           แสดงความคิดเห็น
                         </button>
-                        <button
-                          onClick={() => handleMark(activity._id)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-[var(--radius-md)] text-fluid-xs font-medium transition-colors"
-                          style={{ color: activity.marked ? 'var(--success)' : 'var(--text-muted)' }}
-                        >
-                          <Flag className={`w-4 h-4 ${activity.marked ? 'fill-current' : ''}`} />
-                          {activity.marked ? 'Approved' : 'Approve'}
-                        </button>
                       </div>
 
                       {/* Comments section */}
@@ -554,6 +413,7 @@ export default function LeaderCarWashPage() {
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
+                            {/* Existing comments */}
                             {activity.comments.length > 0 && (
                               <div className="px-4 py-2 space-y-2" style={{ background: 'var(--bg-inset)' }}>
                                 {activity.comments.map((c) => (
@@ -570,13 +430,15 @@ export default function LeaderCarWashPage() {
                                         <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                                           {dayjs(c.createdAt).fromNow()}
                                         </span>
-                                        <button
-                                          onClick={() => handleDeleteComment(activity._id, c._id)}
-                                          className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
-                                          style={{ color: 'var(--danger)' }}
-                                        >
-                                          ลบ
-                                        </button>
+                                        {(c.userId?._id === user.id) && (
+                                          <button
+                                            onClick={() => handleDeleteComment(activity._id, c._id)}
+                                            className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                            style={{ color: 'var(--danger)' }}
+                                          >
+                                            ลบ
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -586,7 +448,7 @@ export default function LeaderCarWashPage() {
 
                             {/* Comment input */}
                             <div className="flex items-center gap-2 px-4 py-3">
-                              <Avatar user={{ _id: user.id, lineDisplayName: user.lineDisplayName || 'Leader', name: user.name }} size="sm" />
+                              <Avatar user={{ _id: user.id, lineDisplayName: user.lineDisplayName, lineProfileImage: user.lineProfileImage, name: user.name, surname: user.surname }} size="sm" />
                               <div className="flex-1 flex items-center gap-2">
                                 <input
                                   ref={commentInputRef}
@@ -615,7 +477,6 @@ export default function LeaderCarWashPage() {
                 })}
               </div>
             )}
-
           </div>
         </div>
       </div>
@@ -678,7 +539,7 @@ export default function LeaderCarWashPage() {
         )}
       </AnimatePresence>
 
-      <BottomNav role="leader" />
+      <BottomNav role="driver" />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, CalendarDays, Clock, User, FileText, Users, CheckSquare, ClipboardList, Settings, PenSquare, LogOut, Car } from 'lucide-react';
+import { Home, CalendarDays, Clock, User, FileText, Users, CheckSquare, ClipboardList, Settings, PenSquare, LogOut, Car, Rss } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ThemeToggle from './ThemeToggle';
 
@@ -15,7 +15,8 @@ const driverNav: NavItem[] = [
   { icon: Home, label: 'หน้าหลัก', href: '/home' },
   { icon: FileText, label: 'ขอลา', href: '/leave' },
   { icon: Clock, label: 'ประวัติการลา', href: '/leave/history' },
-  { icon: Car, label: 'กิจกรรม', href: '/car-wash' },
+  { icon: Rss, label: 'Moments', href: '/car-wash/feed' },
+  { icon: Car, label: 'โพสต์กิจกรรม', href: '/car-wash' },
   { icon: CalendarDays, label: 'Dashboard', href: '/dashboard' },
   { icon: PenSquare, label: 'แก้ไขข้อมูล', href: '/profile-edit' },
   { icon: Settings, label: 'ตั้งค่า', href: '/settings' },
@@ -27,7 +28,7 @@ const leaderNav: NavItem[] = [
   { icon: ClipboardList, label: 'ประวัติทั้งหมด', href: '/leader/history' },
   { icon: Users, label: 'จัดการพนักงาน', href: '/leader/drivers' },
   { icon: FileText, label: 'บันทึกการแทน', href: '/leader/substitute' },
-  { icon: Car, label: 'กิจกรรมล้างรถ', href: '/leader/car-wash' },
+  { icon: Rss, label: 'Moments กิจกรรม', href: '/leader/car-wash' },
   { icon: CalendarDays, label: 'Dashboard', href: '/dashboard' },
   { icon: User, label: 'แก้ไขโปรไฟล์', href: '/leader/profile-edit' },
 ];

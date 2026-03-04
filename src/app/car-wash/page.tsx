@@ -81,7 +81,7 @@ export default function CarWashPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [user, setUser] = useState<DriverUser | null>(null);
 
-  const [activityType, setActivityType] = useState('car-wash');
+  const [activityType, setActivityType] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<Blob | null>(null);
   const [caption, setCaption] = useState('');
@@ -158,7 +158,7 @@ export default function CarWashPage() {
     }
   };
 
-  const canSubmit = !!imageFile && !!activityDate && !!activityTime && !loading;
+  const canSubmit = !!activityType && !!imageFile && !!activityDate && !!activityTime && !loading;
 
   if (!user) return null;
 
@@ -227,126 +227,160 @@ export default function CarWashPage() {
               </div>
             </motion.div>
 
-            {/* Section 2: Image Upload */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }} className="card p-5">
-              <label className="block text-fluid-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-                รูปภาพ
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handleImageSelect}
-              />
-              {imagePreview ? (
-                <div className="relative">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full rounded-[var(--radius-md)] object-contain max-h-[300px]"
-                    style={{ background: 'var(--bg-inset)' }}
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-3 right-3 btn btn-secondary text-fluid-xs flex items-center gap-1.5"
+            {/* Sections 2-5: appear after activity type is selected */}
+            <AnimatePresence>
+              {activityType && (
+                <>
+                  {/* Section 2: Image Upload */}
+                  <motion.div
+                    key="upload"
+                    initial={{ y: 30, opacity: 0, height: 0 }}
+                    animate={{ y: 0, opacity: 1, height: 'auto' }}
+                    exit={{ y: -10, opacity: 0, height: 0 }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                    className="card p-5"
                   >
-                    <Camera className="w-3.5 h-3.5" />
-                    เปลี่ยนรูป
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex flex-col items-center justify-center gap-3 p-8 rounded-[var(--radius-md)] border-2 border-dashed transition-colors"
-                  style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-                >
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'var(--bg-inset)' }}>
-                    <ImageIcon className="w-6 h-6" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-fluid-sm font-medium">แตะเพื่อถ่ายรูปหรืออัปโหลด</p>
-                    <p className="text-fluid-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>รูปจะถูก resize อัตโนมัติ</p>
-                  </div>
-                </button>
+                    <label className="block text-fluid-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+                      รูปภาพ
+                    </label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={handleImageSelect}
+                    />
+                    {imagePreview ? (
+                      <div className="relative">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full rounded-[var(--radius-md)] object-contain max-h-[300px]"
+                          style={{ background: 'var(--bg-inset)' }}
+                        />
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="absolute bottom-3 right-3 btn btn-secondary text-fluid-xs flex items-center gap-1.5"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          เปลี่ยนรูป
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full flex flex-col items-center justify-center gap-3 p-8 rounded-[var(--radius-md)] border-2 border-dashed transition-colors"
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+                      >
+                        <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'var(--bg-inset)' }}>
+                          <ImageIcon className="w-6 h-6" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-fluid-sm font-medium">แตะเพื่อถ่ายรูปหรืออัปโหลด</p>
+                          <p className="text-fluid-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>รูปจะถูก resize อัตโนมัติ</p>
+                        </div>
+                      </button>
+                    )}
+                  </motion.div>
+
+                  {/* Section 3: Caption */}
+                  <motion.div
+                    key="caption"
+                    initial={{ y: 30, opacity: 0, height: 0 }}
+                    animate={{ y: 0, opacity: 1, height: 'auto' }}
+                    exit={{ y: -10, opacity: 0, height: 0 }}
+                    transition={{ duration: 0.35, ease: 'easeOut', delay: 0.08 }}
+                    className="card p-5"
+                  >
+                    <label className="block text-fluid-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+                      รายละเอียด <span className="font-normal" style={{ color: 'var(--text-muted)' }}>(ไม่บังคับ)</span>
+                    </label>
+                    <textarea
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      rows={3}
+                      className="input resize-none"
+                      placeholder="เช่น ล้างรถเรียบร้อย ทำความสะอาดภายใน..."
+                    />
+                  </motion.div>
+
+                  {/* Section 4: Date & Time */}
+                  <motion.div
+                    key="datetime"
+                    initial={{ y: 30, opacity: 0, height: 0 }}
+                    animate={{ y: 0, opacity: 1, height: 'auto' }}
+                    exit={{ y: -10, opacity: 0, height: 0 }}
+                    transition={{ duration: 0.35, ease: 'easeOut', delay: 0.16 }}
+                    className="card p-5"
+                  >
+                    <label className="block text-fluid-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+                      วันที่และเวลาที่ทำกิจกรรม
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-fluid-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                          <CalendarDays className="w-3.5 h-3.5 inline mr-1" />
+                          วันที่
+                        </label>
+                        <input
+                          type="date"
+                          value={activityDate}
+                          onChange={(e) => setActivityDate(e.target.value)}
+                          max={dayjs().format('YYYY-MM-DD')}
+                          className="input"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-fluid-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                          <Clock className="w-3.5 h-3.5 inline mr-1" />
+                          เวลา
+                        </label>
+                        <select
+                          value={activityTime}
+                          onChange={(e) => setActivityTime(e.target.value)}
+                          className="input"
+                        >
+                          {timeSlots.map((t) => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <p className="text-fluid-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                      {dayjs(activityDate).format('D MMMM YYYY')} เวลา {activityTime} น.
+                    </p>
+                  </motion.div>
+
+                  {/* Submit */}
+                  <motion.div
+                    key="submit"
+                    initial={{ y: 30, opacity: 0, height: 0 }}
+                    animate={{ y: 0, opacity: 1, height: 'auto' }}
+                    exit={{ y: -10, opacity: 0, height: 0 }}
+                    transition={{ duration: 0.35, ease: 'easeOut', delay: 0.24 }}
+                  >
+                    <button
+                      onClick={handleSubmit}
+                      disabled={!canSubmit}
+                      className="btn btn-primary w-full py-3.5 text-fluid-sm font-semibold"
+                    >
+                      {loading ? (
+                        <span className="flex items-center gap-2">
+                          <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                          กำลังบันทึก...
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center gap-2">
+                          <Send className="w-4 h-4" />
+                          บันทึกกิจกรรม
+                        </span>
+                      )}
+                    </button>
+                  </motion.div>
+                </>
               )}
-            </motion.div>
-
-            {/* Section 3: Caption */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="card p-5">
-              <label className="block text-fluid-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-                รายละเอียด <span className="font-normal" style={{ color: 'var(--text-muted)' }}>(ไม่บังคับ)</span>
-              </label>
-              <textarea
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                rows={3}
-                className="input resize-none"
-                placeholder="เช่น ล้างรถเรียบร้อย ทำความสะอาดภายใน..."
-              />
-            </motion.div>
-
-            {/* Section 4: Date & Time */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.15 }} className="card p-5">
-              <label className="block text-fluid-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-                วันที่และเวลาที่ทำกิจกรรม
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-fluid-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    <CalendarDays className="w-3.5 h-3.5 inline mr-1" />
-                    วันที่
-                  </label>
-                  <input
-                    type="date"
-                    value={activityDate}
-                    onChange={(e) => setActivityDate(e.target.value)}
-                    max={dayjs().format('YYYY-MM-DD')}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="block text-fluid-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    <Clock className="w-3.5 h-3.5 inline mr-1" />
-                    เวลา
-                  </label>
-                  <select
-                    value={activityTime}
-                    onChange={(e) => setActivityTime(e.target.value)}
-                    className="input"
-                  >
-                    {timeSlots.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <p className="text-fluid-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                {dayjs(activityDate).format('D MMMM YYYY')} เวลา {activityTime} น.
-              </p>
-            </motion.div>
-
-            {/* Submit */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-              <button
-                onClick={handleSubmit}
-                disabled={!canSubmit}
-                className="btn btn-primary w-full py-3.5 text-fluid-sm font-semibold"
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                    กำลังบันทึก...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <Send className="w-4 h-4" />
-                    บันทึกกิจกรรม
-                  </span>
-                )}
-              </button>
-            </motion.div>
+            </AnimatePresence>
 
           </div>
         </div>
