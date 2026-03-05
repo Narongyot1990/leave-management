@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, CalendarDays, Clock, User, FileText, Users, CheckSquare, ClipboardList, Settings, PenSquare, LogOut, Car, Rss } from 'lucide-react';
+import { Home, CalendarDays, Clock, User, FileText, Users, CheckSquare, ClipboardList, Settings, PenSquare, LogOut, Car, Rss, Contact2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ThemeToggle from './ThemeToggle';
 
@@ -16,6 +16,7 @@ const driverNav: NavItem[] = [
   { icon: FileText, label: 'ขอลา', href: '/leave' },
   { icon: Clock, label: 'ประวัติการลา', href: '/leave/history' },
   { icon: Rss, label: 'Moments', href: '/car-wash/feed' },
+  { icon: Contact2, label: 'ผู้ติดต่อ', href: '/contacts' },
   { icon: Car, label: 'โพสต์กิจกรรม', href: '/car-wash' },
   { icon: CalendarDays, label: 'Dashboard', href: '/dashboard' },
   { icon: PenSquare, label: 'แก้ไขข้อมูล', href: '/profile-edit' },

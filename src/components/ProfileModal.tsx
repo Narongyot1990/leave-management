@@ -146,30 +146,23 @@ export default function ProfileModal({ user, open, onClose }: ProfileModalProps)
                 </div>
               ) : (
                 <>
-                  {/* Name & status */}
+                  {/* Name & online status */}
                   <div className="text-center mb-4">
-                    <div className="flex items-center justify-center gap-2 flex-wrap">
-                      <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                        {fullName || displayUser.lineDisplayName}
-                      </h2>
-                      {displayUser.status && (
-                        <span
-                          className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                          style={{
-                            background: displayUser.status === 'active' ? 'var(--success-light)' : 'rgba(251,191,36,0.1)',
-                            color: displayUser.status === 'active' ? 'var(--success)' : 'var(--warning)',
-                          }}
-                        >
-                          {displayUser.status === 'active' ? 'ใช้งาน' : 'รออนุมัติ'}
-                        </span>
-                      )}
-                    </div>
+                    <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+                      {fullName || displayUser.lineDisplayName}
+                    </h2>
                     <p className="text-fluid-sm" style={{ color: 'var(--text-muted)' }}>
                       @{displayUser.lineDisplayName}
                     </p>
-                    <p className="text-fluid-xs mt-0.5" style={{ color: displayUser.isOnline ? 'var(--success)' : 'var(--text-muted)' }}>
-                      {displayUser.isOnline ? '● Online' : displayUser.lastSeen ? `Last seen ${formatLastSeen(displayUser.lastSeen)}` : ''}
-                    </p>
+                    <div className="flex items-center justify-center gap-1.5 mt-1">
+                      <span
+                        className="w-2 h-2 rounded-full inline-block"
+                        style={{ background: displayUser.isOnline ? 'var(--success)' : 'var(--text-muted)' }}
+                      />
+                      <span className="text-fluid-xs font-medium" style={{ color: displayUser.isOnline ? 'var(--success)' : 'var(--text-muted)' }}>
+                        {displayUser.isOnline ? 'ออนไลน์' : displayUser.lastSeen ? formatLastSeen(displayUser.lastSeen) : 'ไม่ทราบ'}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Info rows */}
