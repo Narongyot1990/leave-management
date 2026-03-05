@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import { del } from '@vercel/blob';
 import dbConnect from '@/lib/mongodb';
-import { CarWashActivity } from '@/models/CarWashActivity';
+import { CarWashActivity, IComment } from '@/models/CarWashActivity';
 import { requireAuth } from '@/lib/api-auth';
 import { pusher, CHANNELS } from '@/lib/pusher';
 
@@ -64,13 +65,13 @@ export async function PATCH(
       }
 
       const alreadyLiked = activity.likes.some(
-        (lid: any) => lid.toString() === visitorId
+        (lid: mongoose.Types.ObjectId) => lid.toString() === visitorId
       );
 
       if (alreadyLiked) {
         activity.likes = activity.likes.filter(
-          (lid: any) => lid.toString() !== visitorId
-        ) as any;
+          (lid: mongoose.Types.ObjectId) => lid.toString() !== visitorId
+        );
       } else {
         activity.likes.push(visitorId);
       }
@@ -98,10 +99,10 @@ export async function PATCH(
       }
 
       activity.comments.push({
-        userId: visitorId,
+        userId: new mongoose.Types.ObjectId(visitorId),
         text,
         createdAt: new Date(),
-      } as any);
+      } as IComment);
 
       await activity.save();
       await activity.populate('userId', 'lineDisplayName lineProfileImage name surname');
@@ -125,7 +126,7 @@ export async function PATCH(
         return NextResponse.json({ error: 'commentId is required' }, { status: 400 });
       }
 
-      const comment = (activity.comments as any).id(commentId);
+      const comment = (activity.comments as unknown as { id: (id: string) => IComment | undefined }).id(commentId);
       if (!comment) {
         return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
       }
@@ -137,7 +138,7 @@ export async function PATCH(
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
 
-      (activity.comments as any).pull({ _id: commentId });
+      (activity.comments as unknown as { pull: (query: object) => void }).pull({ _id: commentId });
       await activity.save();
       await activity.populate('userId', 'lineDisplayName lineProfileImage name surname');
       await activity.populate('comments.userId', 'lineDisplayName lineProfileImage name surname');
@@ -238,7 +239,7 @@ export async function DELETE(
     if (activity.imageUrls && activity.imageUrls.length > 0) {
       for (const url of activity.imageUrls) {
         try {
-          await del(url, { token: process.env.itl_READ_WRITE_TOKEN });
+          await del(url, { token: process.env.BLOB_READ_WRITE_TOKEN });
         } catch (blobErr) {
           console.error('Blob delete error (non-fatal):', blobErr);
         }

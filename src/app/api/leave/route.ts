@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongodb';
 import { LeaveRequest } from '@/models/LeaveRequest';
 import { User } from '@/models/User';
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     await dbConnect();
 
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (userId) {
       query.userId = userId;
     }

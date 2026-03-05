@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import dbConnect from '@/lib/mongodb';
 import { CarWashActivity } from '@/models/CarWashActivity';
-import { User } from '@/models/User';
 import { requireAuth } from '@/lib/api-auth';
 import { pusher, CHANNELS } from '@/lib/pusher';
 
@@ -93,7 +92,7 @@ export async function POST(request: NextRequest) {
       const blob = await put(filename, image, {
         access: 'private',
         addRandomSuffix: true,
-        token: process.env.itl_READ_WRITE_TOKEN,
+        token: process.env.BLOB_READ_WRITE_TOKEN,
       });
       imageUrls.push(blob.url);
     }

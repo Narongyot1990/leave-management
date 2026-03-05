@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongodb';
-import { User } from '@/models/User';
+import { User, IUser } from '@/models/User';
 import { LeaveRequest } from '@/models/LeaveRequest';
 import { SubstituteRecord } from '@/models/SubstituteRecord';
 import { pusher } from '@/lib/pusher';
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     await dbConnect();
 
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (status) {
       query.status = status;
     }
@@ -53,7 +54,7 @@ export async function PATCH(request: NextRequest) {
 
     await dbConnect();
 
-    const updateData: any = {};
+    const updateData: mongoose.UpdateQuery<IUser> = {};
     if (name !== undefined) updateData.name = name;
     if (surname !== undefined) updateData.surname = surname;
     if (phone !== undefined) updateData.phone = phone;

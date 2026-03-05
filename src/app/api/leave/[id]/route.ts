@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import { LeaveRequest } from '@/models/LeaveRequest';
-import { User } from '@/models/User';
-import { pusher, CHANNELS } from '@/lib/pusher';
+import { User, IUser } from '@/models/User';
+import { pusher } from '@/lib/pusher';
 import { requireAuth, requireLeader } from '@/lib/api-auth';
+import mongoose from 'mongoose';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,7 +59,7 @@ export async function DELETE(
         const end = new Date(leaveRequest.endDate);
         const leaveDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-        const quotaUpdate: any = {};
+        const quotaUpdate: mongoose.UpdateQuery<IUser> = {};
         if (leaveRequest.leaveType === 'vacation') {
           quotaUpdate.vacationDays = user.vacationDays + leaveDays;
         } else if (leaveRequest.leaveType === 'sick') {
@@ -141,7 +142,7 @@ export async function PATCH(
         const end = new Date(leaveRequest.endDate);
         const leaveDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-        const quotaUpdate: any = {};
+        const quotaUpdate: mongoose.UpdateQuery<IUser> = {};
         if (leaveRequest.leaveType === 'vacation') {
           quotaUpdate.vacationDays = Math.max(0, user.vacationDays - leaveDays);
         } else if (leaveRequest.leaveType === 'sick') {
@@ -162,7 +163,7 @@ export async function PATCH(
     }
     await leaveRequest.save();
 
-    const userId = leaveRequest.userId as any;
+    const userId = leaveRequest.userId as unknown as mongoose.Types.ObjectId;
     try {
       await pusher.trigger(`driver-${userId._id}`, 'leave-status-changed', {
         id: leaveRequest._id,

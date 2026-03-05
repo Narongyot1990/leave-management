@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongodb';
-import { User } from '@/models/User';
+import { User, IUser } from '@/models/User';
 import { requireAuth } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,7 @@ export async function PATCH(request: NextRequest) {
 
     await dbConnect();
 
-    const updateData: any = {};
+    const updateData: mongoose.UpdateQuery<IUser> = {};
     if (name !== undefined) updateData.name = name;
     if (surname !== undefined) updateData.surname = surname;
     if (phone !== undefined) updateData.phone = phone;

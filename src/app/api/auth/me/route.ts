@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { Leader } from '@/models/Leader';
@@ -6,7 +6,7 @@ import { getCurrentUser } from '@/lib/jwt-auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await dbConnect();
     

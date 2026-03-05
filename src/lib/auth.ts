@@ -1,8 +1,7 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import dbConnect from '@/lib/mongodb';
-import { User, IUser } from '@/models/User';
-import { Leader, ILeader } from '@/models/Leader';
+import { Leader } from '@/models/Leader';
 import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
@@ -44,14 +43,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
+        token.role = (user as { role?: string }).role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
+        (session.user as { id?: string; role?: string }).id = token.id as string;
+        (session.user as { id?: string; role?: string }).role = token.role as string;
       }
       return session;
     },

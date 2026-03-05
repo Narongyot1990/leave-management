@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import { Leader } from '@/models/Leader';
 import bcrypt from 'bcryptjs';
-import { generateAccessToken, generateRefreshToken, setAuthCookies } from '@/lib/jwt-auth';
+import { generateAccessToken, generateRefreshToken } from '@/lib/jwt-auth';
 
 export const dynamic = 'force-dynamic';
 

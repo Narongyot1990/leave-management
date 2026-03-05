@@ -7,6 +7,7 @@ import { X, Calendar } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'react-day-picker/style.css';
 
+// Thai months constant (kept for future use)
 interface DatePickerModalProps {
   open: boolean;
   onClose: () => void;
@@ -30,6 +31,17 @@ export default function DatePickerModal({ open, onClose, onConfirm, onConfirmSin
   const [selectedText, setSelectedText] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
+  const updateSelectedText = (from?: Date, to?: Date) => {
+    if (from && to) {
+      const days = dayjs(to).diff(dayjs(from), 'day') + 1;
+      setSelectedText(`${dayjs(from).format('D')} - ${dayjs(to).format('D MMM YYYY')} (${days} วัน)`);
+    } else if (from) {
+      setSelectedText(`${dayjs(from).format('D MMM YYYY')} - ...`);
+    } else {
+      setSelectedText('');
+    }
+  };
+
   useEffect(() => {
     if (mode === 'single' && initialDate) {
       setSingleDate(initialDate);
@@ -43,17 +55,6 @@ export default function DatePickerModal({ open, onClose, onConfirm, onConfirmSin
   useEffect(() => {
     setCurrentMonth(new Date());
   }, [open]);
-
-  const updateSelectedText = (from?: Date, to?: Date) => {
-    if (from && to) {
-      const days = dayjs(to).diff(dayjs(from), 'day') + 1;
-      setSelectedText(`${dayjs(from).format('D')} - ${dayjs(to).format('D MMM YYYY')} (${days} วัน)`);
-    } else if (from) {
-      setSelectedText(`${dayjs(from).format('D MMM YYYY')} - ...`);
-    } else {
-      setSelectedText('');
-    }
-  };
 
   const handleSelect = (newRange: DateRange | undefined) => {
     setRange(newRange);

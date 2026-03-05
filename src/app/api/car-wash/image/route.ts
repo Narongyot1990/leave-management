@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     // Fetch the private blob with the token
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${process.env.itl_READ_WRITE_TOKEN}`,
+        Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
       },
     });
 
