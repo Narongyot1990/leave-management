@@ -239,9 +239,15 @@ export default function ProfilePage() {
                 <p className="text-lg" style={{ color: 'var(--text-muted)' }}>
                   @{user.lineDisplayName}
                 </p>
-                <p className="text-sm mt-1" style={{ color: user.isOnline ? 'var(--success)' : 'var(--text-muted)' }}>
-                  {user.isOnline ? '● Online' : `Last seen ${formatLastSeen(user.lastSeen)}`}
-                </p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span
+                    className="w-2 h-2 rounded-full inline-block"
+                    style={{ background: user.isOnline ? 'var(--success)' : 'var(--text-muted)' }}
+                  />
+                  <span className="text-sm font-medium" style={{ color: user.isOnline ? 'var(--success)' : 'var(--text-muted)' }}>
+                    {user.isOnline ? 'ออนไลน์' : user.lastSeen ? formatLastSeen(user.lastSeen) : 'ไม่ทราบ'}
+                  </span>
+                </div>
               </div>
 
               {/* Success/Error Messages */}
