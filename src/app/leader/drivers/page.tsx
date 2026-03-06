@@ -22,6 +22,8 @@ interface Driver {
   vacationDays: number;
   sickDays: number;
   personalDays: number;
+  isOnline?: boolean;
+  lastSeen?: string;
   createdAt: string;
 }
 
@@ -68,6 +70,10 @@ function DriverManagementContent() {
   useEffect(() => {
     if (!user) return;
     fetchDrivers();
+    
+    // Refresh every 30 seconds to update online status
+    const interval = setInterval(fetchDrivers, 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
   const handleActivate = async (driverId: string) => {
@@ -169,6 +175,22 @@ function DriverManagementContent() {
     });
   };
 
+  const formatRelativeTime = (dateStr?: string) => {
+    if (!dateStr) return 'ไม่เคยออนไลน์';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'ออนไลน์ตอนนี้';
+    if (diffMins < 60) return `${diffMins} นาทีที่แล้ว`;
+    if (diffHours < 24) return `${diffHours} ชั่วโมงที่แล้ว`;
+    if (diffDays < 7) return `${diffDays} วันที่แล้ว`;
+    return formatDate(dateStr);
+  };
+
   if (!user) return null;
 
   return (
@@ -242,16 +264,32 @@ function DriverManagementContent() {
                   onClick={() => setSelectedDriver(driver)}
                   className="card p-4 flex items-center gap-3 cursor-pointer"
                 >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden cursor-pointer"
-                    style={{ background: 'var(--accent)' }}
-                    onClick={(e) => { e.stopPropagation(); setProfileUser(driver as unknown as ProfileUser); setShowProfile(true); }}
-                  >
-                    {driver.lineProfileImage ? (
-                      <img src={driver.lineProfileImage} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      (driver.name || driver.lineDisplayName).charAt(0)
-                    )}
+                  <div className="relative shrink-0">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden cursor-pointer"
+                      style={{ background: 'var(--accent)' }}
+                      onClick={(e) => { e.stopPropagation(); setProfileUser(driver as unknown as ProfileUser); setShowProfile(true); }}
+                    >
+                      {driver.lineProfileImage ? (
+                        <img src={driver.lineProfileImage} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        (driver.name || driver.lineDisplayName).charAt(0)
+                      )}
+                    </div>
+                    {/* Online Status Indicator */}
+                    <div
+                      className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 flex flex-col items-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div
+                        className="w-2.5 h-2.5 rounded-full border-2 border-white"
+                        style={{ background: driver.isOnline ? '#22c55e' : '#9ca3af' }}
+                        title={driver.isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
+                      />
+                      <span className="text-[10px] text-center mt-0.5 whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                        {formatRelativeTime(driver.lastSeen)}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-fluid-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>

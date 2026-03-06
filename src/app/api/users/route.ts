@@ -28,7 +28,9 @@ export async function GET(request: NextRequest) {
       query.status = 'active';
     }
 
-    const users = await User.find(query).sort({ createdAt: -1 });
+    const users = await User.find(query)
+      .select('lineUserId lineDisplayName lineProfileImage name surname phone employeeId status vacationDays sickDays personalDays lastSeen isOnline createdAt')
+      .sort({ createdAt: -1 });
 
     return NextResponse.json({
       success: true,
