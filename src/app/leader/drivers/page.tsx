@@ -276,20 +276,13 @@ function DriverManagementContent() {
                         (driver.name || driver.lineDisplayName).charAt(0)
                       )}
                     </div>
-                    {/* Online Status Indicator */}
+                    {/* Online Status Dot - positioned at bottom-right of profile */}
                     <div
-                      className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 flex flex-col items-center"
+                      className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white"
+                      style={{ background: driver.isOnline ? '#22c55e' : '#9ca3af' }}
+                      title={driver.isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
                       onClick={(e) => e.stopPropagation()}
-                    >
-                      <div
-                        className="w-2.5 h-2.5 rounded-full border-2 border-white"
-                        style={{ background: driver.isOnline ? '#22c55e' : '#9ca3af' }}
-                        title={driver.isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
-                      />
-                      <span className="text-[10px] text-center mt-0.5 whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-                        {formatRelativeTime(driver.lastSeen)}
-                      </span>
-                    </div>
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-fluid-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
@@ -297,6 +290,9 @@ function DriverManagementContent() {
                     </p>
                     <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>
                       {driver.employeeId || '-'} | {driver.phone || '-'}
+                    </p>
+                    <p className="text-[10px] truncate" style={{ color: driver.isOnline ? '#22c55e' : 'var(--text-muted)' }}>
+                      {driver.isOnline ? '● ออนไลน์' : `● ${formatRelativeTime(driver.lastSeen)}`}
                     </p>
                   </div>
                   <span className={`badge ${driver.status === 'active' ? 'badge-success' : 'badge-warning'}`}>
