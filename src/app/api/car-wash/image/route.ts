@@ -11,15 +11,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'url is required' }, { status: 400 });
     }
 
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!token) {
+      console.error('BLOB_READ_WRITE_TOKEN is not set');
+      return NextResponse.json({ error: 'Blob token not configured' }, { status: 500 });
+    }
+
     // Fetch the private blob with the token
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
     if (!response.ok) {
-      return NextResponse.json({ error: 'Failed to fetch image' }, { status: response.status });
+      console.error('Blob fetch failed:', response.status, response.statusText);
+      return NextResponse.json({ error: 'Failed to fetch image', details: response.statusText }, { status: response.status });
     }
 
     const contentType = response.headers.get('content-type') || 'image/jpeg';
