@@ -13,14 +13,16 @@ export async function GET(request: NextRequest) {
 
     const token = process.env.itl_READ_WRITE_TOKEN;
     if (!token) {
-      console.error('BLOB_READ_WRITE_TOKEN is not set');
+      console.error('itl_READ_WRITE_TOKEN is not set');
       return NextResponse.json({ error: 'Blob token not configured' }, { status: 500 });
     }
+
+    console.log('Fetching blob with token prefix:', token.substring(0, 10));
 
     // Fetch the private blob with the token
     const response = await fetch(url, {
       headers: {
-        Authorization: `${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
