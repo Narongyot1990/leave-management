@@ -298,6 +298,7 @@ function DriverManagementContent() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-fluid-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                      {driver.employeeId ? `${driver.employeeId} - ` : ''}
                       {driver.name && driver.surname ? `${driver.name} ${driver.surname}` : driver.lineDisplayName}
                     </p>
                     <div className="flex items-center gap-1.5">
@@ -307,12 +308,6 @@ function DriverManagementContent() {
                       >
                         {isDriverOnline(driver) ? 'ออนไลน์' : driver.lastSeen ? formatRelativeTime(driver.lastSeen) : 'ไม่ทราบ'}
                       </span>
-                      {driver.employeeId && (
-                        <>
-                          <span style={{ color: 'var(--text-muted)' }}>·</span>
-                          <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{driver.employeeId}</span>
-                        </>
-                      )}
                     </div>
                     {driver.phone && (
                       <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
