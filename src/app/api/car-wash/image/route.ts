@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'url is required' }, { status: 400 });
     }
 
-    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    const token = process.env.itl_READ_WRITE_TOKEN;
     if (!token) {
       console.error('BLOB_READ_WRITE_TOKEN is not set');
       return NextResponse.json({ error: 'Blob token not configured' }, { status: 500 });
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     // Fetch the private blob with the token
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `${token}`,
       },
     });
 

@@ -239,7 +239,7 @@ export async function DELETE(
     if (activity.imageUrls && activity.imageUrls.length > 0) {
       for (const url of activity.imageUrls) {
         try {
-          await del(url, { token: process.env.BLOB_READ_WRITE_TOKEN });
+          await del(url, { token: process.env.itl_READ_WRITE_TOKEN });
         } catch (blobErr) {
           console.error('Blob delete error (non-fatal):', blobErr);
         }
