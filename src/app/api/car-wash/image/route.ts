@@ -12,17 +12,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'url is required' }, { status: 400 });
     }
 
-    // Public blobs don't need auth — fetch directly first
-    let response = await fetch(url);
+    // Private blobs need token auth — try with token first
+    const token = process.env.itl_READ_WRITE_TOKEN;
+    let response: Response;
 
-    // If direct fetch fails, retry with token (for private blobs or restricted access)
-    if (!response.ok) {
-      const token = process.env.itl_READ_WRITE_TOKEN;
-      if (token) {
-        response = await fetch(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+    if (token) {
+      response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // If token auth fails, fallback to direct fetch (for public URLs like LINE profile images)
+      if (!response.ok) {
+        response = await fetch(url);
       }
+    } else {
+      response = await fetch(url);
     }
 
     if (!response.ok) {

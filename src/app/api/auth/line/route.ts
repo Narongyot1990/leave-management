@@ -74,6 +74,11 @@ export async function POST(request: NextRequest) {
         lineDisplayName: profile.displayName,
         lineProfileImage: profile.pictureUrl,
       });
+    } else {
+      // Update LINE profile data on every login (display name / profile image may change)
+      user.lineDisplayName = profile.displayName;
+      user.lineProfileImage = profile.pictureUrl;
+      await user.save();
     }
 
     const payload = {

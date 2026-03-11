@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     for (const image of images) {
       const filename = `car-wash/${userId}/${Date.now()}-${image.name}`;
       const blob = await put(filename, image, {
-        access: 'public',
+        access: 'private',
         addRandomSuffix: true,
         token: process.env.itl_READ_WRITE_TOKEN,
       });
