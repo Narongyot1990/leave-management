@@ -12,6 +12,7 @@ import UserAvatar from '@/components/UserAvatar';
 import { getLeaveTypeMeta } from '@/lib/leave-types';
 import { formatDateThai, getLeaveDays } from '@/lib/date-utils';
 import { usePusher } from '@/hooks/usePusher';
+import { useToast } from '@/components/Toast';
 
 interface LeaveRequest {
   _id: string;
@@ -76,14 +77,17 @@ export default function LeaderApprovePage() {
     fetchPending();
   }, [user]);
 
+  const { showToast } = useToast();
+
   // Pusher realtime — new leave requests auto-refresh
-  const handleNewLeave = useCallback(() => {
+  const handleNewLeave = useCallback((data: { userName?: string }) => {
     setNewRequestAlert(true);
     fetchPending();
+    showToast('notification', `คำขอลาใหม่จาก ${data?.userName || 'พนักงาน'}`);
     const audio = new Audio('/notification.mp3');
     audio.play().catch(() => {});
     setTimeout(() => setNewRequestAlert(false), 5000);
-  }, []);
+  }, [showToast]);
 
   const handleLeaveStatusChanged = useCallback(() => {
     fetchPending();

@@ -10,6 +10,7 @@ import Sidebar from '@/components/Sidebar';
 import { getLeaveTypeMeta, getStatusBadge, LEAVE_TYPE_LIST } from '@/lib/leave-types';
 import { formatDateThai } from '@/lib/date-utils';
 import { usePusher } from '@/hooks/usePusher';
+import { useToast } from '@/components/Toast';
 
 interface LeaveRequest {
   _id: string;
@@ -67,6 +68,8 @@ export default function LeaveHistoryPage() {
     fetchHistory();
   }, [user]);
 
+  const { showToast } = useToast();
+
   // Pusher realtime — leave status changes
   const handleLeaveChanged = useCallback(async () => {
     if (!user) return;
@@ -75,7 +78,8 @@ export default function LeaveHistoryPage() {
       const data = await response.json();
       if (data.success) setRequests(data.requests);
     } catch { /* ignore */ }
-  }, [user]);
+    showToast('info', 'สถานะใบลามีการอัปเดต');
+  }, [user, showToast]);
 
   usePusher('leave-requests', [
     { event: 'leave-status-changed', callback: handleLeaveChanged },

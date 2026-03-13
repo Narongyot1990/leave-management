@@ -292,6 +292,21 @@ export default function CarWashFeedPage() {
 
   const handleLike = async (activityId: string) => {
     if (!user) return;
+    // Optimistic update
+    setActivities((prev) =>
+      prev.map((a) => {
+        if (a._id !== activityId) return a;
+        const alreadyLiked = a.likes.some(
+          (l: any) => (l._id || l) === user.id
+        );
+        return {
+          ...a,
+          likes: alreadyLiked
+            ? a.likes.filter((l: any) => (l._id || l) !== user.id)
+            : [...a.likes, { _id: user.id, lineDisplayName: user.lineDisplayName, lineProfileImage: user.lineProfileImage }],
+        };
+      })
+    );
     try {
       const res = await fetch(`/api/car-wash/${activityId}`, {
         method: 'PATCH',
@@ -301,7 +316,12 @@ export default function CarWashFeedPage() {
       const data = await res.json();
       if (data.success) updateActivity(data.activity);
     } catch (err) {
-      console.error(err);
+      // Revert on error by re-fetching
+      try {
+        const res = await fetch(`/api/car-wash/${activityId}`);
+        const json = await res.json();
+        if (json.success) updateActivity(json.activity);
+      } catch { /* ignore */ }
     }
   };
 

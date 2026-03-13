@@ -12,6 +12,7 @@ import UserAvatar from '@/components/UserAvatar';
 import { PERFORMANCE_TIERS, PERFORMANCE_TIER_CONFIG, type PerformanceTier } from '@/lib/profile-tier';
 import { formatDateThai, formatRelativeTime, isUserOnline } from '@/lib/date-utils';
 import { usePusher } from '@/hooks/usePusher';
+import { useToast } from '@/components/Toast';
 
 interface Driver {
   _id: string;
@@ -84,13 +85,20 @@ function DriverManagementContent() {
     return () => clearInterval(interval);
   }, [user]);
 
+  const { showToast } = useToast();
+
   // Pusher realtime — driver list auto-refresh
   const handleDriverChanged = useCallback(() => {
     fetchDrivers();
   }, []);
 
+  const handleNewDriver = useCallback((data: { displayName?: string }) => {
+    fetchDrivers();
+    showToast('notification', `พนักงานใหม่ลงทะเบียน: ${data?.displayName || 'พนักงาน'}`);
+  }, [showToast]);
+
   usePusher('users', [
-    { event: 'new-driver', callback: handleDriverChanged },
+    { event: 'new-driver', callback: handleNewDriver },
     { event: 'driver-activated', callback: handleDriverChanged },
     { event: 'driver-updated', callback: handleDriverChanged },
     { event: 'driver-deleted', callback: handleDriverChanged },

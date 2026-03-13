@@ -8,6 +8,7 @@ import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import { usePusher } from '@/hooks/usePusher';
+import { useToast } from '@/components/Toast';
 
 interface TaskQuestion {
   question: string;
@@ -85,6 +86,8 @@ export default function TasksPage() {
     fetchTasks();
   }, [user]);
 
+  const { showToast } = useToast();
+
   // Pusher realtime — task changes
   const handleTaskChanged = useCallback(async () => {
     if (!user) return;
@@ -98,8 +101,13 @@ export default function TasksPage() {
     } catch { /* ignore */ }
   }, [user]);
 
+  const handleNewTask = useCallback(async (data: { title?: string }) => {
+    await handleTaskChanged();
+    showToast('notification', `มี Task ใหม่: ${data?.title || 'แบบทดสอบ'}`);
+  }, [handleTaskChanged, showToast]);
+
   usePusher('tasks', [
-    { event: 'new-task', callback: handleTaskChanged },
+    { event: 'new-task', callback: handleNewTask },
     { event: 'task-updated', callback: handleTaskChanged },
     { event: 'task-deleted', callback: handleTaskChanged },
     { event: 'task-submitted', callback: handleTaskChanged },

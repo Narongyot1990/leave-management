@@ -11,6 +11,7 @@ import Sidebar from '@/components/Sidebar';
 import DatePickerModal from '@/components/DatePickerModal';
 import { LEAVE_TYPE_LIST } from '@/lib/leave-types';
 import { usePusher } from '@/hooks/usePusher';
+import { useToast } from '@/components/Toast';
 
 interface DriverUser {
   id: string;
@@ -71,14 +72,31 @@ export default function LeavePage() {
     fetchUserData();
   }, [router]);
 
+  const { showToast } = useToast();
+
   // Pusher realtime — leave status changed (approved/rejected)
-  const handleLeaveStatus = useCallback((data: { status?: string; driverUserId?: string }) => {
+  const handleLeaveStatus = useCallback(async (data: { status?: string; driverUserId?: string }) => {
     if (!user) return;
-    // Only react to events for this driver
     if (data.driverUserId && data.driverUserId !== user.id) return;
-    // Refresh user quota
-    window.location.reload();
-  }, [user]);
+    // Smart refresh: re-fetch user quota instead of reloading
+    try {
+      const response = await fetch(`/api/users?status=active`);
+      const json = await response.json();
+      if (json.success) {
+        const currentUser = json.users.find((u: any) => u._id === user.id);
+        if (currentUser) {
+          setUser((prev) => prev ? {
+            ...prev,
+            vacationDays: currentUser.vacationDays ?? 10,
+            sickDays: currentUser.sickDays ?? 10,
+            personalDays: currentUser.personalDays ?? 5,
+          } : prev);
+        }
+      }
+    } catch { /* ignore */ }
+    const statusText = data.status === 'approved' ? 'อนุมัติแล้ว' : data.status === 'rejected' ? 'ไม่อนุมัติ' : 'มีการเปลี่ยนแปลง';
+    showToast(data.status === 'approved' ? 'success' : 'info', `ใบลาของคุณ${statusText}`);
+  }, [user, showToast]);
 
   usePusher('leave-requests', [
     { event: 'leave-status-changed', callback: handleLeaveStatus },

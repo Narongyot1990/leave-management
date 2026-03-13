@@ -19,10 +19,6 @@ export async function POST(request: NextRequest) {
     const lineChannelSecret = process.env.LINE_CHANNEL_SECRET;
     const lineRedirectUri = redirectUri || process.env.LINE_REDIRECT_URI;
 
-    console.log('LINE_CHANNEL_ID exists:', !!lineChannelId);
-    console.log('LINE_CHANNEL_SECRET exists:', !!lineChannelSecret);
-    console.log('LINE_REDIRECT_URI:', lineRedirectUri);
-
     if (!lineChannelId || !lineChannelSecret) {
       return NextResponse.json({ 
         error: 'Server configuration error', 
@@ -47,7 +43,6 @@ export async function POST(request: NextRequest) {
     });
 
     const tokenData = await tokenResponse.json();
-    console.log('Token response:', tokenData);
 
     if (!tokenData.access_token) {
       return NextResponse.json({ 
@@ -63,7 +58,6 @@ export async function POST(request: NextRequest) {
     });
 
     const profile = await profileResponse.json();
-    console.log('Profile:', profile);
 
     await dbConnect();
 
