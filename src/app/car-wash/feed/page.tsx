@@ -25,6 +25,7 @@ import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
+import UserAvatar from '@/components/UserAvatar';
 import { getPusherClient } from '@/lib/pusher-client';
 import { formatDateThai } from '@/lib/types';
 
@@ -53,6 +54,7 @@ interface UserInfo {
   _id: string;
   lineDisplayName: string;
   lineProfileImage?: string;
+  performanceTier?: string;
   name?: string;
   surname?: string;
 }
@@ -87,20 +89,8 @@ function getDisplayName(u: UserInfo | undefined) {
 }
 
 function Avatar({ user, size = 'md', onClick }: { user?: UserInfo; size?: 'sm' | 'md' | 'lg'; onClick?: () => void }) {
-  const sizeMap = { sm: 'w-6 h-6 text-[9px]', md: 'w-9 h-9 text-xs', lg: 'w-11 h-11 text-sm' };
-  return (
-    <div
-      className={`${sizeMap[size]} rounded-full overflow-hidden shrink-0 flex items-center justify-center text-white font-bold ${onClick ? 'cursor-pointer' : ''}`}
-      style={{ background: 'var(--accent)' }}
-      onClick={onClick}
-    >
-      {user?.lineProfileImage ? (
-        <img src={user.lineProfileImage} alt="" className="w-full h-full object-cover" />
-      ) : (
-        (user?.name || user?.lineDisplayName)?.charAt(0) || '?'
-      )}
-    </div>
-  );
+  const avatarSize = size === 'sm' ? 'xs' : size === 'lg' ? 'md' : 'sm';
+  return <UserAvatar imageUrl={user?.lineProfileImage} displayName={user?.name || user?.lineDisplayName} tier={user?.performanceTier} size={avatarSize} onClick={onClick} />;
 }
 
 // Multi-image grid layout: 1 img = full, 2 = side-by-side, 3 = 1 big + 2 small, 4 = 2x2, 5+ = 2x2 + overlay
@@ -164,7 +154,7 @@ function ImageGrid({ images, onClickImage }: { images: string[]; onClickImage: (
 
 export default function CarWashFeedPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ id: string; lineDisplayName: string; lineProfileImage?: string; name?: string; surname?: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; lineDisplayName: string; lineProfileImage?: string; performanceTier?: string; name?: string; surname?: string } | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -658,7 +648,7 @@ export default function CarWashFeedPage() {
 
                             {/* Comment input */}
                             <div className="flex items-center gap-2 px-4 py-3">
-                              <Avatar user={{ _id: user.id, lineDisplayName: user.lineDisplayName, lineProfileImage: user.lineProfileImage, name: user.name, surname: user.surname }} size="sm" />
+                              <Avatar user={{ _id: user.id, lineDisplayName: user.lineDisplayName, lineProfileImage: user.lineProfileImage, performanceTier: user.performanceTier, name: user.name, surname: user.surname }} size="sm" />
                               <div className="flex-1 flex items-center gap-2">
                                 <input
                                   ref={commentInputRef}

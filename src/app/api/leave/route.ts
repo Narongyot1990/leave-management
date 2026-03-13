@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     }
 
     const requests = await LeaveRequest.find(query)
-      .populate('userId', 'lineDisplayName employeeId phone name surname lineProfileImage')
+      .populate('userId', 'lineDisplayName employeeId phone name surname lineProfileImage performanceTier performancePoints performanceLevel')
       .sort({ createdAt: -1 });
 
     return NextResponse.json({
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
       status: 'pending',
     });
 
-    await leaveRequest.populate('userId', 'lineDisplayName employeeId phone name surname lineProfileImage');
+    await leaveRequest.populate('userId', 'lineDisplayName employeeId phone name surname lineProfileImage performanceTier performancePoints performanceLevel');
 
     try {
       await pusher.trigger(CHANNELS.LEAVE_REQUESTS, 'new-leave-request', {

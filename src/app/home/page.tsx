@@ -7,11 +7,13 @@ import { FilePlus, Clock, CalendarDays, ChevronRight, LogOut, AlertCircle, Umbre
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
+import UserAvatar from '@/components/UserAvatar';
 
 interface DriverUser {
   id: string;
   lineDisplayName: string;
   lineProfileImage?: string;
+  performanceTier?: string;
   name?: string;
   surname?: string;
   phone?: string;
@@ -117,18 +119,7 @@ export default function DriverHomePage() {
               className="flex items-center gap-3"
             >
               <div className="relative">
-                <div
-                  className="w-12 h-12 rounded-[var(--radius-md)] overflow-hidden"
-                  style={{ boxShadow: 'var(--shadow-sm)' }}
-                >
-                  {user.lineProfileImage ? (
-                    <img src={user.lineProfileImage} alt={user.lineDisplayName} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white font-bold" style={{ background: 'var(--accent)' }}>
-                      {user.lineDisplayName.charAt(0)}
-                    </div>
-                  )}
-                </div>
+                <UserAvatar imageUrl={user.lineProfileImage} displayName={user.lineDisplayName} tier={user.performanceTier} size="md" />
                 {user.status === 'active' && (
                   <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full" style={{ background: 'var(--success)', border: '2px solid var(--bg-base)' }} />
                 )}

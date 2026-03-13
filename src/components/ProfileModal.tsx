@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ONLINE_TIMEOUT_MS } from '@/hooks/useOnlineStatus';
 import { X, Phone, PhoneCall, Hash, User, Circle } from 'lucide-react';
+import UserAvatar from '@/components/UserAvatar';
 
 function isUserOnline(user: ProfileUser): boolean {
   if (!user.lastSeen) return false;
@@ -16,6 +17,9 @@ export interface ProfileUser {
   _id: string;
   lineDisplayName: string;
   lineProfileImage?: string;
+  performanceTier?: string;
+  performancePoints?: number;
+  performanceLevel?: number;
   name?: string;
   surname?: string;
   phone?: string;
@@ -118,22 +122,12 @@ export default function ProfileModal({ user, open, onClose }: ProfileModalProps)
             {/* Avatar */}
             <div className="flex flex-col items-center -mt-12 px-5 pb-5">
               <div className="relative mb-3">
-                <div
-                  className="w-24 h-24 rounded-full overflow-hidden border-4 shadow-lg"
-                  style={{ background: 'var(--accent)', borderColor: 'var(--bg-surface)' }}
-                >
-                  {displayUser.lineProfileImage ? (
-                    <img
-                      src={displayUser.lineProfileImage}
-                      alt={displayUser.lineDisplayName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <User className="w-10 h-10 text-white" />
-                    </div>
-                  )}
-                </div>
+                <UserAvatar
+                  imageUrl={displayUser.lineProfileImage}
+                  displayName={displayUser.lineDisplayName}
+                  tier={displayUser.performanceTier}
+                  size="xl"
+                />
                 {/* Online indicator */}
                 {displayUser.lastSeen !== undefined && (
                   <div

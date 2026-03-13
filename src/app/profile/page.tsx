@@ -3,14 +3,18 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, AlertCircle, Pencil, X, Circle, User, Phone, Hash, PhoneCall } from 'lucide-react';
-import BottomNav from '@/components/BottomNav';
+import { X, Phone, PhoneCall, User, Hash, Circle, CheckCircle2, AlertCircle, Pencil } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
+import BottomNav from '@/components/BottomNav';
+import UserAvatar from '@/components/UserAvatar';
 
 interface DriverUser {
   id: string;
   lineDisplayName: string;
   lineProfileImage?: string;
+  performanceTier?: string;
+  performancePoints?: number;
+  performanceLevel?: number;
   name?: string;
   surname?: string;
   phone?: string;
@@ -171,25 +175,7 @@ export default function ProfilePage() {
               {/* Avatar - Large & Prominent */}
               <div className="relative -mt-16 sm:-mt-20 mb-4">
                 <div className="inline-block relative">
-                  <div 
-                    className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 shadow-lg"
-                    style={{ 
-                      background: 'var(--accent)',
-                      borderColor: 'var(--bg-surface)'
-                    }}
-                  >
-                    {user.lineProfileImage ? (
-                      <img 
-                        src={user.lineProfileImage} 
-                        alt={user.lineDisplayName} 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <User className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
-                      </div>
-                    )}
-                  </div>
+                  <UserAvatar imageUrl={user.lineProfileImage} displayName={user.lineDisplayName} tier={user.performanceTier} size="2xl" showTierBadge />
                   {/* Online Status Badge */}
                   <div 
                     className="absolute bottom-2 right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-3 flex items-center justify-center"

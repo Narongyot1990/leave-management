@@ -7,12 +7,14 @@ import { CheckCircle2, AlertCircle } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
+import UserAvatar from '@/components/UserAvatar';
 
 interface DriverUser {
   id: string;
   lineUserId: string;
   lineDisplayName: string;
   lineProfileImage?: string;
+  performanceTier?: string;
   name?: string;
   surname?: string;
   phone?: string;
@@ -119,13 +121,7 @@ export default function ProfileEditPage() {
           <div className="max-w-2xl mx-auto space-y-4">
             {/* Profile Card */}
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-6 text-center">
-              <div className="w-14 h-14 rounded-[var(--radius-md)] flex items-center justify-center mx-auto mb-3 overflow-hidden" style={{ background: 'var(--accent)' }}>
-                {user.lineProfileImage ? (
-                  <img src={user.lineProfileImage} alt={user.lineDisplayName} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-xl font-bold text-white">{user.lineDisplayName.charAt(0)}</span>
-                )}
-              </div>
+              <UserAvatar imageUrl={user.lineProfileImage} displayName={user.lineDisplayName} tier={user.performanceTier} size="lg" className="mx-auto mb-3" />
               <h2 className="text-fluid-lg font-bold" style={{ color: 'var(--text-primary)' }}>{user.lineDisplayName}</h2>
               <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>{user.status === 'active' ? 'พร้อมใช้งาน' : 'รอยืนยัน'}</p>
             </motion.div>

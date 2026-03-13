@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Clock } from 'lucide-react';
+import UserAvatar from '@/components/UserAvatar';
 
 interface DriverUser {
   id: string;
   lineUserId: string;
   lineDisplayName: string;
   lineProfileImage?: string;
+  performanceTier?: string;
   name?: string;
   surname?: string;
   phone?: string;
@@ -110,17 +112,8 @@ export default function ProfileSetupPage() {
     <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: 'var(--bg-base)' }}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[400px] space-y-4">
         <div className="text-center mb-2">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="w-14 h-14 rounded-[var(--radius-md)] flex items-center justify-center mx-auto mb-3 overflow-hidden"
-            style={{ background: 'var(--accent)' }}
-          >
-            {user.lineProfileImage ? (
-              <img src={user.lineProfileImage} alt={user.lineDisplayName} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-xl font-bold text-white">{user.lineDisplayName.charAt(0)}</span>
-            )}
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+            <UserAvatar imageUrl={user.lineProfileImage} displayName={user.lineDisplayName} tier={user.performanceTier} size="lg" className="mx-auto mb-3" />
           </motion.div>
           <h1 className="text-fluid-xl font-bold" style={{ color: 'var(--text-primary)' }}>ยินดีต้อนรับ!</h1>
           <p className="text-fluid-xs mt-1" style={{ color: 'var(--text-muted)' }}>กรุณากรอกข้อมูลเพื่อใช้งานระบบ</p>

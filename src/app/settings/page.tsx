@@ -7,11 +7,13 @@ import { CheckCircle2, AlertCircle } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
+import UserAvatar from '@/components/UserAvatar';
 
 interface DriverUser {
   id: string;
   lineDisplayName: string;
   lineProfileImage?: string;
+  performanceTier?: string;
   name?: string;
   surname?: string;
   phone?: string;
@@ -113,13 +115,7 @@ export default function SettingsPage() {
             {/* Profile Card */}
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-5">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-[var(--radius-md)] flex items-center justify-center overflow-hidden shrink-0" style={{ background: 'var(--accent)' }}>
-                  {user.lineProfileImage ? (
-                    <img src={user.lineProfileImage} alt={user.lineDisplayName} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-lg font-bold text-white">{user.lineDisplayName.charAt(0)}</span>
-                  )}
-                </div>
+                <UserAvatar imageUrl={user.lineProfileImage} displayName={user.lineDisplayName} tier={user.performanceTier} size="md" />
                 <div>
                   <h2 className="text-fluid-lg font-bold" style={{ color: 'var(--text-primary)' }}>{user.lineDisplayName}</h2>
                   <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>พนักงานขับรถ</p>
