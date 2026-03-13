@@ -6,7 +6,10 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Download, X, Phone, Star } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
+import UserAvatar from '@/components/UserAvatar';
 import { getHolidayMap, getHolidaysForMonth, type ThaiHoliday } from '@/lib/thai-holidays';
+import { getLeaveTypeMeta, LEAVE_TYPE_LIST } from '@/lib/leave-types';
+import { formatDateThai as formatDateThaiUtil, getLeaveDays as getLeaveDaysUtil } from '@/lib/date-utils';
 
 interface LeaveRequest {
   _id: string;
@@ -14,6 +17,7 @@ interface LeaveRequest {
     _id: string;
     lineDisplayName: string;
     lineProfileImage?: string;
+    performanceTier?: string;
     name?: string;
     surname?: string;
     employeeId?: string;
@@ -32,19 +36,6 @@ interface DayData {
   leaves: LeaveRequest[];
 }
 
-const leaveTypeColors: Record<string, { bg: string; text: string; label: string }> = {
-  vacation: { bg: 'bg-indigo-500', text: 'text-indigo-500', label: 'ลาพักร้อน' },
-  sick: { bg: 'bg-red-400', text: 'text-red-400', label: 'ลาป่วย' },
-  personal: { bg: 'bg-emerald-500', text: 'text-emerald-500', label: 'ลากิจ' },
-  unpaid: { bg: 'bg-slate-400', text: 'text-slate-400', label: 'ไม่รับค่าจ้าง' },
-};
-
-const leaveTypeLabels: Record<string, string> = {
-  vacation: 'ลาพักร้อน',
-  sick: 'ลาป่วย',
-  personal: 'ลากิจ',
-  unpaid: 'ไม่รับค่าจ้าง',
-};
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -134,16 +125,6 @@ function DashboardContent() {
     }
   };
 
-  const formatDateThai = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-  };
-
-  const getLeaveDays = (startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  };
 
   const exportToCSV = () => {
     const monthLeaves = leaves.filter(leave => {
@@ -158,11 +139,11 @@ function DashboardContent() {
 
     const headers = ['วันที่', 'ชื่อ-นามสกุล', 'ประเภทการลา', 'วันที่เริ่ม', 'วันที่สิ้นสุด', 'สถานะ'];
     const rows = monthLeaves.map(leave => [
-      formatDateThai(leave.createdAt),
+      formatDateThaiUtil(leave.createdAt),
       `${leave.userId?.name || ''} ${leave.userId?.surname || ''}`,
-      leaveTypeLabels[leave.leaveType] || leave.leaveType,
-      formatDateThai(leave.startDate),
-      formatDateThai(leave.endDate),
+      getLeaveTypeMeta(leave.leaveType).label,
+      formatDateThaiUtil(leave.startDate),
+      formatDateThaiUtil(leave.endDate),
       'อนุมัติ'
     ]);
 
@@ -273,7 +254,7 @@ function DashboardContent() {
                                 {types.slice(0, 3).map((type, i) => (
                                   <div
                                     key={type}
-                                    className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center text-white font-bold ${leaveTypeColors[type]?.bg || 'bg-slate-400'}`}
+                                    className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center text-white font-bold ${getLeaveTypeMeta(type).bgClass}`}
                                     style={{
                                       fontSize: '8px',
                                       marginLeft: i > 0 ? '-4px' : '0',
@@ -302,10 +283,10 @@ function DashboardContent() {
 
           {/* Legend */}
           <div className="flex flex-wrap justify-center gap-3">
-            {Object.entries(leaveTypeColors).map(([key, value]) => (
-              <div key={key} className="flex items-center gap-1.5">
-                <div className={`w-2.5 h-2.5 rounded-full ${value.bg}`} />
-                <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>{value.label}</span>
+            {LEAVE_TYPE_LIST.map((lt) => (
+              <div key={lt.value} className="flex items-center gap-1.5">
+                <div className={`w-2.5 h-2.5 rounded-full ${lt.bgClass}`} />
+                <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>{lt.label}</span>
               </div>
             ))}
             <div className="flex items-center gap-1.5">
@@ -372,17 +353,13 @@ function DashboardContent() {
               <div className="p-2 space-y-1.5 overflow-y-auto max-h-[55vh]">
                 {selectedDay.leaves.map((leave) => (
                   <div key={leave._id} className="flex items-start gap-2.5 p-2.5 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs overflow-hidden flex-shrink-0 cursor-pointer"
-                      style={{ background: 'var(--accent)' }}
-                      onClick={(e) => { e.stopPropagation(); setProfileUser(leave.userId as ProfileUser); setShowProfile(true); }}
-                    >
-                      {leave.userId?.lineProfileImage ? (
-                        <img src={leave.userId.lineProfileImage} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        (leave.userId?.name || leave.userId?.lineDisplayName)?.charAt(0) || '?'
-                      )}
-                    </div>
+                    <UserAvatar
+                      imageUrl={leave.userId?.lineProfileImage}
+                      displayName={leave.userId?.name || leave.userId?.lineDisplayName}
+                      tier={leave.userId?.performanceTier}
+                      size="sm"
+                      onClick={() => { setProfileUser(leave.userId as ProfileUser); setShowProfile(true); }}
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <p className="text-fluid-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
@@ -401,9 +378,9 @@ function DashboardContent() {
                       </div>
                       <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>@{leave.userId?.lineDisplayName}</p>
                       <div className="flex items-center gap-1.5 mt-1">
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${leaveTypeColors[leave.leaveType]?.bg || 'bg-slate-400'}`} />
-                        <p className="text-fluid-xs" style={{ color: leaveTypeColors[leave.leaveType]?.text || 'var(--text-muted)' }}>
-                          {leaveTypeColors[leave.leaveType]?.label} ({getLeaveDays(leave.startDate, leave.endDate)} วัน)
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${getLeaveTypeMeta(leave.leaveType).bgClass}`} />
+                        <p className="text-fluid-xs" style={{ color: getLeaveTypeMeta(leave.leaveType).color }}>
+                          {getLeaveTypeMeta(leave.leaveType).label} ({getLeaveDaysUtil(leave.startDate, leave.endDate)} วัน)
                         </p>
                       </div>
                       {leave.reason && (

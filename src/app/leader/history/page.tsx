@@ -3,11 +3,14 @@
 import { useEffect, useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Umbrella, Thermometer, Briefcase, Ban, FileText, ClipboardList, CalendarDays, Phone } from 'lucide-react';
+import { FileText, ClipboardList, CalendarDays, Phone } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
+import UserAvatar from '@/components/UserAvatar';
+import { getLeaveTypeMeta, getRecordTypeLabel, getStatusBadge } from '@/lib/leave-types';
+import { formatDateThai, getLeaveDays } from '@/lib/date-utils';
 
 interface LeaveRequest {
   _id: string;
@@ -15,6 +18,7 @@ interface LeaveRequest {
     _id: string;
     lineDisplayName: string;
     lineProfileImage?: string;
+    performanceTier?: string;
     name?: string;
     surname?: string;
     employeeId?: string;
@@ -33,6 +37,7 @@ interface SubstituteRecord {
   userId: {
     lineDisplayName: string;
     lineProfileImage?: string;
+    performanceTier?: string;
     name?: string;
     surname?: string;
     employeeId?: string;
@@ -43,36 +48,6 @@ interface SubstituteRecord {
   description?: string;
 }
 
-const leaveTypeLabels: Record<string, string> = {
-  vacation: 'ลาพักร้อน',
-  sick: 'ลาป่วย',
-  personal: 'ลากิจ',
-  unpaid: 'ลากิจ (ไม่ได้รับค่าจ้าง)',
-};
-
-const substituteTypeLabels: Record<string, string> = {
-  vacation: 'ลาพักร้อน',
-  sick: 'ลาป่วย',
-  personal: 'ลากิจ',
-  unpaid: 'ลากิจ (ไม่ได้รับค่าจ้าง)',
-  absent: 'ขาดงาน',
-  late: 'มาสาย',
-  accident: 'Accident',
-  damage: 'ทำสินค้าเสียหาย',
-};
-
-const statusBadgeMap: Record<string, { cls: string; label: string }> = {
-  pending: { cls: 'badge-warning', label: 'รออนุมัติ' },
-  approved: { cls: 'badge-success', label: 'อนุมัติ' },
-  rejected: { cls: 'badge-danger', label: 'ไม่อนุมัติ' },
-};
-
-const leaveIconMap: Record<string, { icon: React.ElementType; color: string }> = {
-  vacation: { icon: Umbrella, color: 'var(--accent)' },
-  sick: { icon: Thermometer, color: 'var(--danger)' },
-  personal: { icon: Briefcase, color: 'var(--success)' },
-  unpaid: { icon: Ban, color: 'var(--text-muted)' },
-};
 
 function LeaderHistoryContent() {
   const router = useRouter();
@@ -130,19 +105,6 @@ function LeaderHistoryContent() {
     fetchData();
   }, [user]);
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const getLeaveDays = (startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  };
 
   if (!user) {
     return null;
@@ -194,9 +156,9 @@ function LeaderHistoryContent() {
               ) : (
                 <div className="space-y-2">
                   {leaves.map((request, index) => {
-                    const iconData = leaveIconMap[request.leaveType] || { icon: FileText, color: 'var(--text-muted)' };
-                    const Icon = iconData.icon;
-                    const badge = statusBadgeMap[request.status] || { cls: 'badge-info', label: request.status };
+                    const meta = getLeaveTypeMeta(request.leaveType);
+                    const Icon = meta.icon;
+                    const badge = getStatusBadge(request.status);
 
                     return (
                       <motion.div
@@ -207,17 +169,13 @@ function LeaderHistoryContent() {
                         className="card overflow-hidden"
                       >
                         <div className="p-4 flex items-start gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                          <div
-                            className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden cursor-pointer"
-                            style={{ background: 'var(--accent)' }}
+                          <UserAvatar
+                            imageUrl={request.userId?.lineProfileImage}
+                            displayName={request.userId?.name || request.userId?.lineDisplayName}
+                            tier={request.userId?.performanceTier}
+                            size="md"
                             onClick={() => { setProfileUser(request.userId as ProfileUser); setShowProfile(true); }}
-                          >
-                            {request.userId?.lineProfileImage ? (
-                              <img src={request.userId.lineProfileImage} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              (request.userId?.name || request.userId?.lineDisplayName)?.charAt(0) || '?'
-                            )}
-                          </div>
+                          />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
                               <h3 className="text-fluid-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
@@ -244,12 +202,12 @@ function LeaderHistoryContent() {
                         </div>
                         <div className="p-4" style={{ background: 'var(--bg-inset)' }}>
                           <div className="flex items-center gap-2 mb-2">
-                            <Icon className="w-4 h-4" style={{ color: iconData.color }} strokeWidth={1.8} />
-                            <span className="text-fluid-sm font-medium" style={{ color: iconData.color }}>{leaveTypeLabels[request.leaveType]}</span>
+                            <Icon className="w-4 h-4" style={{ color: meta.color }} strokeWidth={1.8} />
+                            <span className="text-fluid-sm font-medium" style={{ color: meta.color }}>{meta.label}</span>
                           </div>
                           <div className="flex items-center gap-2 text-fluid-xs" style={{ color: 'var(--text-secondary)' }}>
                             <CalendarDays className="w-3.5 h-3.5" strokeWidth={1.5} />
-                            <span>{formatDate(request.startDate)} - {formatDate(request.endDate)} ({getLeaveDays(request.startDate, request.endDate)} วัน)</span>
+                            <span>{formatDateThai(request.startDate)} - {formatDateThai(request.endDate)} ({getLeaveDays(request.startDate, request.endDate)} วัน)</span>
                           </div>
                           <p className="text-fluid-xs mt-2" style={{ color: 'var(--text-secondary)' }}>{request.reason}</p>
                         </div>
@@ -275,17 +233,13 @@ function LeaderHistoryContent() {
                       className="card overflow-hidden"
                     >
                       <div className="p-4 flex items-start gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                        <div
-                          className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden cursor-pointer"
-                          style={{ background: 'var(--accent)' }}
+                        <UserAvatar
+                          imageUrl={record.userId?.lineProfileImage}
+                          displayName={record.userId?.name || record.userId?.lineDisplayName}
+                          tier={record.userId?.performanceTier}
+                          size="md"
                           onClick={() => { setProfileUser(record.userId as unknown as ProfileUser); setShowProfile(true); }}
-                        >
-                          {record.userId?.lineProfileImage ? (
-                            <img src={record.userId.lineProfileImage} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            (record.userId?.name || record.userId?.lineDisplayName)?.charAt(0) || '?'
-                          )}
-                        </div>
+                        />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <h3 className="text-fluid-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
@@ -313,11 +267,11 @@ function LeaderHistoryContent() {
                       <div className="p-4" style={{ background: 'var(--bg-inset)' }}>
                         <div className="flex items-center gap-2 mb-2">
                           <ClipboardList className="w-4 h-4" style={{ color: 'var(--warning)' }} strokeWidth={1.8} />
-                          <span className="text-fluid-sm font-medium" style={{ color: 'var(--text-primary)' }}>{substituteTypeLabels[record.recordType]}</span>
+                          <span className="text-fluid-sm font-medium" style={{ color: 'var(--text-primary)' }}>{getRecordTypeLabel(record.recordType)}</span>
                         </div>
                         <div className="flex items-center gap-2 text-fluid-xs" style={{ color: 'var(--text-secondary)' }}>
                           <CalendarDays className="w-3.5 h-3.5" strokeWidth={1.5} />
-                          <span>{formatDate(record.date)}</span>
+                          <span>{formatDateThai(record.date)}</span>
                         </div>
                         {record.description && (
                           <p className="text-fluid-xs mt-2" style={{ color: 'var(--text-secondary)' }}>{record.description}</p>

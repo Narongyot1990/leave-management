@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { FileText, Umbrella, Thermometer, Briefcase, Ban, X, AlertCircle } from 'lucide-react';
+import { FileText, X, AlertCircle } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
+import { getLeaveTypeMeta, getStatusBadge, LEAVE_TYPE_LIST } from '@/lib/leave-types';
+import { formatDateThai } from '@/lib/date-utils';
 
 interface LeaveRequest {
   _id: string;
@@ -27,33 +29,6 @@ interface DriverUser {
   personalDays: number;
 }
 
-const leaveTypeLabels: Record<string, string> = {
-  vacation: 'ลาพักร้อน',
-  sick: 'ลาป่วย',
-  personal: 'ลากิจ',
-  unpaid: 'ลากิจ (ไม่ได้รับค่าจ้าง)',
-};
-
-const statusBadge: Record<string, { cls: string; label: string }> = {
-  pending: { cls: 'badge-warning', label: 'รออนุมัติ' },
-  approved: { cls: 'badge-success', label: 'อนุมัติ' },
-  rejected: { cls: 'badge-danger', label: 'ไม่อนุมัติ' },
-  cancelled: { cls: 'badge-info', label: 'ยกเลิก' },
-};
-
-const leaveTypeIcons: Record<string, React.ElementType> = {
-  vacation: Umbrella,
-  sick: Thermometer,
-  personal: Briefcase,
-  unpaid: Ban,
-};
-
-const leaveTypeColorMap: Record<string, string> = {
-  vacation: 'var(--accent)',
-  sick: 'var(--danger)',
-  personal: 'var(--success)',
-  unpaid: 'var(--text-muted)',
-};
 
 export default function LeaveHistoryPage() {
   const router = useRouter();
@@ -133,22 +108,18 @@ export default function LeaveHistoryPage() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
 
   if (!user) {
     return null;
   }
 
   const quotaItems = [
-    { icon: Umbrella, label: 'พักร้อน', value: user.vacationDays || 10, color: 'var(--accent)' },
-    { icon: Thermometer, label: 'ลาป่วย', value: user.sickDays || 10, color: 'var(--danger)' },
-    { icon: Briefcase, label: 'ลากิจ', value: user.personalDays || 5, color: 'var(--success)' },
+    ...LEAVE_TYPE_LIST.filter(lt => lt.daysKey).map(lt => ({
+      icon: lt.icon,
+      label: lt.label.replace('ลา', ''),
+      value: lt.daysKey ? (user as any)[lt.daysKey] ?? 0 : 0,
+      color: lt.color,
+    })),
   ];
 
   return (
@@ -190,9 +161,10 @@ export default function LeaveHistoryPage() {
               <div className="space-y-2">
                 <AnimatePresence>
                   {requests.map((request, index) => {
-                    const Icon = leaveTypeIcons[request.leaveType] || FileText;
-                    const iconColor = leaveTypeColorMap[request.leaveType] || 'var(--text-muted)';
-                    const badge = statusBadge[request.status] || { cls: 'badge-info', label: request.status };
+                    const meta = getLeaveTypeMeta(request.leaveType);
+                    const Icon = meta.icon;
+                    const iconColor = meta.color;
+                    const badge = getStatusBadge(request.status);
 
                     return (
                       <motion.div
@@ -210,10 +182,10 @@ export default function LeaveHistoryPage() {
                             </div>
                             <div>
                               <h3 className="text-fluid-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                {leaveTypeLabels[request.leaveType]}
+                                {meta.label}
                               </h3>
                               <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>
-                                {formatDate(request.startDate)} - {formatDate(request.endDate)}
+                                {formatDateThai(request.startDate)} - {formatDateThai(request.endDate)}
                               </p>
                             </div>
                           </div>
@@ -235,7 +207,7 @@ export default function LeaveHistoryPage() {
 
                         <div className="flex items-center justify-between mt-2.5">
                           <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>
-                            {formatDate(request.createdAt)}
+                            {formatDateThai(request.createdAt)}
                           </p>
 
                           {(request.status === 'pending' || request.status === 'approved') && (

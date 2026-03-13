@@ -8,12 +8,15 @@ import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
-import { useOnlineStatus, ONLINE_TIMEOUT_MS } from '@/hooks/useOnlineStatus';
+import UserAvatar from '@/components/UserAvatar';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { formatRelativeTime, isUserOnline } from '@/lib/date-utils';
 
 interface Contact {
   _id: string;
   lineDisplayName: string;
   lineProfileImage?: string;
+  performanceTier?: string;
   name?: string;
   surname?: string;
   phone?: string;
@@ -23,31 +26,6 @@ interface Contact {
   isOnline?: boolean;
 }
 
-function formatLastSeen(dateStr?: string): string {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-  const diffWeeks = Math.floor(diffDays / 7);
-  const diffMonths = Math.floor(diffDays / 30);
-
-  if (diffMins < 1) return 'เมื่อสักครู่';
-  if (diffMins < 60) return `${diffMins} นาทีที่แล้ว`;
-  if (diffHours < 24) return `${diffHours} ชม.ที่แล้ว`;
-  if (diffDays < 7) return `${diffDays} วันที่แล้ว`;
-  if (diffWeeks < 4) return `${diffWeeks} สัปดาห์ที่แล้ว`;
-  return `${diffMonths} เดือนที่แล้ว`;
-}
-
-function isUserOnline(contact: Contact): boolean {
-  if (!contact.lastSeen) return false;
-  const lastSeen = new Date(contact.lastSeen);
-  const now = new Date();
-  return now.getTime() - lastSeen.getTime() < ONLINE_TIMEOUT_MS;
-}
 
 export default function ContactsPage() {
   const router = useRouter();
@@ -81,8 +59,8 @@ export default function ContactsPage() {
           const others = (data.users as Contact[])
             .filter((c) => c._id !== user.id)
             .sort((a, b) => {
-              if (isUserOnline(a) && !isUserOnline(b)) return -1;
-              if (!isUserOnline(a) && isUserOnline(b)) return 1;
+              if (isUserOnline(a.lastSeen) && !isUserOnline(b.lastSeen)) return -1;
+              if (!isUserOnline(a.lastSeen) && isUserOnline(b.lastSeen)) return 1;
               const nameA = a.name || a.lineDisplayName;
               const nameB = b.name || b.lineDisplayName;
               return nameA.localeCompare(nameB, 'th');
@@ -111,7 +89,7 @@ export default function ContactsPage() {
     );
   });
 
-  const onlineCount = contacts.filter((c) => isUserOnline(c)).length;
+  const onlineCount = contacts.filter((c) => isUserOnline(c.lastSeen)).length;
 
   if (!user) return null;
 
@@ -171,21 +149,17 @@ export default function ContactsPage() {
                   >
                     {/* Avatar */}
                     <div className="relative">
-                      <div
-                        className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden shrink-0"
-                        style={{ background: 'var(--accent)' }}
-                      >
-                        {contact.lineProfileImage ? (
-                          <img src={contact.lineProfileImage} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          (contact.name || contact.lineDisplayName)?.charAt(0) || '?'
-                        )}
-                      </div>
+                      <UserAvatar
+                        imageUrl={contact.lineProfileImage}
+                        displayName={contact.name || contact.lineDisplayName}
+                        tier={contact.performanceTier}
+                        size="sm"
+                      />
                       {/* Online dot */}
                       <span
                         className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2"
                         style={{
-                          background: isUserOnline(contact) ? 'var(--success)' : 'var(--text-muted)',
+                          background: isUserOnline(contact.lastSeen) ? 'var(--success)' : 'var(--text-muted)',
                           borderColor: 'var(--bg-surface)',
                         }}
                       />
@@ -199,9 +173,9 @@ export default function ContactsPage() {
                       <div className="flex items-center gap-1.5">
                         <span
                           className="text-[11px] font-medium"
-                          style={{ color: isUserOnline(contact) ? 'var(--success)' : 'var(--text-muted)' }}
+                          style={{ color: isUserOnline(contact.lastSeen) ? 'var(--success)' : 'var(--text-muted)' }}
                         >
-                          {isUserOnline(contact) ? 'ออนไลน์' : contact.lastSeen ? formatLastSeen(contact.lastSeen) : 'ไม่ทราบ'}
+                          {isUserOnline(contact.lastSeen) ? 'ออนไลน์' : contact.lastSeen ? formatRelativeTime(contact.lastSeen) : 'ไม่ทราบ'}
                         </span>
                         {contact.employeeId && (
                           <>

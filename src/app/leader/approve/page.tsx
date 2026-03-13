@@ -4,11 +4,14 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Pusher from 'pusher-js';
-import { CheckCircle2, XCircle, Bell, Umbrella, Thermometer, Briefcase, Ban, CalendarDays, Inbox, Phone } from 'lucide-react';
+import { CheckCircle2, XCircle, Bell, CalendarDays, Inbox, Phone } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
+import UserAvatar from '@/components/UserAvatar';
+import { getLeaveTypeMeta } from '@/lib/leave-types';
+import { formatDateThai, getLeaveDays } from '@/lib/date-utils';
 
 interface LeaveRequest {
   _id: string;
@@ -16,6 +19,7 @@ interface LeaveRequest {
     _id: string;
     lineDisplayName: string;
     lineProfileImage?: string;
+    performanceTier?: string;
     name?: string;
     surname?: string;
     employeeId?: string;
@@ -29,12 +33,6 @@ interface LeaveRequest {
   createdAt: string;
 }
 
-const leaveTypeMeta: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  vacation: { label: 'ลาพักร้อน', icon: Umbrella, color: 'var(--accent)' },
-  sick: { label: 'ลาป่วย', icon: Thermometer, color: 'var(--danger)' },
-  personal: { label: 'ลากิจ', icon: Briefcase, color: 'var(--success)' },
-  unpaid: { label: 'ลากิจ (ไม่ได้รับค่าจ้าง)', icon: Ban, color: 'var(--text-muted)' },
-};
 
 export default function LeaderApprovePage() {
   const router = useRouter();
@@ -173,19 +171,6 @@ export default function LeaderApprovePage() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const getLeaveDays = (startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  };
 
   if (!user) {
     return null;
@@ -238,7 +223,7 @@ export default function LeaderApprovePage() {
               <div className="space-y-3">
                 <AnimatePresence>
                   {requests.map((request, index) => {
-                    const meta = leaveTypeMeta[request.leaveType] || { label: request.leaveType, icon: CalendarDays, color: 'var(--text-muted)' };
+                    const meta = getLeaveTypeMeta(request.leaveType);
                     const Icon = meta.icon;
 
                     return (
@@ -252,17 +237,13 @@ export default function LeaderApprovePage() {
                       >
                         {/* User Info */}
                         <div className="p-4 flex items-start gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                          <div
-                            className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden cursor-pointer"
-                            style={{ background: 'var(--accent)' }}
+                          <UserAvatar
+                            imageUrl={request.userId?.lineProfileImage}
+                            displayName={request.userId?.name || request.userId?.lineDisplayName}
+                            tier={request.userId?.performanceTier}
+                            size="md"
                             onClick={() => { setProfileUser(request.userId as ProfileUser); setShowProfile(true); }}
-                          >
-                            {request.userId?.lineProfileImage ? (
-                              <img src={request.userId.lineProfileImage} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              (request.userId?.name || request.userId?.lineDisplayName)?.charAt(0) || '?'
-                            )}
-                          </div>
+                          />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
                               <h3 className="text-fluid-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
@@ -296,7 +277,7 @@ export default function LeaderApprovePage() {
                           </div>
                           <div className="flex items-center gap-2 text-fluid-xs" style={{ color: 'var(--text-secondary)' }}>
                             <CalendarDays className="w-3.5 h-3.5" strokeWidth={1.5} />
-                            <span>{formatDate(request.startDate)} - {formatDate(request.endDate)} ({getLeaveDays(request.startDate, request.endDate)} วัน)</span>
+                            <span>{formatDateThai(request.startDate)} - {formatDateThai(request.endDate)} ({getLeaveDays(request.startDate, request.endDate)} วัน)</span>
                           </div>
                           <p className="text-fluid-xs mt-2" style={{ color: 'var(--text-secondary)' }}>{request.reason}</p>
                         </div>
