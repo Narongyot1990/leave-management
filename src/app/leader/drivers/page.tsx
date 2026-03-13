@@ -24,6 +24,7 @@ interface Driver {
   surname?: string;
   phone?: string;
   employeeId?: string;
+  branch?: string;
   status: 'pending' | 'active';
   vacationDays: number;
   sickDays: number;
@@ -141,6 +142,7 @@ function DriverManagementContent() {
           sickDays: selectedDriver.sickDays,
           personalDays: selectedDriver.personalDays,
           performanceTier: selectedDriver.performanceTier,
+          branch: selectedDriver.branch,
         }),
       });
       const data = await response.json();
@@ -269,6 +271,9 @@ function DriverManagementContent() {
                       {driver.employeeId ? `${driver.employeeId} - ` : ''}
                       {driver.name && driver.surname ? `${driver.name} ${driver.surname}` : driver.lineDisplayName}
                     </p>
+                    {driver.branch && (
+                      <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>{driver.branch}</span>
+                    )}
                     <div className="flex items-center gap-1.5">
                       <span
                         className="text-[11px] font-medium"
@@ -386,6 +391,22 @@ function DriverManagementContent() {
                 <div>
                   <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>เบอร์โทร</label>
                   <input type="tel" value={selectedDriver.phone || ''} onChange={(e) => setSelectedDriver({ ...selectedDriver, phone: e.target.value })} className="input" placeholder="กรอกเบอร์โทร" />
+                </div>
+
+                <div>
+                  <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>สาขา</label>
+                  <select
+                    value={selectedDriver.branch || ''}
+                    onChange={(e) => setSelectedDriver({ ...selectedDriver, branch: e.target.value || undefined })}
+                    className="input"
+                  >
+                    <option value="">-- เลือกสาขา --</option>
+                    <option value="AYA">AYA</option>
+                    <option value="CBI">CBI</option>
+                    <option value="KSN">KSN</option>
+                    <option value="RA2">RA2</option>
+                    <option value="BBT">BBT</option>
+                  </select>
                 </div>
 
                 <div className="pt-3" style={{ borderTop: '1px solid var(--border)' }}>

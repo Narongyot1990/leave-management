@@ -22,7 +22,7 @@ export async function GET(
     await dbConnect();
 
     const user = await User.findById(id).select(
-      'lineDisplayName lineProfileImage name surname phone employeeId status lastSeen isOnline'
+      'lineDisplayName lineProfileImage name surname phone employeeId branch status performanceTier performancePoints performanceLevel lastSeen isOnline'
     );
 
     if (!user) {

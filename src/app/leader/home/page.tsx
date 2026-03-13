@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { CheckSquare, Users, PenSquare, CalendarDays, Clock, User, ChevronRight, LogOut } from 'lucide-react';
+import { CheckSquare, Users, PenSquare, CalendarDays, Clock, User, ChevronRight, LogOut, ClipboardCheck, Settings } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -21,7 +21,9 @@ const menuItems = [
   { icon: PenSquare, label: 'บันทึกแทน', sub: 'บันทึกข้อมูลการแทน', href: '/leader/substitute', color: 'var(--info)' },
   { icon: CalendarDays, label: 'Dashboard', sub: 'ภาพรวมตารางวันลา', href: '/dashboard', color: 'var(--warning)' },
   { icon: Clock, label: 'ประวัติทั้งหมด', sub: 'ดูประวัติการลาและบันทึก', href: '/leader/history', color: 'var(--text-muted)' },
+  { icon: ClipboardCheck, label: 'จัดการ Tasks', sub: 'สร้างแบบทดสอบ/งานให้พนักงาน', href: '/leader/tasks', color: 'var(--info)' },
   { icon: User, label: 'แก้ไขโปรไฟล์', sub: 'แก้ไขข้อมูลส่วนตัว', href: '/leader/profile-edit', color: 'var(--danger)' },
+  { icon: Settings, label: 'ตั้งค่า', sub: 'ตั้งค่าสาขาที่ดูแล', href: '/leader/settings', color: 'var(--text-muted)' },
 ];
 
 export default function LeaderHomePage() {

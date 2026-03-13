@@ -20,12 +20,18 @@ export async function GET(request: NextRequest) {
 
     await dbConnect();
 
+    const marked = searchParams.get('marked');
+    const countOnly = searchParams.get('countOnly');
+
     const query: Record<string, unknown> = {};
     if (userId) {
       query.userId = userId;
     }
     if (activityType) {
       query.activityType = activityType;
+    }
+    if (marked === 'true') {
+      query.marked = true;
     }
     if (startDate || endDate) {
       query.activityDate = {};
@@ -44,6 +50,10 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     const total = await CarWashActivity.countDocuments(query);
+
+    if (countOnly === 'true') {
+      return NextResponse.json({ success: true, total });
+    }
 
     const activities = await CarWashActivity.find(query)
       .populate('userId', 'lineDisplayName lineProfileImage name surname employeeId')

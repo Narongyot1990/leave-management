@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { X, Phone, PhoneCall, User, Hash, Circle, CheckCircle2, AlertCircle, Pencil } from 'lucide-react';
+import { X, Phone, PhoneCall, User, Hash, Circle, CheckCircle2, AlertCircle, Pencil, MapPin, Flag } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import BottomNav from '@/components/BottomNav';
 import UserAvatar from '@/components/UserAvatar';
@@ -20,6 +20,7 @@ interface DriverUser {
   surname?: string;
   phone?: string;
   employeeId?: string;
+  branch?: string;
   status?: string;
   lastSeen?: string;
   isOnline?: boolean;
@@ -33,6 +34,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [approvedCount, setApprovedCount] = useState(0);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -61,6 +63,14 @@ export default function ProfilePage() {
 
     fetchUser();
   }, [router]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(`/api/car-wash?userId=${user.id}&marked=true&countOnly=true`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setApprovedCount(data.total ?? 0); })
+      .catch(() => {});
+  }, [user?.id]);
 
   const handleStartEdit = (field: 'name' | 'phone') => {
     if (field === 'name') {
@@ -192,6 +202,11 @@ export default function ProfilePage() {
                         รออนุมัติ
                       </span>
                     )}
+                    {user.branch && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
+                        <MapPin className="w-3 h-3 inline mr-0.5" />{user.branch}
+                      </span>
+                    )}
                   </div>
                   {user.phone && (
                     <a 
@@ -237,6 +252,24 @@ export default function ProfilePage() {
                   <AlertCircle className="w-4 h-4" />
                   {error}
                 </div>
+              )}
+
+              {/* Approved Stats */}
+              {approvedCount > 0 && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  className="card p-4 flex items-center gap-4 mb-4"
+                  style={{ background: 'linear-gradient(135deg, var(--success-light) 0%, var(--bg-surface) 100%)' }}
+                >
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'var(--success)', boxShadow: '0 4px 14px rgba(5,150,105,0.3)' }}>
+                    <Flag className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-extrabold" style={{ color: 'var(--success)' }}>{approvedCount}</p>
+                    <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>กิจกรรมที่ได้รับ Approved</p>
+                  </div>
+                </motion.div>
               )}
 
               {/* Employee Info Card */}

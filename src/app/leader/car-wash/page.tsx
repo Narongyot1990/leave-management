@@ -73,7 +73,7 @@ interface Activity {
   caption: string;
   activityDate: string;
   activityTime: string;
-  likes: string[];
+  likes: any[];
   comments: Comment[];
   marked: boolean;
   markedBy?: UserInfo;

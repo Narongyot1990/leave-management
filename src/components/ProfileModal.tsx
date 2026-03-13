@@ -2,16 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ONLINE_TIMEOUT_MS } from '@/hooks/useOnlineStatus';
-import { X, Phone, PhoneCall, Hash, User, Circle } from 'lucide-react';
+import { X, Phone, PhoneCall, Hash, User, Circle, MapPin, Flag } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
-
-function isUserOnline(user: ProfileUser): boolean {
-  if (!user.lastSeen) return false;
-  const lastSeen = new Date(user.lastSeen);
-  const now = new Date();
-  return now.getTime() - lastSeen.getTime() < ONLINE_TIMEOUT_MS;
-}
+import { formatRelativeTime, isUserOnline as checkOnline } from '@/lib/date-utils';
 
 export interface ProfileUser {
   _id: string;
@@ -24,7 +17,9 @@ export interface ProfileUser {
   surname?: string;
   phone?: string;
   employeeId?: string;
+  branch?: string;
   status?: 'active' | 'pending';
+  approvedCount?: number;
   lastSeen?: string;
   isOnline?: boolean;
 }
@@ -33,25 +28,6 @@ interface ProfileModalProps {
   user: ProfileUser | null;
   open: boolean;
   onClose: () => void;
-}
-
-function formatLastSeen(dateStr?: string): string {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-  const diffWeeks = Math.floor(diffDays / 7);
-  const diffMonths = Math.floor(diffDays / 30);
-
-  if (diffMins < 1) return 'เมื่อสักครู่';
-  if (diffMins < 60) return `${diffMins} นาทีที่แล้ว`;
-  if (diffHours < 24) return `${diffHours} ชั่วโมงที่แล้ว`;
-  if (diffDays < 7) return `${diffDays} วันที่แล้ว`;
-  if (diffWeeks < 4) return `${diffWeeks} สัปดาห์ที่แล้ว`;
-  return `${diffMonths} เดือนที่แล้ว`;
 }
 
 export default function ProfileModal({ user, open, onClose }: ProfileModalProps) {
@@ -67,12 +43,20 @@ export default function ProfileModal({ user, open, onClose }: ProfileModalProps)
     const fetchUser = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/users/${user._id}`);
-        const data = await res.json();
-        if (data.success && data.user) {
-          setFullUser(data.user);
+        const [userRes, countRes] = await Promise.all([
+          fetch(`/api/users/${user._id}`),
+          fetch(`/api/car-wash?userId=${user._id}&marked=true&countOnly=true`).catch(() => null),
+        ]);
+        const userData = await userRes.json();
+        let approvedCount = 0;
+        if (countRes) {
+          const countData = await countRes.json();
+          approvedCount = countData.total ?? 0;
+        }
+        if (userData.success && userData.user) {
+          setFullUser({ ...userData.user, approvedCount });
         } else {
-          setFullUser(user);
+          setFullUser({ ...user, approvedCount });
         }
       } catch {
         setFullUser(user);
@@ -133,7 +117,7 @@ export default function ProfileModal({ user, open, onClose }: ProfileModalProps)
                   <div
                     className="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 flex items-center justify-center"
                     style={{
-                      background: isUserOnline(displayUser) ? 'var(--success)' : 'var(--text-muted)',
+                      background: checkOnline(displayUser.lastSeen) ? 'var(--success)' : 'var(--text-muted)',
                       borderColor: 'var(--bg-surface)',
                     }}
                   >
@@ -159,11 +143,26 @@ export default function ProfileModal({ user, open, onClose }: ProfileModalProps)
                     <div className="flex items-center justify-center gap-1.5 mt-1">
                       <span
                         className="w-2 h-2 rounded-full inline-block"
-                        style={{ background: isUserOnline(displayUser) ? 'var(--success)' : 'var(--text-muted)' }}
+                        style={{ background: checkOnline(displayUser.lastSeen) ? 'var(--success)' : 'var(--text-muted)' }}
                       />
-                      <span className="text-fluid-xs font-medium" style={{ color: isUserOnline(displayUser) ? 'var(--success)' : 'var(--text-muted)' }}>
-                        {isUserOnline(displayUser) ? 'ออนไลน์' : displayUser.lastSeen ? formatLastSeen(displayUser.lastSeen) : 'ไม่ทราบ'}
+                      <span className="text-fluid-xs font-medium" style={{ color: checkOnline(displayUser.lastSeen) ? 'var(--success)' : 'var(--text-muted)' }}>
+                        {checkOnline(displayUser.lastSeen) ? 'ออนไลน์' : displayUser.lastSeen ? formatRelativeTime(displayUser.lastSeen) : 'ไม่ทราบ'}
                       </span>
+                    </div>
+                    {/* Branch + Approved badges */}
+                    <div className="flex items-center justify-center gap-2 mt-2">
+                      {displayUser.branch && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
+                          <MapPin className="w-3 h-3" />
+                          {displayUser.branch}
+                        </span>
+                      )}
+                      {(displayUser.approvedCount ?? 0) > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'var(--success-light)', color: 'var(--success)' }}>
+                          <Flag className="w-3 h-3" />
+                          {displayUser.approvedCount} Approved
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -181,6 +180,21 @@ export default function ProfileModal({ user, open, onClose }: ProfileModalProps)
                         </p>
                       </div>
                     </div>
+
+                    {/* Branch */}
+                    {displayUser.branch && (
+                      <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-inset)' }}>
+                          <MapPin className="w-4 h-4" style={{ color: 'var(--warning)' }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>สาขา</p>
+                          <p className="text-fluid-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                            {displayUser.branch}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Full name */}
                     <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>

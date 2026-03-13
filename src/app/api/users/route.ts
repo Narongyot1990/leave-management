@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     const users = await User.find(query)
-      .select('lineUserId lineDisplayName lineProfileImage name surname phone employeeId status vacationDays sickDays personalDays performanceTier performancePoints performanceLevel lastSeen isOnline createdAt')
+      .select('lineUserId lineDisplayName lineProfileImage name surname phone employeeId branch status vacationDays sickDays personalDays performanceTier performancePoints performanceLevel lastSeen isOnline createdAt')
       .sort({ createdAt: -1 });
 
     return NextResponse.json({
@@ -48,7 +48,7 @@ export async function PATCH(request: NextRequest) {
     if ('error' in authResult) return authResult.error;
 
     const body = await request.json();
-    const { userId, name, surname, phone, employeeId, status, vacationDays, sickDays, personalDays, performanceTier } = body;
+    const { userId, name, surname, phone, employeeId, branch, status, vacationDays, sickDays, personalDays, performanceTier } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -66,6 +66,7 @@ export async function PATCH(request: NextRequest) {
     if (sickDays !== undefined) updateData.sickDays = sickDays;
     if (personalDays !== undefined) updateData.personalDays = personalDays;
     if (performanceTier !== undefined) updateData.performanceTier = performanceTier;
+    if (branch !== undefined) updateData.branch = branch;
 
     const user = await User.findByIdAndUpdate(
       userId,
@@ -105,6 +106,7 @@ export async function PATCH(request: NextRequest) {
         performanceTier: user.performanceTier,
         performancePoints: user.performancePoints,
         performanceLevel: user.performanceLevel,
+        branch: user.branch,
       },
     });
   } catch (error) {
