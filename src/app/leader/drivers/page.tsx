@@ -101,7 +101,7 @@ function DriverManagementContent() {
       });
       const data = await response.json();
       if (data.success) {
-        setAllDrivers(drivers.map(d => d._id === driverId ? { ...d, status: 'active' } : d));
+        setAllDrivers(prev => prev.map(d => d._id === driverId ? { ...d, status: 'active' } : d));
         setSelectedDriver(null);
       }
     } catch (err) {
@@ -121,7 +121,7 @@ function DriverManagementContent() {
       });
       const data = await response.json();
       if (data.success) {
-        setAllDrivers(drivers.map(d => d._id === driverId ? { ...d, status: 'pending' } : d));
+        setAllDrivers(prev => prev.map(d => d._id === driverId ? { ...d, status: 'pending' } : d));
         setSelectedDriver(null);
       }
     } catch (err) {
@@ -154,7 +154,7 @@ function DriverManagementContent() {
       });
       const data = await response.json();
       if (data.success) {
-        setAllDrivers(drivers.map(d => d._id === selectedDriver._id ? { ...d, ...data.user } : d));
+        setAllDrivers(prev => prev.map(d => d._id === selectedDriver._id ? { ...d, ...data.user } : d));
         setSelectedDriver(null);
       }
     } catch (err) {
@@ -171,7 +171,7 @@ function DriverManagementContent() {
       const response = await fetch(`/api/users?id=${deletingId}`, { method: 'DELETE' });
       const data = await response.json();
       if (data.success) {
-        setAllDrivers(drivers.filter(d => d._id !== deletingId));
+        setAllDrivers(prev => prev.filter(d => d._id !== deletingId));
         setShowDeleteModal(false);
         setDeletingId(null);
         setSelectedDriver(null);

@@ -266,11 +266,28 @@ function DashboardContent() {
                       {day && (
                         <>
                           <span className="text-xs font-medium" style={{ color: holiday ? '#ef4444' : hasLeaves ? 'var(--text-primary)' : 'var(--text-muted)' }}>{day}</span>
-                          {hasLeaves && (
-                            <div className={`mt-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white ${leaveTypeColors[dayLeaves[0].leaveType]?.bg || 'bg-slate-400'}`}>
-                              {dayLeaves.length}
-                            </div>
-                          )}
+                          {hasLeaves && (() => {
+                            const types = Array.from(new Set(dayLeaves.map(l => l.leaveType)));
+                            return (
+                              <div className="flex items-center mt-0.5" style={{ gap: types.length > 1 ? '-2px' : '0' }}>
+                                {types.slice(0, 3).map((type, i) => (
+                                  <div
+                                    key={type}
+                                    className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center text-white font-bold ${leaveTypeColors[type]?.bg || 'bg-slate-400'}`}
+                                    style={{
+                                      fontSize: '8px',
+                                      marginLeft: i > 0 ? '-4px' : '0',
+                                      borderColor: 'var(--bg-surface)',
+                                      zIndex: 3 - i,
+                                      position: 'relative',
+                                    }}
+                                  >
+                                    {i === 0 ? dayLeaves.length : ''}
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
                           {holiday && !hasLeaves && (
                             <div className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: '#ef4444', opacity: 0.5 }} />
                           )}
