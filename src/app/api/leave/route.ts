@@ -16,27 +16,37 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     const status = searchParams.get('status');
+    const branch = searchParams.get('branch');
 
     await dbConnect();
 
     const query: Record<string, unknown> = {};
-    const { role, branch, userId: authUserId } = authResult.payload;
+    const { role, branch: userBranch, userId: authUserId } = authResult.payload;
 
-    // Admin (superuser) can see all leave requests - no branch filter
+    // Build query based on role
     if (role === 'driver') {
-      query.userId = authUserId;
-    } else if (role === 'leader' && branch) {
-      // Find all users in this branch
-      const branchUsers = await User.find({ branch }).select('_id');
+      // Driver: sees all approved leaves in their branch, not just their own
+      if (userBranch) {
+        const branchUsers = await User.find({ branch: userBranch }).select('_id');
+        const branchUserIds = branchUsers.map(u => u._id);
+        query.userId = { $in: branchUserIds };
+      } else {
+        // No branch - see only self
+        query.userId = authUserId;
+      }
+    } else if (role === 'leader' && userBranch) {
+      // Leader: sees all leaves in their branch
+      const branchUsers = await User.find({ branch: userBranch }).select('_id');
       const branchUserIds = branchUsers.map(u => u._id);
       query.userId = { $in: branchUserIds };
-    } else if (role === 'admin' && branch) {
-      // Admin with specific branch filter (optional)
-      const branchUsers = await User.find({ branch }).select('_id');
-      const branchUserIds = branchUsers.map(u => u._id);
-      query.userId = { $in: branchUserIds };
+    } else if (role === 'admin') {
+      // Admin: sees all unless explicit branch param provided
+      if (branch) {
+        const branchUsers = await User.find({ branch }).select('_id');
+        const branchUserIds = branchUsers.map(u => u._id);
+        query.userId = { $in: branchUserIds };
+      }
     }
-    // Admin without branch = see all (no filter)
 
     if (userId) {
       query.userId = userId;

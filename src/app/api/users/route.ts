@@ -27,9 +27,10 @@ export async function GET(request: NextRequest) {
     // Build query based on role
     if (role === 'driver') {
       // Driver: by default sees only themselves
-      // If branch param provided (contract page), see drivers in that branch
+      // If branch param provided (contacts page), see active drivers in that branch
       if (branch) {
         query.branch = branch;
+        query.status = 'active'; // Only show active drivers
       } else {
         query._id = userId;
       }
@@ -42,11 +43,14 @@ export async function GET(request: NextRequest) {
           { branch: null }
         ];
       }
+      // Always filter active for leader view
+      query.status = 'active';
     } else if (role === 'admin') {
       // Admin: sees all unless branch specified
       if (userBranch) {
         query.branch = userBranch;
       }
+      // If no specific filters, show all statuses unless status param provided
     }
 
     if (status) {
