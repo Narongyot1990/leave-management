@@ -60,7 +60,25 @@ export default function UserAvatar({
           style={{ background: 'var(--accent)' }}
         >
           {imageUrl ? (
-            <img src={imageUrl} alt={displayName || 'User avatar'} className="w-full h-full object-cover" />
+            <img 
+              src={imageUrl} 
+              alt={displayName || 'User avatar'} 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+                // Show initial instead
+                const parent = (e.target as HTMLImageElement).parentElement;
+                if (parent) {
+                  const initial = document.createElement('span');
+                  initial.textContent = displayName?.trim()?.charAt(0)?.toUpperCase() || '?';
+                  initial.className = [sizeConfig.inner, sizeConfig.text, 'flex items-center justify-center'].join(' ');
+                  initial.style.background = 'var(--accent)';
+                  initial.style.color = 'white';
+                  initial.style.fontWeight = 'bold';
+                  parent.appendChild(initial);
+                }
+              }}
+            />
           ) : (
             displayName ? initial : <User className={sizeConfig.icon} />
           )}

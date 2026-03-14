@@ -62,10 +62,17 @@ export default function DriverProfile({ user, isMe = true, onEditClick }: Driver
           style={{ border: `3px solid ${colors.border}`, background: colors.bg }}
         >
           {user.lineProfileImage ? (
-            <img src={user.lineProfileImage} alt="Profile" className="w-full h-full object-cover" />
-          ) : (
-            <UserIcon className="w-8 h-8" style={{ color: colors.text }} />
-          )}
+            <img 
+              src={user.lineProfileImage} 
+              alt="Profile" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          <UserIcon className={`w-8 h-8 ${user.lineProfileImage ? 'hidden' : ''}`} style={{ color: colors.text }} />
         </div>
         
         <div className="flex-1 min-w-0">
