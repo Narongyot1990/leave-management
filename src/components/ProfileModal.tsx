@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
 import DriverProfile from '@/components/DriverProfile';
 
 export interface ProfileUser {
-  id: string; // Changed from _id to id for consistency
+  id: string;
   _id?: string;
   lineDisplayName: string;
   linePublicId?: string;
@@ -70,6 +70,21 @@ export default function ProfileModal({ user, open, onClose }: ProfileModalProps)
     fetchUser();
   }, [open, user]);
 
+  // Handle escape key
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (open) {
+      document.addEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+      document.body.style.overflow = '';
+    };
+  }, [open, onClose]);
+
   if (!open || !user) return null;
 
   const displayUser = fullUser || user;
@@ -77,41 +92,58 @@ export default function ProfileModal({ user, open, onClose }: ProfileModalProps)
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-auto"
-          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
-          onClick={onClose}
-        >
+        <>
+          {/* Backdrop */}
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="w-full max-w-5xl max-h-[90vh] overflow-hidden relative rounded-[32px] shadow-2xl"
-            style={{ background: 'var(--bg-base)' }}
-            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[60]"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
+            onClick={onClose}
+          />
+          
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4 pointer-events-none"
           >
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="absolute top-6 right-6 z-50 w-10 h-10 rounded-full flex items-center justify-center transition-all bg-black/10 hover:bg-black/20 text-white md:text-gray-500 md:bg-gray-100 md:hover:bg-gray-200"
+            <div 
+              className="w-full max-w-4xl max-h-[90vh] overflow-hidden relative rounded-[24px] shadow-2xl pointer-events-auto"
+              style={{ background: 'var(--bg-base)' }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <X className="w-5 h-5" />
-            </button>
+              {/* Close Button - Outside */}
+              <button
+                onClick={onClose}
+                className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110"
+                style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)' }}
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-            {loading ? (
-              <div className="h-[600px] flex items-center justify-center">
-                <div className="w-10 h-10 rounded-full border-4 border-accent border-t-transparent animate-spin" />
-              </div>
-            ) : (
-              <div className="h-full overflow-y-auto md:overflow-hidden">
-                <DriverProfile user={displayUser} isMe={false} />
-              </div>
-            )}
+              {loading ? (
+                <div className="h-[500px] flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div 
+                      className="w-10 h-10 rounded-full border-4 animate-spin" 
+                      style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} 
+                    />
+                    <p style={{ color: 'var(--text-muted)' }}>กำลังโหลด...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full overflow-y-auto">
+                  <DriverProfile user={displayUser} isMe={false} />
+                </div>
+              )}
+            </div>
           </motion.div>
-        </motion.div>
+        </>
       )}
     </AnimatePresence>
   );

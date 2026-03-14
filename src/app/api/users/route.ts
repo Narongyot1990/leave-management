@@ -24,16 +24,30 @@ export async function GET(request: NextRequest) {
     const query: Record<string, unknown> = {};
     const { role, branch: userBranch, userId } = authResult.payload;
 
-    // Admin (superuser) can see all users - no branch filter
-    if (role === 'leader' && userBranch) {
-      query.branch = userBranch;
-    } else if (role === 'driver') {
-      query._id = userId;
-    } else if (role === 'admin' && userBranch) {
-      // Admin with specific branch filter (optional)
-      query.branch = userBranch;
+    // Build query based on role
+    if (role === 'driver') {
+      // Driver: by default sees only themselves
+      // If branch param provided (contract page), see drivers in that branch
+      if (branch) {
+        query.branch = branch;
+      } else {
+        query._id = userId;
+      }
+    } else if (role === 'leader') {
+      // Leader: sees their branch + pending/unassigned drivers
+      if (userBranch) {
+        query.$or = [
+          { branch: userBranch },
+          { branch: { $exists: false } },
+          { branch: null }
+        ];
+      }
+    } else if (role === 'admin') {
+      // Admin: sees all unless branch specified
+      if (userBranch) {
+        query.branch = userBranch;
+      }
     }
-    // Admin without branch = see all (no filter)
 
     if (status) {
       query.status = status;

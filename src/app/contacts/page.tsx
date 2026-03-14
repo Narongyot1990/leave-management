@@ -55,7 +55,12 @@ export default function ContactsPage() {
 
     const fetchContacts = async () => {
       try {
-        const res = await fetch('/api/users?activeOnly=true');
+        // Driver: see drivers in same branch; Leader/Admin: see all
+        let url = '/api/users?activeOnly=true';
+        if (user.role === 'driver' && user.branch) {
+          url += `&branch=${user.branch}`;
+        }
+        const res = await fetch(url);
         const data = await res.json();
         if (data.success) {
           // Exclude self, sort online first then by name
@@ -83,7 +88,11 @@ export default function ContactsPage() {
   // Pusher realtime — user changes (new driver, activated, etc.)
   const handleUserChanged = useCallback(async () => {
     try {
-      const res = await fetch('/api/users?activeOnly=true');
+      let url = '/api/users?activeOnly=true';
+      if (user?.role === 'driver' && user?.branch) {
+        url += `&branch=${user.branch}`;
+      }
+      const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
         const others = (data.users as Contact[])

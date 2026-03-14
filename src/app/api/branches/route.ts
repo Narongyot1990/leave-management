@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import { requireSuperuser } from '@/lib/api-auth';
+import { triggerPusher, CHANNELS, EVENTS } from '@/lib/pusher';
 
 const DEFAULT_BRANCHES = [
   { code: 'AYA', name: 'AYA', description: '', location: null, active: true },
@@ -114,6 +115,9 @@ export async function POST(request: NextRequest) {
 
     await settings.save();
     branchesCache = null; // Clear cache
+    
+    // Trigger Pusher for real-time update
+    await triggerPusher(CHANNELS.BRANCHES, EVENTS.BRANCH_CREATED, { code: normalizedCode, name });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -173,6 +177,9 @@ export async function PATCH(request: NextRequest) {
 
     await settings.save();
     branchesCache = null; // Clear cache
+    
+    // Trigger Pusher for real-time update
+    await triggerPusher(CHANNELS.BRANCHES, EVENTS.BRANCH_UPDATED, { code: normalizedCode });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -223,6 +230,9 @@ export async function DELETE(request: NextRequest) {
     settings.branches = settings.branches.filter((b: any) => b.code.toUpperCase() !== normalizedCode);
     await settings.save();
     branchesCache = null; // Clear cache
+    
+    // Trigger Pusher for real-time update
+    await triggerPusher(CHANNELS.BRANCHES, EVENTS.BRANCH_DELETED, { code: normalizedCode });
 
     return NextResponse.json({ success: true });
   } catch (error) {

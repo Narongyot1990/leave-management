@@ -14,6 +14,7 @@ export const CHANNELS = {
   USERS: 'users',
   TASKS: 'tasks',
   DASHBOARD: 'dashboard',
+  BRANCHES: 'branches',
 };
 
 export const EVENTS = {
@@ -35,6 +36,10 @@ export const EVENTS = {
   TASK_UPDATED: 'task-updated',
   TASK_DELETED: 'task-deleted',
   TASK_SUBMITTED: 'task-submitted',
+  // Branches
+  BRANCH_UPDATED: 'branch-updated',
+  BRANCH_CREATED: 'branch-created',
+  BRANCH_DELETED: 'branch-deleted',
 };
 
 /** Fire-and-forget Pusher trigger — never throws */
