@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
         query.userId = authUserId;
       }
     } else if (role === 'leader' && userBranch) {
-      // Leader: sees all leaves in their branch
-      const branchUsers = await User.find({ branch: userBranch }).select('_id');
+      // Leader: sees all leaves in their branch (case-insensitive)
+      const branchUsers = await User.find({ branch: { $regex: new RegExp(`^${userBranch}$`, 'i') } }).select('_id');
       const branchUserIds = branchUsers.map(u => u._id);
       query.userId = { $in: [...branchUserIds, authUserId] };
     } else if (role === 'admin') {

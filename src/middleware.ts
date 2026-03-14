@@ -50,7 +50,8 @@ export async function middleware(request: NextRequest) {
   if (refreshToken) {
     const payload = await verifyRefreshTokenEdge(refreshToken);
     if (payload) {
-      const tokenPayload = { userId: payload.userId, email: payload.email, role: payload.role };
+      // Preserve ALL fields from the payload (including branch)
+      const tokenPayload = { ...payload };
       const newAccessToken = await generateAccessTokenEdge(tokenPayload);
       const newRefreshToken = await generateRefreshTokenEdge(tokenPayload);
 

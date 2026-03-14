@@ -34,7 +34,18 @@ export async function GET() {
           id: leader._id,
           email: leader.email,
           name: leader.name,
+          branch: leader.branch,
           role: 'leader',
+        },
+      });
+    } else if (tokenPayload.role === 'admin') {
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: tokenPayload.userId,
+          email: tokenPayload.email,
+          name: 'ITL Administrator',
+          role: 'admin',
         },
       });
     } else if (tokenPayload.role === 'driver') {
@@ -42,7 +53,7 @@ export async function GET() {
       if (!user) {
         return NextResponse.json({ 
           success: false, 
-          error: 'User not found' 
+          error: 'User found' 
         }, { status: 404 });
       }
 
@@ -50,9 +61,6 @@ export async function GET() {
         lastSeen: new Date(),
         isOnline: true,
       });
-      
-      user.lastSeen = new Date();
-      user.isOnline = true;
       
       return NextResponse.json({
         success: true,
