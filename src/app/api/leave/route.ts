@@ -25,22 +25,15 @@ export async function GET(request: NextRequest) {
 
     // Build query based on role
     if (role === 'driver') {
-      // Driver: sees approved leaves in their branch OR from drivers without branch
-      const orConditions = [];
-      
+      // Driver: ONLY sees approved leaves in their branch
       if (userBranch) {
-        // Has branch - see own branch + branch-less drivers
-        orConditions.push({ branch: userBranch });
+        const branchUsers = await User.find({ branch: userBranch }).select('_id');
+        const branchUserIds = branchUsers.map(u => u._id);
+        query.userId = { $in: branchUserIds };
+      } else {
+        // Fallback for drivers without a branch (unlikely but possible)
+        query.userId = authUserId; // See only own leaves
       }
-      orConditions.push({ branch: { $exists: false } });
-      orConditions.push({ branch: null });
-      
-      const branchUsers = await User.find({
-        $or: orConditions
-      }).select('_id');
-      
-      const branchUserIds = branchUsers.map(u => u._id);
-      query.userId = { $in: branchUserIds };
     } else if (role === 'leader' && userBranch) {
       // Leader: sees all leaves in their branch
       const branchUsers = await User.find({ branch: userBranch }).select('_id');

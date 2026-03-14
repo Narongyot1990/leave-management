@@ -22,7 +22,7 @@ const driverNav: NavItem[] = [
 
 const leaderNav: NavItem[] = [
   { icon: Home, label: 'หน้าหลัก', href: '/leader/home' },
-  { icon: CalendarDays, label: 'ปฏิทิน', href: '/leader/approve' },
+  { icon: CalendarDays, label: 'ปฏิทิน', href: '/dashboard' },
   { icon: Rss, label: 'Moments', href: '/leader/car-wash' },
   { icon: ClipboardList, label: 'ประวัติ', href: '/leader/history' },
   { icon: Users, label: 'พนักงาน', href: '/leader/drivers' },
