@@ -188,9 +188,13 @@ export default function DriverProfile({ user, isMe = true, onEditClick }: Driver
               transition={{ delay: 0.3 }}
               className={`px-3 py-1.5 rounded-xl border border-white/5 bg-white/5 flex items-center gap-2`}
             >
-              <div className={`w-2 h-2 rounded-full ${user.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+              <div className={`w-2 h-2 rounded-full ${user.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-white/20'}`} />
               <span className="text-[10px] font-black uppercase tracking-widest text-white/60">
-                {user.status === 'active' ? 'Active' : 'Pending'}
+                {user.isOnline ? 'Online' : 'Offline'}
+              </span>
+              <span className="w-1 h-1 rounded-full bg-white/10" />
+              <span className={`text-[9px] font-bold uppercase tracking-wider ${user.status === 'active' ? 'text-emerald-400/60' : 'text-amber-400/60'}`}>
+                {user.status === 'active' ? 'Approved' : 'Pending'}
               </span>
             </motion.div>
           </div>
