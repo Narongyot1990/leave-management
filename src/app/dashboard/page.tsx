@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Download, X, Phone, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, X, Phone, Star, AlertCircle } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -258,6 +258,14 @@ function DashboardContent() {
             </motion.div>
           )}
 
+          {/* Current Branch Indicator (Driver/Leader) */}
+          {role !== 'admin' && user?.branch && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-surface/50 border border-border">
+              <span className="text-[11px] font-bold text-muted uppercase tracking-wider">กำลังแสดงข้อมูลสาขา:</span>
+              <span className="text-[11px] font-black text-accent">{user.branch}</span>
+            </motion.div>
+          )}
+
           {/* Month Selector */}
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-4">
             <div className="flex items-center justify-between">
@@ -288,60 +296,76 @@ function DashboardContent() {
                 <div className="w-8 h-8 rounded-full border-[3px] animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
               </div>
             ) : (
-              <div className="grid grid-cols-7">
-                {calendarDays.map((day, index) => {
-                  const dayLeaves = day ? getLeavesForDay(day) : [];
-                  const hasLeaves = dayLeaves.length > 0;
-                  const holiday = day ? holidayMap.get(day) : undefined;
-                  return (
-                    <div
-                      key={index}
-                      onClick={() => day && handleDayClick(day)}
-                      className="min-h-[3.2rem] flex flex-col items-center justify-start pt-2 transition-colors relative"
-                      style={{
-                        borderBottom: '1px solid var(--border)',
-                        borderRight: '1px solid var(--border)',
-                        cursor: day ? 'pointer' : 'default',
-                        background: holiday
-                          ? 'rgba(239, 68, 68, 0.08)'
-                          : day
-                            ? 'transparent'
-                            : 'var(--bg-inset)',
-                      }}
-                    >
-                      {day && (
-                        <>
-                          <span className="text-xs font-medium" style={{ color: holiday ? '#ef4444' : hasLeaves ? 'var(--text-primary)' : 'var(--text-muted)' }}>{day}</span>
-                          {hasLeaves && (() => {
-                            const types = Array.from(new Set(dayLeaves.map(l => l.leaveType)));
-                            return (
-                              <div className="flex items-center mt-0.5" style={{ gap: types.length > 1 ? '-2px' : '0' }}>
-                                {types.slice(0, 3).map((type, i) => (
-                                  <div
-                                    key={type}
-                                    className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center text-white font-bold ${getLeaveTypeMeta(type).bgClass}`}
-                                    style={{
-                                      fontSize: '8px',
-                                      marginLeft: i > 0 ? '-4px' : '0',
-                                      borderColor: 'var(--bg-surface)',
-                                      zIndex: 3 - i,
-                                      position: 'relative',
-                                    }}
-                                  >
-                                    {i === 0 ? dayLeaves.length : ''}
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          })()}
-                          {holiday && !hasLeaves && (
-                            <div className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: '#ef4444', opacity: 0.5 }} />
-                          )}
-                        </>
-                      )}
+              <div>
+                <div className="grid grid-cols-7">
+                  {calendarDays.map((day, index) => {
+                    const dayLeaves = day ? getLeavesForDay(day) : [];
+                    const hasLeaves = dayLeaves.length > 0;
+                    const holiday = day ? holidayMap.get(day) : undefined;
+                    return (
+                      <div
+                        key={index}
+                        onClick={() => day && handleDayClick(day)}
+                        className="min-h-[3.2rem] flex flex-col items-center justify-start pt-2 transition-colors relative"
+                        style={{
+                          borderBottom: '1px solid var(--border)',
+                          borderRight: '1px solid var(--border)',
+                          cursor: day ? 'pointer' : 'default',
+                          background: holiday
+                            ? 'rgba(239, 68, 68, 0.08)'
+                            : day
+                              ? 'transparent'
+                              : 'var(--bg-inset)',
+                        }}
+                      >
+                        {day && (
+                          <>
+                            <span className="text-xs font-medium" style={{ color: holiday ? '#ef4444' : hasLeaves ? 'var(--text-primary)' : 'var(--text-muted)' }}>{day}</span>
+                            {hasLeaves && (() => {
+                              const types = Array.from(new Set(dayLeaves.map(l => l.leaveType)));
+                              return (
+                                <div className="flex items-center mt-0.5" style={{ gap: types.length > 1 ? '-2px' : '0' }}>
+                                  {types.slice(0, 3).map((type, i) => (
+                                    <div
+                                      key={type}
+                                      className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center text-white font-bold ${getLeaveTypeMeta(type).bgClass}`}
+                                      style={{
+                                        fontSize: '8px',
+                                        marginLeft: i > 0 ? '-4px' : '0',
+                                        borderColor: 'var(--bg-surface)',
+                                        zIndex: 3 - i,
+                                        position: 'relative',
+                                      }}
+                                    >
+                                      {i === 0 ? dayLeaves.length : ''}
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })()}
+                            {holiday && !hasLeaves && (
+                              <div className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: '#ef4444', opacity: 0.5 }} />
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {leaves.length === 0 && (
+                  <div className="p-12 text-center" style={{ background: 'var(--bg-surface)' }}>
+                    <div className="w-16 h-16 rounded-full bg-surface-variant flex items-center justify-center mx-auto mb-4 border border-border">
+                      <AlertCircle className="w-8 h-8 text-muted opacity-30" />
                     </div>
-                  );
-                })}
+                    <h4 className="text-[13px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>ไม่พบข้อมูลการลา</h4>
+                    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      {role === 'admin' && selectedBranch === 'all' 
+                        ? 'ไม่พบข้อมูลการลาที่ผ่านการอนุมัติในระบบ'
+                        : `ยังไม่มีการอนุมัติใบลาในสาขา ${role === 'admin' ? selectedBranch : user?.branch}`}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>

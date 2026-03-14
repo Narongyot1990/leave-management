@@ -25,24 +25,23 @@ export async function GET(request: NextRequest) {
 
     // Build query based on role
     if (role === 'driver') {
-      // Driver: ONLY sees approved leaves in their branch
+      // Driver: Sees their own leaves + others in their branch
       if (userBranch) {
         const branchUsers = await User.find({ branch: userBranch }).select('_id');
         const branchUserIds = branchUsers.map(u => u._id);
-        query.userId = { $in: branchUserIds };
+        query.userId = { $in: [...branchUserIds, authUserId] };
       } else {
-        // Fallback for drivers without a branch (unlikely but possible)
-        query.userId = authUserId; // See only own leaves
+        query.userId = authUserId;
       }
     } else if (role === 'leader' && userBranch) {
       // Leader: sees all leaves in their branch
       const branchUsers = await User.find({ branch: userBranch }).select('_id');
       const branchUserIds = branchUsers.map(u => u._id);
-      query.userId = { $in: branchUserIds };
+      query.userId = { $in: [...branchUserIds, authUserId] };
     } else if (role === 'admin') {
       // Admin: sees all unless explicit branch param provided
-      if (branch) {
-        const branchUsers = await User.find({ branch }).select('_id');
+      if (branch && branch !== 'all') {
+        const branchUsers = await User.find({ branch: { $regex: new RegExp(`^${branch}$`, 'i') } }).select('_id');
         const branchUserIds = branchUsers.map(u => u._id);
         query.userId = { $in: branchUserIds };
       }
@@ -51,8 +50,14 @@ export async function GET(request: NextRequest) {
     if (userId) {
       query.userId = userId;
     }
+    
+    // Status filter - if not provided, default to approved for the calendar
+    // but allow explicit status filter if provided
     if (status) {
       query.status = status;
+    } else if (!userId) {
+      // Default for dashboard is approved only
+      query.status = 'approved';
     }
 
     const requests = await LeaveRequest.find(query)
