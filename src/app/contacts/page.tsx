@@ -16,6 +16,7 @@ import { usePusher } from '@/hooks/usePusher';
 interface Contact {
   _id: string;
   lineUserId: string;
+  linePublicId?: string;
   lineDisplayName: string;
   lineProfileImage?: string;
   performanceTier?: string;
@@ -217,15 +218,17 @@ export default function ContactsPage() {
                     {/* Action buttons */}
                     <div className="flex items-center gap-2 shrink-0">
                       {/* LINE button */}
-                      <a
-                        href={`line://ti/p/~${contact.lineUserId}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-                        style={{ background: '#00C300', color: '#fff' }}
-                        title="เพิ่มเพื่อนใน LINE"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                      </a>
+                      {contact.linePublicId && (
+                        <a
+                          href={`https://line.me/R/ti/p/~${encodeURIComponent(contact.linePublicId)}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                          style={{ background: '#00C300', color: '#fff' }}
+                          title="เปิดใน LINE"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </a>
+                      )}
                       {/* Call button */}
                       {contact.phone && (
                         <a

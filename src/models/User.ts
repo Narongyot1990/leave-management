@@ -5,6 +5,7 @@ export type DriverStatus = 'pending' | 'active';
 
 export interface IUser extends Document {
   lineUserId: string;
+  linePublicId?: string;
   lineDisplayName: string;
   lineProfileImage?: string;
   performanceTier: PerformanceTier;
@@ -28,6 +29,7 @@ export interface IUser extends Document {
 const UserSchema = new Schema<IUser>(
   {
     lineUserId: { type: String, required: true, unique: true },
+    linePublicId: { type: String },
     lineDisplayName: { type: String, required: true },
     lineProfileImage: { type: String },
     performanceTier: { type: String, enum: PERFORMANCE_TIERS, default: 'standard' },

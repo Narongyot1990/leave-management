@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
 
     const users = await User.find(query)
-      .select('lineUserId lineDisplayName lineProfileImage name surname phone employeeId branch status vacationDays sickDays personalDays performanceTier performancePoints performanceLevel lastSeen isOnline createdAt')
+      .select('lineUserId linePublicId lineDisplayName lineProfileImage name surname phone employeeId branch status vacationDays sickDays personalDays performanceTier performancePoints performanceLevel lastSeen isOnline createdAt')
       .sort({ createdAt: -1 });
 
     return NextResponse.json({
@@ -52,7 +52,7 @@ export async function PATCH(request: NextRequest) {
     if ('error' in authResult) return authResult.error;
 
     const body = await request.json();
-    const { userId, name, surname, phone, employeeId, branch, status, vacationDays, sickDays, personalDays, performanceTier } = body;
+    const { userId, name, surname, phone, employeeId, linePublicId, branch, status, vacationDays, sickDays, personalDays, performanceTier } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -65,6 +65,7 @@ export async function PATCH(request: NextRequest) {
     if (surname !== undefined) updateData.surname = surname;
     if (phone !== undefined) updateData.phone = phone;
     if (employeeId !== undefined) updateData.employeeId = employeeId;
+    if (linePublicId !== undefined) updateData.linePublicId = linePublicId;
     if (status !== undefined) updateData.status = status;
     if (vacationDays !== undefined) updateData.vacationDays = vacationDays;
     if (sickDays !== undefined) updateData.sickDays = sickDays;
@@ -92,6 +93,7 @@ export async function PATCH(request: NextRequest) {
       user: {
         id: user._id,
         lineUserId: user.lineUserId,
+        linePublicId: user.linePublicId,
         lineDisplayName: user.lineDisplayName,
         lineProfileImage: user.lineProfileImage,
         name: user.name,

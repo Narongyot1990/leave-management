@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { X, Phone, PhoneCall, User, Hash, Circle, CheckCircle2, AlertCircle, Pencil, MapPin, Flag, Brain, Trophy, Star, Zap, BookOpen, TrendingUp } from 'lucide-react';
+import { X, Phone, PhoneCall, User, Hash, Circle, CheckCircle2, AlertCircle, Pencil, MapPin, Flag, Brain, Trophy, Star, Zap, BookOpen, TrendingUp, MessageCircle } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import BottomNav from '@/components/BottomNav';
 import UserAvatar from '@/components/UserAvatar';
@@ -13,6 +13,7 @@ import { PERFORMANCE_TIER_CONFIG, normalizePerformanceTier } from '@/lib/profile
 interface DriverUser {
   id: string;
   lineDisplayName: string;
+  linePublicId?: string;
   lineProfileImage?: string;
   performanceTier?: string;
   performancePoints?: number;
@@ -30,7 +31,7 @@ interface DriverUser {
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<DriverUser | null>(null);
-  const [editField, setEditField] = useState<'name' | 'phone' | null>(null);
+  const [editField, setEditField] = useState<'name' | 'phone' | 'linePublicId' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -79,9 +80,11 @@ export default function ProfilePage() {
       .catch(() => {});
   }, [user?.id]);
 
-  const handleStartEdit = (field: 'name' | 'phone') => {
+  const handleStartEdit = (field: 'name' | 'phone' | 'linePublicId') => {
     if (field === 'name') {
       setEditValue(`${user?.name || ''} ${user?.surname || ''}`.trim());
+    } else if (field === 'linePublicId') {
+      setEditValue(user?.linePublicId || '');
     } else {
       setEditValue(user?.phone || '');
     }
@@ -108,6 +111,8 @@ export default function ProfilePage() {
         const parts = editValue.trim().split(' ');
         updates.name = parts[0] || '';
         updates.surname = parts.slice(1).join(' ') || '';
+      } else if (editField === 'linePublicId') {
+        updates.linePublicId = editValue.trim().replace(/^@+/, '');
       } else if (editField === 'phone') {
         updates.phone = editValue.trim();
       }
@@ -128,7 +133,8 @@ export default function ProfilePage() {
           ...user, 
           name: data.user.name, 
           surname: data.user.surname,
-          phone: data.user.phone 
+          phone: data.user.phone,
+          linePublicId: data.user.linePublicId
         };
         localStorage.setItem('driverUser', JSON.stringify(updatedUser));
         setUser(updatedUser);

@@ -17,6 +17,7 @@ import { useToast } from '@/components/Toast';
 interface Driver {
   _id: string;
   lineUserId: string;
+  linePublicId?: string;
   lineDisplayName: string;
   lineProfileImage?: string;
   performanceTier?: string;
@@ -160,6 +161,7 @@ function DriverManagementContent() {
           name: selectedDriver.name,
           surname: selectedDriver.surname,
           phone: selectedDriver.phone,
+          linePublicId: selectedDriver.linePublicId,
           employeeId: selectedDriver.employeeId,
           vacationDays: selectedDriver.vacationDays,
           sickDays: selectedDriver.sickDays,
@@ -310,15 +312,17 @@ function DriverManagementContent() {
                     {/* Action buttons */}
                     <div className="flex items-center gap-2">
                       {/* LINE button */}
-                      <a
-                        href={`line://ti/p/~${driver.lineUserId}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-                        style={{ background: '#00C300', color: '#fff' }}
-                        title="เพิ่มเพื่อนใน LINE"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                      </a>
+                      {driver.linePublicId && (
+                        <a
+                          href={`https://line.me/R/ti/p/~${encodeURIComponent(driver.linePublicId)}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                          style={{ background: '#00C300', color: '#fff' }}
+                          title="เปิดใน LINE"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                        </a>
+                      )}
                       {/* Call button */}
                       {driver.phone && (
                         <a
@@ -436,6 +440,16 @@ function DriverManagementContent() {
                 <div>
                   <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>เบอร์โทร</label>
                   <input type="tel" value={selectedDriver.phone || ''} onChange={(e) => setSelectedDriver({ ...selectedDriver, phone: e.target.value })} className="input" placeholder="กรอกเบอร์โทร" />
+                </div>
+                <div>
+                  <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>LINE ID</label>
+                  <input
+                    type="text"
+                    value={selectedDriver.linePublicId || ''}
+                    onChange={(e) => setSelectedDriver({ ...selectedDriver, linePublicId: e.target.value.replace(/^@+/, '').trim() })}
+                    className="input"
+                    placeholder="เช่น narongyot (ไม่ต้องใส่ @)"
+                  />
                 </div>
 
                 <div>

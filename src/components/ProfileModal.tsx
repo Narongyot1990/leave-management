@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Phone, PhoneCall, Hash, User, Circle, MapPin, Flag } from 'lucide-react';
+import { X, Phone, PhoneCall, Hash, User, Circle, MapPin, Flag, MessageCircle } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
 import { formatRelativeTime, isUserOnline as checkOnline } from '@/lib/date-utils';
 
 export interface ProfileUser {
   _id: string;
   lineDisplayName: string;
+  linePublicId?: string;
   lineProfileImage?: string;
   performanceTier?: string;
   performancePoints?: number;
@@ -80,159 +81,144 @@ export default function ProfileModal({ user, open, onClose }: ProfileModalProps)
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.5)' }}
           onClick={onClose}
         >
           <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="card-neo w-full sm:max-w-sm rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-xl)] overflow-hidden"
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 24, opacity: 0 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            className="card-neo w-full max-w-[380px] rounded-[28px] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Cover gradient */}
-            <div className="relative h-20" style={{ background: 'linear-gradient(135deg, var(--accent) 0%, #6366f1 100%)' }}>
+            <div className="relative h-16" style={{ background: 'linear-gradient(135deg, var(--accent) 0%, #6366f1 100%)' }}>
               <button
                 onClick={onClose}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center"
+                className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full flex items-center justify-center"
                 style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Avatar */}
-            <div className="flex flex-col items-center -mt-12 px-5 pb-5">
-              <div className="relative mb-3">
-                <UserAvatar
-                  imageUrl={displayUser.lineProfileImage}
-                  displayName={displayUser.lineDisplayName}
-                  tier={displayUser.performanceTier}
-                  size="xl"
-                />
-                {/* Online indicator */}
-                {displayUser.lastSeen !== undefined && (
-                  <div
-                    className="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 flex items-center justify-center"
-                    style={{
-                      background: checkOnline(displayUser.lastSeen) ? 'var(--success)' : 'var(--text-muted)',
-                      borderColor: 'var(--bg-surface)',
-                    }}
-                  >
-                    <Circle className="w-2 h-2 fill-current text-white" />
-                  </div>
-                )}
-              </div>
-
-              {loading ? (
-                <div className="py-4">
-                  <div className="w-6 h-6 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+            <div className="px-4 pb-4 -mt-9">
+              <div className="flex flex-col items-center">
+                <div className="relative mb-2">
+                  <UserAvatar
+                    imageUrl={displayUser.lineProfileImage}
+                    displayName={displayUser.lineDisplayName}
+                    tier={displayUser.performanceTier}
+                    size="lg"
+                  />
+                  {displayUser.lastSeen !== undefined && (
+                    <div
+                      className="absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                      style={{
+                        background: checkOnline(displayUser.lastSeen) ? 'var(--success)' : 'var(--text-muted)',
+                        borderColor: 'var(--bg-surface)',
+                      }}
+                    >
+                      <Circle className="w-1.5 h-1.5 fill-current text-white" />
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <>
-                  {/* Name & online status */}
-                  <div className="text-center mb-4">
-                    <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                      {fullName || displayUser.lineDisplayName}
-                    </h2>
-                    <p className="text-fluid-sm" style={{ color: 'var(--text-muted)' }}>
-                      @{displayUser.lineDisplayName}
-                    </p>
-                    <div className="flex items-center justify-center gap-1.5 mt-1">
-                      <span
-                        className="w-2 h-2 rounded-full inline-block"
-                        style={{ background: checkOnline(displayUser.lastSeen) ? 'var(--success)' : 'var(--text-muted)' }}
-                      />
-                      <span className="text-fluid-xs font-medium" style={{ color: checkOnline(displayUser.lastSeen) ? 'var(--success)' : 'var(--text-muted)' }}>
-                        {checkOnline(displayUser.lastSeen) ? 'ออนไลน์' : displayUser.lastSeen ? formatRelativeTime(displayUser.lastSeen) : 'ไม่ทราบ'}
-                      </span>
-                    </div>
-                    {/* Branch + Approved badges */}
-                    <div className="flex items-center justify-center gap-2 mt-2">
-                      {displayUser.branch && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
-                          <MapPin className="w-3 h-3" />
-                          {displayUser.branch}
-                        </span>
-                      )}
-                      {(displayUser.approvedCount ?? 0) > 0 && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'var(--success-light)', color: 'var(--success)' }}>
-                          <Flag className="w-3 h-3" />
-                          {displayUser.approvedCount} Approved
-                        </span>
-                      )}
-                    </div>
+
+                {loading ? (
+                  <div className="py-5">
+                    <div className="w-6 h-6 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
                   </div>
-
-                  {/* Info rows */}
-                  <div className="w-full rounded-[var(--radius-lg)] overflow-hidden" style={{ border: '1px solid var(--border)' }}>
-                    {/* Employee ID */}
-                    <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-inset)' }}>
-                        <Hash className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                ) : (
+                  <>
+                    <div className="text-center mb-3">
+                      <h2 className="text-base font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+                        {fullName || displayUser.lineDisplayName}
+                      </h2>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        @{displayUser.lineDisplayName}
+                      </p>
+                      <div className="flex items-center justify-center gap-1.5 mt-1">
+                        <span
+                          className="w-2 h-2 rounded-full inline-block"
+                          style={{ background: checkOnline(displayUser.lastSeen) ? 'var(--success)' : 'var(--text-muted)' }}
+                        />
+                        <span className="text-[11px] font-medium" style={{ color: checkOnline(displayUser.lastSeen) ? 'var(--success)' : 'var(--text-muted)' }}>
+                          {checkOnline(displayUser.lastSeen) ? 'ออนไลน์' : displayUser.lastSeen ? formatRelativeTime(displayUser.lastSeen) : 'ไม่ทราบ'}
+                        </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>รหัสพนักงาน</p>
-                        <p className="text-fluid-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {displayUser.employeeId || '-'}
-                        </p>
+                      <div className="flex items-center justify-center gap-1.5 mt-2 flex-wrap">
+                        {displayUser.branch && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
+                            <MapPin className="w-3 h-3" />
+                            {displayUser.branch}
+                          </span>
+                        )}
+                        {(displayUser.approvedCount ?? 0) > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold" style={{ background: 'var(--success-light)', color: 'var(--success)' }}>
+                            <Flag className="w-3 h-3" />
+                            {displayUser.approvedCount} Approved
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    {/* Branch */}
-                    {displayUser.branch && (
-                      <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-inset)' }}>
+                    <div className="grid grid-cols-2 gap-2 w-full mb-3">
+                      <div className="rounded-[var(--radius-lg)] p-3" style={{ background: 'var(--bg-inset)' }}>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ background: 'var(--bg-surface)' }}>
+                          <Hash className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                        </div>
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>รหัสพนักงาน</p>
+                        <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{displayUser.employeeId || '-'}</p>
+                      </div>
+                      <div className="rounded-[var(--radius-lg)] p-3" style={{ background: 'var(--bg-inset)' }}>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ background: 'var(--bg-surface)' }}>
                           <MapPin className="w-4 h-4" style={{ color: 'var(--warning)' }} />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>สาขา</p>
-                          <p className="text-fluid-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                            {displayUser.branch}
-                          </p>
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>สาขา</p>
+                        <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{displayUser.branch || '-'}</p>
+                      </div>
+                      <div className="rounded-[var(--radius-lg)] p-3 col-span-2" style={{ background: 'var(--bg-inset)' }}>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ background: 'var(--bg-surface)' }}>
+                          <User className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                         </div>
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>ชื่อ-นามสกุล</p>
+                        <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{fullName || '-'}</p>
                       </div>
-                    )}
-
-                    {/* Full name */}
-                    <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-inset)' }}>
-                        <User className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>ชื่อ-นามสกุล</p>
-                        <p className="text-fluid-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {fullName || '-'}
-                        </p>
+                      <div className="rounded-[var(--radius-lg)] p-3 col-span-2" style={{ background: 'var(--bg-inset)' }}>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ background: 'var(--bg-surface)' }}>
+                          <Phone className="w-4 h-4" style={{ color: 'var(--success)' }} />
+                        </div>
+                        <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>เบอร์โทร</p>
+                        <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{displayUser.phone || '-'}</p>
                       </div>
                     </div>
 
-                    {/* Phone */}
-                    <div className="flex items-center gap-3 px-4 py-3">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-inset)' }}>
-                        <Phone className="w-4 h-4" style={{ color: 'var(--success)' }} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>เบอร์โทร</p>
-                        <p className="text-fluid-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {displayUser.phone || '-'}
-                        </p>
-                      </div>
+                    <div className="grid grid-cols-2 gap-2 w-full">
+                      {displayUser.linePublicId && (
+                        <a
+                          href={`https://line.me/R/ti/p/~${encodeURIComponent(displayUser.linePublicId)}`}
+                          className={`h-11 rounded-[var(--radius-lg)] flex items-center justify-center gap-2 ${displayUser.phone ? '' : 'col-span-2'}`}
+                          style={{ background: '#00C300', color: '#fff' }}
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          <span className="text-sm font-semibold">LINE</span>
+                        </a>
+                      )}
                       {displayUser.phone && (
                         <a
                           href={`tel:${displayUser.phone}`}
-                          className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                          className={`h-11 rounded-[var(--radius-lg)] flex items-center justify-center gap-2 ${displayUser.linePublicId ? '' : 'col-span-2'}`}
                           style={{ background: 'var(--success)' }}
                         >
                           <PhoneCall className="w-4 h-4 text-white" />
+                          <span className="text-sm font-semibold text-white">โทร</span>
                         </a>
                       )}
                     </div>
-                  </div>
-                </>
-              )}
+                  </>
+                )}
+              </div>
             </div>
           </motion.div>
         </motion.div>

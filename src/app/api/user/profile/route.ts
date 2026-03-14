@@ -12,7 +12,7 @@ export async function PATCH(request: NextRequest) {
     if ('error' in authResult) return authResult.error;
 
     const body = await request.json();
-    const { userId, name, surname, phone, employeeId } = body;
+    const { userId, name, surname, phone, employeeId, linePublicId } = body;
 
     if (!userId) {
       return NextResponse.json(
@@ -28,6 +28,7 @@ export async function PATCH(request: NextRequest) {
     if (surname !== undefined) updateData.surname = surname;
     if (phone !== undefined) updateData.phone = phone;
     if (employeeId !== undefined) updateData.employeeId = employeeId;
+    if (linePublicId !== undefined) updateData.linePublicId = linePublicId;
 
     const user = await User.findByIdAndUpdate(
       userId,
@@ -47,6 +48,7 @@ export async function PATCH(request: NextRequest) {
       user: {
         id: user._id,
         lineUserId: user.lineUserId,
+        linePublicId: user.linePublicId,
         lineDisplayName: user.lineDisplayName,
         lineProfileImage: user.lineProfileImage,
         name: user.name,
