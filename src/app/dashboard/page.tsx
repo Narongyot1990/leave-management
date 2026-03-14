@@ -92,9 +92,13 @@ function DashboardContent() {
       setLoading(true);
       try {
         let url = '/api/leave?status=approved';
+        
+        // Driver and Leader: API uses JWT token to determine branch automatically
+        // Admin with specific branch filter
         if (role === 'admin' && selectedBranch !== 'all') {
           url += `&branch=${selectedBranch}`;
         }
+        
         const response = await fetch(url);
         const data = await response.json();
         if (data.success) {
