@@ -1,5 +1,5 @@
 'use client';
-
+import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, CalendarDays, Clock, User, FileText, Users, CheckSquare, ClipboardList, Settings, PenSquare, LogOut, Car, Rss, Contact2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -47,13 +47,55 @@ const adminNav: NavItem[] = [
 export default function Sidebar({ role }: { role: 'driver' | 'leader' | 'admin' }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [counts, setCounts] = useState({ pendingLeaves: 0, pendingDrivers: 0 });
   
-  let items = driverNav;
-  if (role === 'admin') {
-    items = adminNav;
-  } else if (role === 'leader') {
-    items = leaderNav;
-  }
+  // Clean up nav items to remove redundancy with BottomNav
+  // BottomNav (Mobile) has: Home, Calendar/Dashboard, History, Drivers, Profile
+  // Sidebar (Desktop) should focus on: Approval, Subscriptions, Specialized management
+  
+  const driverNavItems: NavItem[] = [
+    { icon: FileText, label: 'ขอลาพักผ่อน', href: '/leave' },
+    { icon: Clock, label: 'ประวัติของฉัน', href: '/leave/history' },
+    { icon: Car, label: 'กิจกรรมบริษัท', href: '/car-wash' },
+    { icon: Contact2, label: 'ผู้ติดต่อ', href: '/contacts' },
+    { icon: Settings, label: 'ตั้งค่าระบบ', href: '/settings' },
+  ];
+
+  const leaderNavItems: NavItem[] = [
+    { icon: CheckSquare, label: 'อนุมัติคำขอลา', href: '/leader/approve' },
+    { icon: FileText, label: 'บันทึกการแทน', href: '/leader/substitute' },
+    { icon: User, label: 'แก้ไขข้อมูลโปรไฟล์', href: '/leader/profile-edit' },
+  ];
+
+  const adminNavItems: NavItem[] = [
+    { icon: ClipboardList, label: 'ตรวจสอบประวัติทั้งหมด', href: '/leader/history' },
+    { icon: Rss, label: 'Moments กิจกรรม', href: '/leader/car-wash' },
+    { icon: User, label: 'จัดการโปรไฟล์ส่วนตัว', href: '/leader/profile-edit' },
+  ];
+
+  useEffect(() => {
+    if (role !== 'leader' && role !== 'admin') return;
+    const fetchCounts = async () => {
+      try {
+        const res = await fetch('/api/counts');
+        const data = await res.json();
+        if (data.success) setCounts(data.counts);
+      } catch (e) { /* ignore */ }
+    };
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 30000);
+    return () => clearInterval(interval);
+  }, [role]);
+
+  let items = driverNavItems;
+  if (role === 'admin') items = adminNavItems;
+  else if (role === 'leader') items = leaderNavItems;
+
+  const getBadge = (href: string) => {
+    if (href.includes('approve')) return counts.pendingLeaves;
+    if (href.includes('drivers')) return counts.pendingDrivers;
+    return 0;
+  };
 
   return (
     <aside
@@ -75,25 +117,35 @@ export default function Sidebar({ role }: { role: 'driver' | 'leader' | 'admin' 
       </div>
 
       {/* Nav Items */}
-      <nav className="flex-1 py-3 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 py-4 px-3 space-y-1.5 overflow-y-auto">
         {items.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           const Icon = item.icon;
+          const badge = getBadge(item.href);
 
           return (
             <motion.button
               key={item.href}
               whileTap={{ scale: 0.97 }}
               onClick={() => router.push(item.href)}
-              className="w-full flex items-center gap-3 px-3 min-h-[40px] rounded-[var(--radius-md)] text-left transition-colors text-sm"
+              className="w-full flex items-center justify-between px-3 min-h-[44px] rounded-[var(--radius-md)] text-left transition-all text-sm group"
               style={{
                 color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
                 background: isActive ? 'var(--accent-light)' : 'transparent',
                 fontWeight: isActive ? 600 : 500,
               }}
             >
-              <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />
-              <span className="truncate">{item.label}</span>
+              <div className="flex items-center gap-3">
+                <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />
+                <span className="truncate">{item.label}</span>
+              </div>
+              
+              {badge > 0 && !isActive && (
+                <div className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-[10px] font-bold text-red-500">{badge}</span>
+                </div>
+              )}
             </motion.button>
           );
         })}
@@ -104,7 +156,7 @@ export default function Sidebar({ role }: { role: 'driver' | 'leader' | 'admin' 
         <ThemeToggle />
         <div className="flex items-center gap-2">
            {role === 'admin' && (
-             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 uppercase">Admin</span>
+             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 uppercase">Admin</span>
            )}
           <motion.button
             whileTap={{ scale: 0.9 }}
@@ -112,8 +164,7 @@ export default function Sidebar({ role }: { role: 'driver' | 'leader' | 'admin' 
               localStorage.clear();
               router.push(role === 'driver' ? '/login' : '/leader/login');
             }}
-            className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-md)] transition-colors"
-            style={{ color: 'var(--danger)' }}
+            className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-md)] transition-colors hover:bg-red-500/5 text-red-500/60 hover:text-red-500"
             title="ออกจากระบบ"
           >
             <LogOut className="w-[18px] h-[18px]" />

@@ -46,17 +46,7 @@ export async function GET(request: NextRequest) {
       userFilter.branch = targetBranch;
     }
 
-    if (type === 'pending_leaves') {
-      const count = await LeaveRequest.countDocuments(leaveFilter);
-      return NextResponse.json({ success: true, count });
-    }
-
-    if (type === 'pending_drivers') {
-      const count = await User.countDocuments(userFilter);
-      return NextResponse.json({ success: true, count });
-    }
-
-    if (type === 'all') {
+    if (!type || type === 'all') {
       const [pendingLeaves, pendingDrivers] = await Promise.all([
         LeaveRequest.countDocuments(leaveFilter),
         User.countDocuments(userFilter),
@@ -68,6 +58,16 @@ export async function GET(request: NextRequest) {
           pendingDrivers,
         }
       });
+    }
+
+    if (type === 'pending_leaves') {
+      const count = await LeaveRequest.countDocuments(leaveFilter);
+      return NextResponse.json({ success: true, count });
+    }
+
+    if (type === 'pending_drivers') {
+      const count = await User.countDocuments(userFilter);
+      return NextResponse.json({ success: true, count });
     }
 
     return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });

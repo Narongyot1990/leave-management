@@ -82,6 +82,7 @@ export default function DriverProfile({ user, isMe = true, onEditClick }: Driver
   const [mounted, setMounted] = useState(false);
   const [taskScores, setTaskScores] = useState<TaskScores | null>(null);
   const [loadingScores, setLoadingScores] = useState(false);
+  const [activeTab, setActiveTab] = useState<'performance' | 'attendance'>('performance');
 
   useEffect(() => {
     setMounted(true);
@@ -206,111 +207,148 @@ export default function DriverProfile({ user, isMe = true, onEditClick }: Driver
           />
         </div>
 
-        {/* Bento Grid - densified */}
-        <div className="grid grid-cols-2 gap-2.5">
-          
-          {/* Real Quiz Scores */}
-          <BentoCard className="p-4 flex flex-col justify-between" delay={0.1}>
-            <div className="flex items-center justify-between mb-2">
-              <Zap className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">Testing</span>
-            </div>
-            {loadingScores ? (
-              <div className="py-2"><div className="w-4 h-4 border-2 border-[var(--border)] border-t-emerald-500 rounded-full animate-spin" /></div>
-            ) : (
-              <div>
-                <div className="text-2xl font-black tracking-tighter mb-0.5 text-emerald-500">
-                  {taskScores?.overallPercentage || 0}<span className="text-sm opacity-50 ml-0.5">%</span>
+        {/* Tabs Selection */}
+        <div className="flex p-1 bg-[var(--bg-inset)] rounded-2xl border border-[var(--border)] mb-6">
+          {[
+            { id: 'performance', label: 'ผลการทำงาน', icon: Zap },
+            { id: 'attendance', label: 'ข้อมูลการลา', icon: Calendar }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                activeTab === tab.id 
+                  ? 'bg-[var(--bg-surface)] text-[var(--accent)] shadow-sm border border-[var(--border)]' 
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <tab.icon className={`w-3.5 h-3.5 ${activeTab === tab.id ? 'text-[var(--accent)]' : 'opacity-50'}`} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="grid grid-cols-2 gap-3">
+          {activeTab === 'performance' ? (
+            <>
+              {/* Performance Section */}
+              <BentoCard className="p-5 flex flex-col justify-between" delay={0.1}>
+                <div className="flex items-center justify-between mb-4">
+                  <Star className="w-4 h-4 text-emerald-500" />
+                  <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Knowledge</span>
                 </div>
-                <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase truncate">{taskScores?.knowledgeLevelTh || 'ประเมิน...'}</p>
-              </div>
-            )}
-            <div className="text-[8px] text-[var(--text-muted)] font-bold border-t border-[var(--border)] pt-2 mt-3 flex items-center justify-between">
-              <span>Quiz Impact</span>
-              <TrendingUp className="w-2.5 h-2.5" />
-            </div>
-          </BentoCard>
-
-          {/* Ranking Card */}
-          <BentoCard className="p-4 flex flex-col justify-between" delay={0.2}>
-            <div className="flex items-center justify-between mb-2">
-              <Shield className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-              <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">Ranking</span>
-            </div>
-            <div>
-              <div className="text-2xl font-black tracking-tighter mb-0.5">
-                Lvl <span className="text-[var(--text-muted)]">{user.performanceLevel || 1}</span>
-              </div>
-              <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase">System Rank</p>
-            </div>
-            <div className="text-[8px] text-[var(--text-muted)] font-bold border-t border-[var(--border)] pt-2 mt-3">
-              {user.performancePoints || 0} pts
-            </div>
-          </BentoCard>
-
-          {/* Leave Balance - Dense Wide */}
-          <BentoCard className="col-span-2 p-4" delay={0.3}>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Leave Balance</h4>
-              <Calendar className="w-3.5 h-3.5 text-[var(--text-muted)]/50" />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: 'Vacation', val: user.vacationDays, icon: Umbrella, color: 'text-sky-500' },
-                { label: 'Sick', val: user.sickDays, icon: Thermometer, color: 'text-rose-500' },
-                { label: 'Personal', val: user.personalDays, icon: Briefcase, color: 'text-indigo-500' }
-              ].map((q) => (
-                <div key={q.label} className="text-center py-2.5 rounded-xl bg-[var(--bg-inset)] border border-[var(--border)]">
-                  <q.icon className={`w-3.5 h-3.5 mx-auto mb-1 ${q.color} opacity-80`} />
-                  <div className="text-base font-black leading-none">{q.val || 0}</div>
-                  <div className="text-[8px] font-bold text-[var(--text-muted)] uppercase mt-1">{q.label}</div>
+                {loadingScores ? (
+                  <div className="py-4"><div className="w-5 h-5 border-2 border-[var(--border)] border-t-emerald-500 rounded-full animate-spin" /></div>
+                ) : (
+                  <div>
+                    <div className="text-3xl font-black tracking-tighter mb-1 text-emerald-500">
+                      {taskScores?.overallPercentage || 0}<span className="text-sm opacity-50 ml-1">%</span>
+                    </div>
+                    <p className="text-[11px] font-bold text-[var(--text-secondary)] uppercase">{taskScores?.knowledgeLevelTh || 'กำลังประเมิน...'}</p>
+                  </div>
+                )}
+                <div className="text-[8px] text-[var(--text-muted)] font-bold border-t border-[var(--border)] pt-3 mt-4 flex items-center justify-between">
+                  <span>Quiz Accuracy</span>
+                  <TrendingUp className="w-3 h-3" />
                 </div>
-              ))}
-            </div>
-          </BentoCard>
+              </BentoCard>
 
-          {/* Tasks Completed */}
-          <BentoCard className="col-span-2 p-4 flex items-center gap-4" delay={0.4}>
-            <div className="w-10 h-10 rounded-xl bg-[var(--bg-inset)] flex items-center justify-center shrink-0 border border-[var(--border)]">
-              <CheckCircle2 className="w-5 h-5 text-emerald-500/60" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-[0.2em] mb-0.5">Modules Completed</p>
-              <h4 className="text-lg font-black truncate leading-tight">{taskScores?.completedTasks || 0} <span className="text-xs font-bold text-[var(--text-muted)] uppercase ml-1">Tasks</span></h4>
-            </div>
-            <div className="flex flex-col items-end opacity-60">
-              <div className="text-[9px] font-black text-emerald-500 leading-tight">+12%</div>
-              <div className="text-[7px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">Month</div>
-            </div>
-          </BentoCard>
+              <BentoCard className="p-5 flex flex-col justify-between" delay={0.2}>
+                <div className="flex items-center justify-between mb-4">
+                  <Shield className="w-4 h-4 text-violet-500" />
+                  <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Leveling</span>
+                </div>
+                <div>
+                  <div className="text-3xl font-black tracking-tighter mb-1">
+                    Lvl <span className="text-violet-500">{user.performanceLevel || 1}</span>
+                  </div>
+                  <p className="text-[11px] font-bold text-[var(--text-secondary)] uppercase">Driver Rank</p>
+                </div>
+                <div className="text-[8px] text-[var(--text-muted)] font-bold border-t border-[var(--border)] pt-3 mt-4">
+                  {user.performancePoints || 0} Points gained
+                </div>
+              </BentoCard>
 
-          {/* Densified Contact Info - Click to call enabled */}
-          <BentoCard className="col-span-2 p-4" delay={0.5}>
-            <div className="grid grid-cols-2 gap-4">
+              <BentoCard className="col-span-2 p-5 flex items-center gap-5" delay={0.3}>
+                <div className="w-12 h-12 rounded-xl bg-violet-500/5 flex items-center justify-center shrink-0 border border-violet-500/10">
+                  <CheckCircle2 className="w-6 h-6 text-violet-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] mb-1">Testing Progress</p>
+                  <h4 className="text-xl font-black truncate leading-tight">
+                    {taskScores?.completedTasks || 0} <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase ml-1">Modules Passed</span>
+                  </h4>
+                </div>
+                <div className="flex flex-col items-end">
+                  <div className="text-[10px] font-black text-emerald-500 leading-tight">Top 15%</div>
+                  <div className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">Performance</div>
+                </div>
+              </BentoCard>
+            </>
+          ) : (
+            <>
+              {/* Attendance Section */}
+              <BentoCard className="col-span-2 p-5" delay={0.1}>
+                <div className="flex items-center justify-between mb-5">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)]">Remaining Quota</h4>
+                  <Calendar className="w-4 h-4 text-[var(--accent)]" />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'พักร้อน', val: user.vacationDays, icon: Umbrella, color: 'text-sky-500', bg: 'bg-sky-500/5' },
+                    { label: 'ป่วย', val: user.sickDays, icon: Thermometer, color: 'text-rose-500', bg: 'bg-rose-500/5' },
+                    { label: 'กิจ', val: user.personalDays, icon: Briefcase, color: 'text-indigo-500', bg: 'bg-indigo-500/5' }
+                  ].map((q) => (
+                    <div key={q.label} className={`text-center py-4 rounded-2xl border border-[var(--border)] ${q.bg}`}>
+                      <q.icon className={`w-4 h-4 mx-auto mb-2 ${q.color}`} />
+                      <div className="text-xl font-black leading-none mb-1">{q.val || 0}</div>
+                      <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase">{q.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </BentoCard>
+
+              <BentoCard className="col-span-2 p-5 flex items-center gap-5" delay={0.2}>
+                <div className="w-12 h-12 rounded-xl bg-[var(--accent-light)] flex items-center justify-center shrink-0 border border-[var(--border)]">
+                  <CheckCircle2 className="w-6 h-6 text-[var(--accent)]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] mb-1">Activity Review</p>
+                  <h4 className="text-xl font-black truncate leading-tight">
+                    {user.approvedCount || 0} <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase ml-1">Leaves Approved</span>
+                  </h4>
+                </div>
+              </BentoCard>
+            </>
+          )}
+
+          {/* Shared Contact Section - Always visible or moved to bottom of tabs */}
+          <BentoCard className="col-span-2 p-5 mt-2" delay={0.5}>
+            <div className="grid grid-cols-2 gap-6">
               <a 
                 href={user.phone ? `tel:${user.phone}` : "#"} 
-                className="flex items-center gap-2.5 group active:scale-95 transition-transform"
+                className="flex items-center gap-3.5 group active:scale-95 transition-transform"
               >
-                <div className="w-8 h-8 rounded-lg bg-[var(--bg-inset)] group-hover:bg-[var(--bg-hover)] flex items-center justify-center shrink-0 border border-[var(--border)] transition-colors">
-                  <Phone className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-emerald-500 transition-colors" />
+                <div className="w-10 h-10 rounded-xl bg-[var(--bg-inset)] group-hover:bg-emerald-500/10 flex items-center justify-center shrink-0 border border-[var(--border)] transition-colors">
+                  <Phone className="w-4 h-4 text-[var(--text-muted)] group-hover:text-emerald-500 transition-colors" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest leading-none mb-1">Phone</p>
-                  <p className="text-[11px] font-black truncate group-hover:text-emerald-500 transition-colors">{user.phone || '---'}</p>
+                  <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 leading-none">Callback</p>
+                  <p className="text-[12px] font-black truncate group-hover:text-emerald-500 transition-colors">{user.phone || '---'}</p>
                 </div>
               </a>
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/5 flex items-center justify-center shrink-0 border border-emerald-500/10">
-                  <MessageSquare className="w-3.5 h-3.5 text-emerald-500/60" />
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/5 flex items-center justify-center shrink-0 border border-emerald-500/10">
+                  <MessageSquare className="w-4 h-4 text-emerald-500/60" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[8px] font-bold text-emerald-500/40 uppercase tracking-widest leading-none mb-1">LINE</p>
-                  <p className="text-[11px] font-black truncate text-emerald-500/80">@{user.lineDisplayName || '---'}</p>
+                  <p className="text-[9px] font-black text-emerald-500/40 uppercase tracking-widest mb-1 leading-none">LINE ID</p>
+                  <p className="text-[12px] font-black truncate text-emerald-500/80">@{user.lineDisplayName || '---'}</p>
                 </div>
               </div>
             </div>
           </BentoCard>
-
         </div>
 
         {/* Minimalist Footer */}
