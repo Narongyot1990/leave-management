@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Search, Phone, PhoneCall, User, X } from 'lucide-react';
+import { Search, Phone, PhoneCall, User, X, MessageCircle } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -15,6 +15,7 @@ import { usePusher } from '@/hooks/usePusher';
 
 interface Contact {
   _id: string;
+  lineUserId: string;
   lineDisplayName: string;
   lineProfileImage?: string;
   performanceTier?: string;
@@ -213,17 +214,31 @@ export default function ContactsPage() {
                       </div>
                     </div>
 
-                    {/* Call button */}
-                    {contact.phone && (
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* LINE button */}
                       <a
-                        href={`tel:${contact.phone}`}
+                        href={`line://ti/p/~${contact.lineUserId}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors"
-                        style={{ background: 'var(--success)', color: '#fff' }}
+                        className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                        style={{ background: '#00C300', color: '#fff' }}
+                        title="เพิ่มเพื่อนใน LINE"
                       >
-                        <PhoneCall className="w-4 h-4" />
+                        <MessageCircle className="w-4 h-4" />
                       </a>
-                    )}
+                      {/* Call button */}
+                      {contact.phone && (
+                        <a
+                          href={`tel:${contact.phone}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                          style={{ background: 'var(--success)', color: '#fff' }}
+                          title="โทร"
+                        >
+                          <PhoneCall className="w-4 h-4" />
+                        </a>
+                      )}
+                    </div>
                   </motion.div>
                 );
               })}

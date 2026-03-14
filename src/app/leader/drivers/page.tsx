@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Users, CheckCircle2, AlertCircle, X, Trash2, Shield } from 'lucide-react';
+import { Users, Search, Edit3, Trash2, X, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Plus, Phone, PhoneCall, MessageCircle, Shield } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -19,7 +19,7 @@ interface Driver {
   lineUserId: string;
   lineDisplayName: string;
   lineProfileImage?: string;
-  performanceTier?: PerformanceTier;
+  performanceTier?: string;
   performancePoints?: number;
   performanceLevel?: number;
   name?: string;
@@ -28,12 +28,12 @@ interface Driver {
   employeeId?: string;
   branch?: string;
   status: 'pending' | 'active';
-  vacationDays: number;
-  sickDays: number;
-  personalDays: number;
-  isOnline?: boolean;
+  vacationDays?: number;
+  sickDays?: number;
+  personalDays?: number;
   lastSeen?: string;
-  createdAt: string;
+  isOnline?: boolean;
+  createdAt?: string;
 }
 
 function DriverManagementContent() {
@@ -305,15 +305,37 @@ function DriverManagementContent() {
                         {isUserOnline(driver.lastSeen) ? 'ออนไลน์' : formatRelativeTime(driver.lastSeen)}
                       </span>
                     </div>
-                    {driver.phone && (
-                      <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                        {driver.phone}
-                      </p>
-                    )}
                   </div>
-                  <span className={`badge ${driver.status === 'active' ? 'badge-success' : 'badge-warning'}`}>
-                    {driver.status === 'active' ? 'พร้อมใช้' : 'รอยืนยัน'}
-                  </span>
+                  <div className="flex flex-col gap-2 items-end">
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-2">
+                      {/* LINE button */}
+                      <a
+                        href={`line://ti/p/~${driver.lineUserId}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                        style={{ background: '#00C300', color: '#fff' }}
+                        title="เพิ่มเพื่อนใน LINE"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                      </a>
+                      {/* Call button */}
+                      {driver.phone && (
+                        <a
+                          href={`tel:${driver.phone}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                          style={{ background: 'var(--success)', color: '#fff' }}
+                          title="โทร"
+                        >
+                          <PhoneCall className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                    <span className={`badge ${driver.status === 'active' ? 'badge-success' : 'badge-warning'}`}>
+                      {driver.status === 'active' ? 'พร้อมใช้' : 'รอยืนยัน'}
+                    </span>
+                  </div>
                 </motion.div>
               ))}
             </div>
