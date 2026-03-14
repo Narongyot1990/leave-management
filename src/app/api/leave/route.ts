@@ -27,7 +27,10 @@ export async function GET(request: NextRequest) {
     if (role === 'driver') {
       // Driver: Sees their own leaves + others in their branch
       if (userBranch) {
-        const branchUsers = await User.find({ branch: userBranch }).select('_id');
+        // Find users in same branch (case-insensitive)
+        const branchUsers = await User.find({ 
+          branch: { $regex: new RegExp(`^${userBranch}$`, 'i') } 
+        }).select('_id');
         const branchUserIds = branchUsers.map(u => u._id);
         query.userId = { $in: [...branchUserIds, authUserId] };
       } else {
