@@ -35,15 +35,11 @@ export async function GET(request: NextRequest) {
         query._id = userId;
       }
     } else if (role === 'leader') {
-      // Leader: sees their branch + pending/unassigned drivers
+      // Leader: sees ONLY their branch (no pending/unassigned - those are for driver management)
       if (userBranch) {
-        query.$or = [
-          { branch: userBranch },
-          { branch: { $exists: false } },
-          { branch: null }
-        ];
+        query.branch = userBranch;
       }
-      // Always filter active for leader view
+      // Always filter active for leader contacts view
       query.status = 'active';
     } else if (role === 'admin') {
       // Admin: sees all unless branch specified

@@ -40,12 +40,22 @@ export default function ContactsPage() {
   const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('driverUser');
-    if (!storedUser) {
-      router.push('/login');
-      return;
-    }
-    setUser(JSON.parse(storedUser));
+    // Fetch user data from API to get accurate role and branch
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data.success) {
+          setUser(data.user);
+        } else {
+          router.push('/login');
+        }
+      } catch {
+        router.push('/login');
+      }
+    };
+
+    fetchUser();
   }, [router]);
 
   useOnlineStatus(!!user);
