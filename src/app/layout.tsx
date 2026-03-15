@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
+import GlobalBackground from "@/components/GlobalBackground";
 import { ToastProvider } from "@/components/Toast";
 
 const geistSans = Geist({
@@ -45,6 +46,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
+          <GlobalBackground />
           <ToastProvider>
             <div className="min-h-screen">
               {children}

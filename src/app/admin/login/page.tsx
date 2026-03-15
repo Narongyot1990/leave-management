@@ -5,8 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
-import ParticleEmitter from '@/components/ParticleEmitter';
-import SnowEmitter from '@/components/SnowEmitter';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -66,13 +64,6 @@ export default function AdminLoginPage() {
       <div className="absolute top-4 right-4 z-50">
         <ThemeToggle />
       </div>
-
-      {/* Effects Layer */}
-      {isDark ? (
-        <ParticleEmitter count={50} speed={0.15} maxSize={2} lineDistance={120} colors={['rgba(99,102,241,0.2)']} />
-      ) : (
-        <SnowEmitter count={80} />
-      )}
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
