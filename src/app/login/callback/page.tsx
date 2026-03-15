@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -51,7 +51,10 @@ function LineCallbackContent() {
 
         if (data.success) {
           const role = data.user?.role;
-          if (role === 'leader' || role === 'admin') {
+          if (role === 'admin') {
+            localStorage.setItem('leaderUser', JSON.stringify(data.user));
+            router.push('/admin/home');
+          } else if (role === 'leader') {
             localStorage.setItem('leaderUser', JSON.stringify(data.user));
             router.push('/leader/home');
           } else {

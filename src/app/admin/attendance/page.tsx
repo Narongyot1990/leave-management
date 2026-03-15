@@ -187,44 +187,75 @@ export default function AttendanceMonitorPage() {
                </div>
             </div>
 
-            {/* Active Workers */}
-            {activeUsers.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="card p-4 overflow-hidden"
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_var(--emerald)]" />
-                  <h3 className="text-sm font-black uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                    กำลังปฏิบัติงาน ({activeUsers.length})
-                  </h3>
+            {/* Active Workers - The Monitoring Board */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="card p-6 overflow-hidden relative border-t-4 border-t-emerald-500 shadow-2xl shadow-emerald-500/5"
+            >
+              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/[0.03] rounded-full -mr-32 -mt-32" />
+              
+              <div className="flex items-center gap-3 mb-6 relative">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+                   <Activity className="w-6 h-6 text-emerald-500 animate-pulse" />
                 </div>
-                <div className="flex flex-wrap gap-3">
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                    Real-time Monitoring Board
+                  </h3>
+                  <p className="text-[10px] font-bold text-muted uppercase tracking-widest">
+                    สถานะการปฏิบัติงานปัจจุบัน ({activeUsers.length} คน)
+                  </p>
+                </div>
+              </div>
+
+              {activeUsers.length === 0 ? (
+                <div className="py-12 text-center bg-inset rounded-[32px] border border-dashed border-border lg:mx-20">
+                   <Users className="w-10 h-10 mx-auto mb-4 opacity-20" />
+                   <p className="text-xs font-bold text-muted uppercase tracking-tighter italic">ไม่พบพนักงานที่กำลังปฏิบัติงานในขณะนี้</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 relative">
                   {activeUsers.map(user => (
                     <motion.div 
                       key={user.userId}
-                      whileHover={{ y: -2 }}
-                      className="flex items-center gap-3 px-3.5 py-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 shadow-sm"
+                      whileHover={{ y: -4, scale: 1.02 }}
+                      className="group relative flex flex-col p-4 rounded-3xl border border-emerald-500/20 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.05] transition-all"
                     >
-                      <UserAvatar 
-                        imageUrl={user.userImage}
-                        displayName={user.userName}
-                        size="xs"
-                      />
-                      <div className="leading-tight">
-                        <p className="text-[11px] font-black" style={{ color: 'var(--text-primary)' }}>
-                          {user.userName}
-                        </p>
-                        <p className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">
-                          {user.branch} • {new Date(user.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
+                      <div className="flex items-center gap-4 mb-4">
+                         <div className="relative">
+                            <UserAvatar 
+                              imageUrl={user.userImage}
+                              displayName={user.userName}
+                              size="md"
+                            />
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[var(--bg-surface)] shadow-lg shadow-emerald-500/50" />
+                         </div>
+                         <div className="min-w-0 flex-1">
+                            <p className="text-sm font-black truncate" style={{ color: 'var(--text-primary)' }}>
+                              {user.userName}
+                            </p>
+                            <p className="text-[10px] font-black text-accent uppercase tracking-widest">
+                              {user.branch}
+                            </p>
+                         </div>
+                      </div>
+
+                      <div className="mt-auto pt-3 border-t border-emerald-500/10 flex items-center justify-between">
+                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted">
+                            <Clock className="w-3.5 h-3.5" />
+                            {new Date(user.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                         </div>
+                         <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                            <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Live Now</span>
+                         </div>
                       </div>
                     </motion.div>
                   ))}
                 </div>
-              </motion.div>
-            )}
+              )}
+            </motion.div>
 
             {/* Log */}
             <div className="space-y-3">

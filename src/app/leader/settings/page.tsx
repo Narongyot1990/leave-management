@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Settings, CheckCircle2, MapPin, Lock, Eye, EyeOff } from 'lucide-react';
+import { Settings, CheckCircle2, MapPin, Lock, Eye, EyeOff, Shield, Users } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -203,6 +203,33 @@ export default function LeaderSettingsPage() {
                  {role === 'admin' ? '• คุณมีสิทธิ์เข้าถึงทุกสาขาในฐานะผู้ดูแลระบบสูงสุด •' : '• ติดต่อผู้ดูแลระบบหากต้องการเปลี่ยนแปลงสาขา •'}
                </p>
             </motion.div>
+
+            {/* Admin Control Center */}
+            {role === 'admin' && (
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.15 }} className="card p-5 relative overflow-hidden group border-b-2 border-b-indigo-500">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-indigo-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-black uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>Admin Control Center</h2>
+                    <p className="text-[10px] font-bold text-muted uppercase tracking-widest">การจัดการระดับผู้ดูแลระบบ</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                   <button onClick={() => router.push('/admin/branches')} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-inset hover:bg-accent/5 hover:ring-1 hover:ring-accent transition-all group/btn">
+                      <MapPin className="w-5 h-5 text-accent group-hover/btn:scale-110 transition-transform" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted">Manage Branches</span>
+                   </button>
+                   <button onClick={() => router.push('/leader/drivers')} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-inset hover:bg-emerald-500/5 hover:ring-1 hover:ring-emerald-500 transition-all group/btn">
+                      <Users className="w-5 h-5 text-emerald-500 group-hover/btn:scale-110 transition-transform" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted">Manage Drivers</span>
+                   </button>
+                </div>
+              </motion.div>
+            )}
 
             {/* Security Section */}
             {!isRootAdmin && (
