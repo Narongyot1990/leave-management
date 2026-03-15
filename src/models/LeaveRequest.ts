@@ -10,7 +10,7 @@ export interface ILeaveRequest extends Document {
   endDate: Date;
   reason: string;
   status: LeaveStatus;
-  approvedBy?: mongoose.Types.ObjectId;
+  approvedBy?: any; // Allow string or ObjectId
   approvedAt?: Date;
   rejectedReason?: string;
   createdAt: Date;
@@ -33,7 +33,7 @@ const LeaveRequestSchema = new Schema<ILeaveRequest>(
       enum: ['pending', 'approved', 'rejected', 'cancelled'],
       default: 'pending',
     },
-    approvedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    approvedBy: { type: String, ref: 'User' },
     approvedAt: { type: Date },
     rejectedReason: { type: String },
   },

@@ -64,9 +64,39 @@ export async function GET(request: NextRequest) {
       .skip(skip)
       .limit(limit);
 
+    // Manual population for admin_root
+    const adminRootProfile = {
+      _id: 'admin_root',
+      name: 'ITL',
+      surname: 'Administrator',
+      lineDisplayName: 'ITL Administrator',
+      role: 'admin',
+      status: 'active',
+    };
+
+    const populatedActivities = activities.map(act => {
+      const obj = act.toObject();
+      if (obj.userId === 'admin_root') obj.userId = adminRootProfile;
+      
+      if (obj.likes && obj.likes.length > 0) {
+        obj.likes = obj.likes.map((l: any) => l === 'admin_root' ? adminRootProfile : l);
+      }
+      
+      if (obj.comments && obj.comments.length > 0) {
+        obj.comments = obj.comments.map((c: any) => {
+          if (c.userId === 'admin_root') c.userId = adminRootProfile;
+          return c;
+        });
+      }
+      
+      if (obj.markedBy === 'admin_root') obj.markedBy = adminRootProfile;
+      
+      return obj;
+    });
+
     const hasMore = skip + activities.length < total;
 
-    return NextResponse.json({ success: true, activities, hasMore, total });
+    return NextResponse.json({ success: true, activities: populatedActivities, hasMore, total });
   } catch (error) {
     console.error('Get CarWash Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

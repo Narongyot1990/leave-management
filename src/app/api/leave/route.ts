@@ -78,9 +78,25 @@ export async function GET(request: NextRequest) {
       .populate('approvedBy', 'name surname lineDisplayName lineProfileImage performanceTier branch role')
       .sort({ createdAt: -1 });
 
+    // Manual population for admin_root
+    const adminRootProfile = {
+      _id: 'admin_root',
+      name: 'ITL',
+      surname: 'Administrator',
+      lineDisplayName: 'ITL Administrator',
+      role: 'admin',
+      status: 'active',
+    };
+
+    const populatedRequests = requests.map(req => {
+      const obj = req.toObject();
+      if (obj.approvedBy === 'admin_root') obj.approvedBy = adminRootProfile;
+      return obj;
+    });
+
     const response = NextResponse.json({
       success: true,
-      requests,
+      requests: populatedRequests,
     });
 
     // Prevent caching for real-time leave data

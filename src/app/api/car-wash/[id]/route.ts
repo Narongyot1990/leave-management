@@ -30,7 +30,30 @@ export async function GET(
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, activity });
+    // Manual population for admin_root
+    const adminRootProfile = {
+      _id: 'admin_root',
+      name: 'ITL',
+      surname: 'Administrator',
+      lineDisplayName: 'ITL Administrator',
+      role: 'admin',
+      status: 'active',
+    };
+
+    const obj = activity.toObject();
+    if (obj.userId === 'admin_root') obj.userId = adminRootProfile;
+    if (obj.likes && obj.likes.length > 0) {
+      obj.likes = obj.likes.map((l: any) => l === 'admin_root' ? adminRootProfile : l);
+    }
+    if (obj.comments && obj.comments.length > 0) {
+      obj.comments = obj.comments.map((c: any) => {
+        if (c.userId === 'admin_root') c.userId = adminRootProfile;
+        return c;
+      });
+    }
+    if (obj.markedBy === 'admin_root') obj.markedBy = adminRootProfile;
+
+    return NextResponse.json({ success: true, activity: obj });
   } catch (error) {
     console.error('Get Activity Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -94,11 +117,18 @@ export async function PATCH(
         return NextResponse.json({ error: 'visitorId and text are required' }, { status: 400 });
       }
 
-      activity.comments.push({
-        userId: new mongoose.Types.ObjectId(visitorId),
+      const commentData: any = {
         text,
         createdAt: new Date(),
-      } as IComment);
+      };
+
+      if (visitorId === 'admin_root') {
+        commentData.userId = 'admin_root';
+      } else {
+        commentData.userId = new mongoose.Types.ObjectId(visitorId);
+      }
+
+      activity.comments.push(commentData as IComment);
 
       await activity.save();
       await activity.populate('userId', 'lineDisplayName lineProfileImage name surname performanceTier');

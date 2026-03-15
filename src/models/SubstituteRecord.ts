@@ -11,18 +11,18 @@ export type RecordType =
   | 'damage';
 
 export interface ISubstituteRecord extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId: any; // Allow string or ObjectId
   recordType: RecordType;
   description?: string;
   date: Date;
-  createdBy: mongoose.Types.ObjectId;
+  createdBy: any; // Allow string or ObjectId
   createdAt: Date;
   updatedAt: Date;
 }
 
 const SubstituteRecordSchema = new Schema<ISubstituteRecord>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: String, ref: 'User', required: true },
     recordType: {
       type: String,
       enum: ['vacation', 'sick', 'personal', 'unpaid', 'absent', 'late', 'accident', 'damage'],
@@ -30,7 +30,7 @@ const SubstituteRecordSchema = new Schema<ISubstituteRecord>(
     },
     description: { type: String },
     date: { type: Date, required: true },
-    createdBy: { type: Schema.Types.ObjectId, ref: 'Leader', required: true },
+    createdBy: { type: String, ref: 'User', required: true },
   },
   { timestamps: true }
 );

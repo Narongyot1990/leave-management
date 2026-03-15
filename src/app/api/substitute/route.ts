@@ -29,9 +29,22 @@ export async function GET(request: NextRequest) {
       .populate('createdBy', 'name')
       .sort({ date: -1 });
 
+    // Manual population for admin_root
+    const adminRootProfile = {
+      _id: 'admin_root',
+      name: 'ITL Administrator',
+      role: 'admin',
+    };
+
+    const populatedRecords = records.map(rec => {
+      const obj = rec.toObject();
+      if (obj.createdBy === 'admin_root') obj.createdBy = adminRootProfile;
+      return obj;
+    });
+
     return NextResponse.json({
       success: true,
-      records,
+      records: populatedRecords,
     });
   } catch (error) {
     console.error('Get Substitute Records Error:', error);
