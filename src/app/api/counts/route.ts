@@ -48,23 +48,6 @@ export async function GET(request: NextRequest) {
             }
           ]
         };
-      } else if (role === 'leader') {
-        // If leader has no branch, we should probably still show branchless pending drivers
-        userFilter = {
-          $and: [
-            { status: { $ne: 'active' } },
-            {
-              $or: [
-                { branch: { $exists: false } },
-                { branch: '' },
-                { branch: null }
-              ]
-            }
-          ]
-        };
-        // Leaves might need to be hidden or restricted if no branch is set
-        // But for debugging, let's keep leaveFilter as status: 'pending' if no branch is set for leader
-        leaveFilter = { status: 'pending' };
       }
     }
 
