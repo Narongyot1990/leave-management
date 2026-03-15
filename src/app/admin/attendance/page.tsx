@@ -191,27 +191,45 @@ export default function AttendanceMonitorPage() {
   }, [filteredTimelineData]);
 
   // ---------- Position Calculations ----------
-  // For day/hour view: total columns = daysInMonth * 24
   const getBarPosition = useCallback((start: Date, end: Date | null, vd: Date, zoom: ZoomLevel) => {
     const now = new Date();
     const daysInMonth = new Date(vd.getFullYear(), vd.getMonth() + 1, 0).getDate();
+    
     if (zoom === 'month') {
       const startD = start.getDate() - 1 + start.getHours() / 24;
       const effectiveEnd = end || (now.getMonth() === vd.getMonth() ? now : new Date(vd.getFullYear(), vd.getMonth(), daysInMonth, 23, 59));
       const endD = effectiveEnd.getDate() - 1 + effectiveEnd.getHours() / 24;
       return { left: Math.max(0, (startD / daysInMonth) * 100), width: Math.max(0.3, ((endD - startD) / daysInMonth) * 100) };
-    } else {
-      // Full month: position = (day-1)*24 + hour as fraction of totalHours
-      const totalHours = daysInMonth * 24;
-      const startH = (start.getDate() - 1) * 24 + start.getHours() + start.getMinutes() / 60;
+    } else if (zoom === 'day') {
+      // Day view: show only selected day, split into AM/PM periods
+      if (start.getDate() !== vd.getDate()) return { left: 0, width: 0 }; // Not showing this day
+      
+      const startHour = start.getHours() + start.getMinutes() / 60;
       const effectiveEnd = end || now;
-      const endH = (effectiveEnd.getDate() - 1) * 24 + effectiveEnd.getHours() + effectiveEnd.getMinutes() / 60;
-      return { left: Math.max(0, (startH / totalHours) * 100), width: Math.max(0.15, ((endH - startH) / totalHours) * 100) };
+      const endHour = effectiveEnd.getHours() + effectiveEnd.getMinutes() / 60;
+      
+      // Convert to 2-period system: AM (0-12), PM (12-24)
+      const left = startHour < 12 ? 0 : 50; // AM takes 50%, PM takes 50%
+      const width = endHour < 12 
+        ? Math.max(1, ((endHour - startHour) / 12) * 50) // AM period
+        : startHour < 12 
+          ? Math.max(1, ((12 - startHour) / 12) * 50 + ((endHour - 12) / 12) * 50) // Crosses noon
+          : Math.max(1, ((endHour - startHour) / 12) * 50); // PM period
+          
+      return { left, width };
+    } else {
+      // Hour view: show 24 hours of selected day
+      if (start.getDate() !== vd.getDate()) return { left: 0, width: 0 }; // Not showing this day
+      
+      const startHour = start.getHours() + start.getMinutes() / 60;
+      const effectiveEnd = end || now;
+      const endHour = effectiveEnd.getHours() + effectiveEnd.getMinutes() / 60;
+      
+      return { left: Math.max(0, (startHour / 24) * 100), width: Math.max(0.5, ((endHour - startHour) / 24) * 100) };
     }
   }, []);
 
   // ---------- Column Headers ----------
-  // Day/Hour view: show ALL days of the month, each day has 24h columns
   const columnHeaders = useMemo(() => {
     if (zoomLevel === 'month') {
       const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
@@ -221,22 +239,46 @@ export default function AttendanceMonitorPage() {
         const isToday = d.toDateString() === new Date().toDateString();
         return { label: String(i + 1), isWeekend, isToday, key: `d${i}`, type: 'day' as const };
       });
+    } else if (zoomLevel === 'day') {
+      // Day view: 2 periods - AM (00:00-12:00) and PM (12:00-24:00)
+      const periods = [
+        { label: 'AM', start: 0, end: 12 },
+        { label: 'PM', start: 12, end: 24 }
+      ];
+      return periods.map((period, i) => {
+        const isToday = viewDate.toDateString() === new Date().toDateString();
+        const now = new Date();
+        const isNowPeriod = isToday && (now.getHours() >= period.start && now.getHours() < period.end);
+        return { 
+          label: period.label, 
+          isWeekend: false, 
+          isToday, 
+          isNowHour: isNowPeriod,
+          isWorkHour: period.start < 17 && period.end > 8, // Overlaps with work hours
+          key: `period${i}`, 
+          type: 'period' as const,
+          startHour: period.start,
+          endHour: period.end
+        };
+      });
     } else {
-      // Day/Hour view: full month — for each day, show 24 hour sub-columns
-      const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
-      const headers: { label: string; isWeekend: boolean; isToday: boolean; isNowHour: boolean; isWorkHour: boolean; key: string; type: 'hour'; day: number; hour: number }[] = [];
+      // Hour view: 24 hours
+      const headers: { label: string; isWeekend: boolean; isToday: boolean; isNowHour: boolean; isWorkHour: boolean; key: string; type: 'hour'; hour: number }[] = [];
+      const isToday = viewDate.toDateString() === new Date().toDateString();
       const now = new Date();
-      for (let d = 1; d <= daysInMonth; d++) {
-        const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), d);
-        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-        const isToday = date.toDateString() === now.toDateString();
-        // Only show label at midnight (h=0) and noon (h=12) to avoid clutter
-        for (let h = 0; h < 24; h++) {
-          const isNowHour = isToday && now.getHours() === h;
-          const isWorkHour = h >= TIMELINE_CONFIG.SCHEDULE.EXPECTED_START && h < TIMELINE_CONFIG.SCHEDULE.EXPECTED_END;
-          const label = h === 0 ? `${d}` : h === 12 ? '12' : '';
-          headers.push({ label, isWeekend, isToday, isNowHour, isWorkHour, key: `d${d}h${h}`, type: 'hour', day: d, hour: h });
-        }
+      for (let h = 1; h <= 24; h++) {
+        const isNowHour = isToday && now.getHours() === (h % 24);
+        const isWorkHour = (h % 24) >= TIMELINE_CONFIG.SCHEDULE.EXPECTED_START && (h % 24) < TIMELINE_CONFIG.SCHEDULE.EXPECTED_END;
+        headers.push({ 
+          label: String(h), 
+          isWeekend: false, 
+          isToday, 
+          isNowHour, 
+          isWorkHour, 
+          key: `h${h}`, 
+          type: 'hour', 
+          hour: h % 24 
+        });
       }
       return headers;
     }
@@ -245,20 +287,53 @@ export default function AttendanceMonitorPage() {
   // ---------- Date Display ----------
   const dateRangeLabel = useMemo(() => {
     if (zoomLevel === 'month') return viewDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
-    return viewDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+    if (zoomLevel === 'day') return viewDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
+    return viewDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
   }, [zoomLevel, viewDate]);
 
   const isZoomMin = zoomValue === TIMELINE_CONFIG.ZOOM.MIN;
   const isZoomMax = zoomValue === TIMELINE_CONFIG.ZOOM.MAX;
 
   // Column sizing
-  const colMinWidth = zoomLevel === 'month' ? 32 : zoomLevel === 'hour' ? 16 : 14;
+  const colMinWidth = zoomLevel === 'month' ? 32 : zoomLevel === 'day' ? 120 : 40;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role="admin" />
 
-      <div className="lg:pl-[240px] flex-1 flex flex-col min-h-0">
+      {/* Mobile Fixed Profile Bar */}
+      <div className="md:hidden fixed left-0 top-20 bottom-16 w-12 bg-[var(--bg-surface)] border-r border-[var(--border)] z-30 overflow-y-auto">
+        <div className="py-2 space-y-1">
+          {filteredTimelineData.map((user) => {
+            const isActive = user.sessions.some(s => !s.end);
+            const isSelected = selectedUser === user.id;
+            return (
+              <button
+                key={user.id}
+                onClick={() => setSelectedUser(isSelected ? null : user.id)}
+                className={`w-full flex items-center justify-center p-2 transition-colors relative
+                  ${isSelected ? 'bg-[var(--accent)]/10' : 'hover:bg-[var(--bg-inset)]/50'}`}
+                title={user.name}
+              >
+                <div className="relative">
+                  <div className={`w-8 h-8 rounded-lg overflow-hidden ${isActive ? 'ring-2 ring-emerald-500/40' : ''}`}>
+                    {user.image ? (
+                      <img src={user.image} className="w-full h-full object-cover" alt="" />
+                    ) : (
+                      <div className={`w-full h-full flex items-center justify-center text-[11px] font-black ${isActive ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                        {user.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  {isActive && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[var(--bg-surface)] animate-pulse" />}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="lg:pl-[240px] md:pl-0 pl-12 flex-1 flex flex-col min-h-0">
 
         {/* ========== HEADER ========== */}
         <header className="px-3 md:px-5 py-2.5 flex items-center justify-between border-b border-[var(--border)] bg-[var(--bg-surface)] sticky top-0 z-30 shrink-0">
@@ -382,7 +457,7 @@ export default function AttendanceMonitorPage() {
 
           <div className="flex items-center gap-2 text-[9px] font-bold opacity-40">
             <span className="hidden md:inline uppercase tracking-widest">
-              {zoomLevel === 'month' ? `${columnHeaders.length} Days` : '24 Hours'}
+              {zoomLevel === 'month' ? `${columnHeaders.length} Days` : zoomLevel === 'day' ? '2 Periods' : '24 Hours'}
             </span>
           </div>
         </div>
@@ -416,8 +491,8 @@ export default function AttendanceMonitorPage() {
 
           {/* Column Headers */}
           <div className="flex shrink-0 border-b border-[var(--border)] bg-[var(--bg-surface)]">
-            {/* Staff column header */}
-            <div className="w-[140px] md:w-[180px] shrink-0 border-r border-[var(--border)] bg-slate-50 dark:bg-slate-900/50 flex items-center px-3 py-2 sticky left-0 z-20">
+            {/* Staff column header - hidden on mobile */}
+            <div className="hidden md:block w-[140px] md:w-[180px] shrink-0 border-r border-[var(--border)] bg-slate-50 dark:bg-slate-900/50 flex items-center px-3 py-2 sticky left-0 z-20">
               <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Staff ({filteredTimelineData.length})</span>
             </div>
             {/* Timeline column headers */}
@@ -428,8 +503,7 @@ export default function AttendanceMonitorPage() {
                     className={`flex items-center justify-center py-2 border-r border-[var(--border)]/20 transition-colors
                       ${'isWeekend' in col && col.isWeekend ? 'bg-rose-50/50 dark:bg-rose-950/15' : ''}
                       ${'isToday' in col && col.isToday ? 'bg-[var(--accent)]/8' : ''}
-                      ${'isNowHour' in col && col.isNowHour ? 'bg-[var(--accent)]/10' : ''}
-                      ${'isWorkHour' in col && col.isWorkHour ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''}`}
+                      ${'isNowHour' in col && col.isNowHour ? 'bg-[var(--accent)]/10' : ''}`}
                     style={{ minWidth: colMinWidth, width: colMinWidth }}>
                     <span className={`text-[8px] md:text-[9px] font-black
                       ${'isWeekend' in col && col.isWeekend ? 'text-rose-500' : ''}
@@ -471,11 +545,11 @@ export default function AttendanceMonitorPage() {
                 return (
                   <div key={user.id}
                     className={`flex border-b border-[var(--border)]/20 group transition-colors min-h-[52px] cursor-pointer hover:bg-[var(--bg-inset)]/30
-                      ${noActivity ? 'bg-slate-50/10 dark:bg-slate-900/5' : ''} ${isSelected ? 'bg-[var(--accent)]/5' : ''}`}
+                      ${isSelected ? 'bg-[var(--accent)]/5' : ''}`}
                     onClick={() => setSelectedUser(isSelected ? null : user.id)}>
 
-                    {/* Staff Info (sticky left) */}
-                    <div className="w-[140px] md:w-[180px] shrink-0 px-2 py-1.5 border-r border-[var(--border)] bg-[var(--bg-surface)] sticky left-0 z-10 flex items-center gap-2 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]">
+                    {/* Staff Info (sticky left) - hidden on mobile */}
+                    <div className="hidden md:block w-[140px] md:w-[180px] shrink-0 px-2 py-1.5 border-r border-[var(--border)] bg-[var(--bg-surface)] sticky left-0 z-10 flex items-center gap-2 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]">
                       <div className="relative shrink-0">
                         <div className={`w-8 h-8 rounded-lg overflow-hidden ${isActive ? 'ring-2 ring-emerald-500/40' : ''}`}>
                           {user.image ? (
@@ -523,16 +597,17 @@ export default function AttendanceMonitorPage() {
                         {/* Assigned shift backgrounds from workSchedules */}
                         {(() => {
                           const userSched = workSchedules[user.id] || [];
-                          const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
-                          const totalHours = daysInMonth * 24;
                           return userSched.map((entry) => {
-                            const day = new Date(entry.date).getDate();
+                            const entryDate = new Date(entry.date);
+                            const day = entryDate.getDate();
+                            
                             if (zoomLevel === 'month') {
                               // month view: position by day
                               const startD = day - 1 + entry.startHour / 24;
                               const endD = entry.endHour < entry.startHour
                                 ? day + entry.endHour / 24  // overnight: next day
                                 : day - 1 + entry.endHour / 24;
+                              const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
                               return (
                                 <div key={entry.date} className="absolute top-0 bottom-0 pointer-events-none rounded-sm"
                                   style={{
@@ -542,16 +617,39 @@ export default function AttendanceMonitorPage() {
                                     borderLeft: `2px solid ${entry.color}60`,
                                   }} />
                               );
-                            } else {
-                              // day/hour view: full-month hour grid
-                              const startH = (day - 1) * 24 + entry.startHour + entry.startMinute / 60;
-                              const rawEndH = (day - 1) * 24 + entry.endHour + entry.endMinute / 60;
-                              const endH = entry.endHour < entry.startHour ? rawEndH + 24 : rawEndH;
+                            } else if (zoomLevel === 'day') {
+                              // day view: only show if this is the selected day
+                              if (day !== viewDate.getDate()) return null;
+                              
+                              // Convert to AM/PM periods
+                              const left = entry.startHour < 12 ? 0 : 50;
+                              const width = entry.endHour < 12 
+                                ? Math.max(1, ((entry.endHour - entry.startHour) / 12) * 50)
+                                : entry.startHour < 12 
+                                  ? Math.max(1, ((12 - entry.startHour) / 12) * 50 + ((entry.endHour - 12) / 12) * 50)
+                                  : Math.max(1, ((entry.endHour - entry.startHour) / 12) * 50);
+                                  
                               return (
                                 <div key={entry.date} className="absolute top-0 bottom-0 pointer-events-none"
                                   style={{
-                                    left: `${(startH / totalHours) * 100}%`,
-                                    width: `${Math.max(0.3, ((endH - startH) / totalHours) * 100)}%`,
+                                    left: `${left}%`,
+                                    width: `${width}%`,
+                                    background: entry.color + '20',
+                                    borderLeft: `2px solid ${entry.color}50`,
+                                  }} />
+                              );
+                            } else {
+                              // hour view: only show if this is the selected day
+                              if (day !== viewDate.getDate()) return null;
+                              
+                              const left = (entry.startHour / 24) * 100;
+                              const width = ((entry.endHour - entry.startHour) / 24) * 100;
+                              
+                              return (
+                                <div key={entry.date} className="absolute top-0 bottom-0 pointer-events-none"
+                                  style={{
+                                    left: `${left}%`,
+                                    width: `${Math.max(0.5, width)}%`,
                                     background: entry.color + '20',
                                     borderLeft: `2px solid ${entry.color}50`,
                                   }} />
@@ -560,25 +658,7 @@ export default function AttendanceMonitorPage() {
                           });
                         })()}
 
-                        {/* Default work window markers (only if no shift assigned for that day) */}
-                        {zoomLevel !== 'month' && (() => {
-                          const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
-                          const totalHours = daysInMonth * 24;
-                          const userSched = workSchedules[user.id] || [];
-                          return Array.from({ length: daysInMonth }, (_, i) => {
-                            const day = i + 1;
-                            const dateStr = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                            if (userSched.some(e => e.date === dateStr)) return null;
-                            return (
-                              <div key={`ew${i}`} className="absolute top-0 bottom-0 bg-emerald-500/[0.03] pointer-events-none"
-                                style={{
-                                  left: `${((i * 24 + TIMELINE_CONFIG.SCHEDULE.EXPECTED_START) / totalHours) * 100}%`,
-                                  width: `${((TIMELINE_CONFIG.SCHEDULE.EXPECTED_END - TIMELINE_CONFIG.SCHEDULE.EXPECTED_START) / totalHours) * 100}%`,
-                                }} />
-                            );
-                          });
-                        })()}
-
+                        
                         {/* Step-progress-bar sessions */}
                         {user.sessions.map((session, idx) => {
                           const { left, width } = getBarPosition(session.start, session.end, viewDate, zoomLevel);
