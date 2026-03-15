@@ -2,12 +2,14 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Users, ChevronLeft, ChevronRight, History as HistoryIcon, ZoomIn, ZoomOut, RotateCcw, AlertTriangle, CalendarDays, Link, Unlink } from 'lucide-react';
+import { Clock, Users, ChevronLeft, ChevronRight, History as HistoryIcon, ZoomIn, ZoomOut, RotateCcw, AlertTriangle, CalendarDays, Link, Unlink, LayoutGrid, Calendar } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import UserAvatar from '@/components/UserAvatar';
 import { usePusher } from '@/hooks/usePusher';
 import BottomNav from '@/components/BottomNav';
 import { TIMELINE_CONFIG, ZoomLevel } from '@/lib/timeline-config';
+import ShiftTemplateModal from '@/components/ShiftTemplateModal';
+import AssignShiftModal from '@/components/AssignShiftModal';
 
 interface AttendanceRecord {
   _id: string;
@@ -55,6 +57,9 @@ export default function AttendanceMonitorPage() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<'all' | 'driver' | 'leader'>('all');
   const [syncScroll, setSyncScroll] = useState(true);
+  const [showShiftModal, setShowShiftModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [workSchedules, setWorkSchedules] = useState<Record<string, { date: string; color: string; startHour: number; startMinute: number; endHour: number; endMinute: number }[]>>({});
 
   const timelineRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -99,6 +104,23 @@ export default function AttendanceMonitorPage() {
 
   usePusher(TIMELINE_CONFIG.PUSHER.USERS_CHANNEL, [{ event: TIMELINE_CONFIG.PUSHER.ATTENDANCE_EVENT, callback: fetchRecords }], true);
   usePusher(TIMELINE_CONFIG.PUSHER.USERS_CHANNEL, [{ event: TIMELINE_CONFIG.PUSHER.DRIVER_UPDATED_EVENT, callback: fetchUsers }], true);
+
+  const fetchWorkSchedules = useCallback(async () => {
+    try {
+      const month = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`;
+      const res = await fetch(`/api/work-schedule?month=${month}`);
+      const data = await res.json();
+      if (data.success) {
+        const map: typeof workSchedules = {};
+        data.schedules.forEach((s: any) => {
+          map[s.userId] = s.entries;
+        });
+        setWorkSchedules(map);
+      }
+    } catch (err) { console.error(err); }
+  }, [viewDate]);
+
+  useEffect(() => { fetchWorkSchedules(); }, [fetchWorkSchedules]);
 
   // ---------- Zoom & Navigation ----------
   const handleZoomChange = useCallback((newValue: number) => {
@@ -174,24 +196,27 @@ export default function AttendanceMonitorPage() {
   }, [filteredTimelineData]);
 
   // ---------- Position Calculations ----------
+  // For day/hour view: total columns = daysInMonth * 24
   const getBarPosition = useCallback((start: Date, end: Date | null, vd: Date, zoom: ZoomLevel) => {
     const now = new Date();
+    const daysInMonth = new Date(vd.getFullYear(), vd.getMonth() + 1, 0).getDate();
     if (zoom === 'month') {
-      const daysInMonth = new Date(vd.getFullYear(), vd.getMonth() + 1, 0).getDate();
       const startD = start.getDate() - 1 + start.getHours() / 24;
       const effectiveEnd = end || (now.getMonth() === vd.getMonth() ? now : new Date(vd.getFullYear(), vd.getMonth(), daysInMonth, 23, 59));
       const endD = effectiveEnd.getDate() - 1 + effectiveEnd.getHours() / 24;
-      return { left: Math.max(0, (startD / daysInMonth) * 100), width: Math.max(0.5, ((endD - startD) / daysInMonth) * 100) };
+      return { left: Math.max(0, (startD / daysInMonth) * 100), width: Math.max(0.3, ((endD - startD) / daysInMonth) * 100) };
     } else {
-      // day and hour both show 24 columns (hours), hour view just has wider columns
-      const startH = start.getHours() + start.getMinutes() / 60;
-      const effectiveEnd = end || (vd.toDateString() === now.toDateString() ? now : new Date(vd.getFullYear(), vd.getMonth(), vd.getDate(), 23, 59));
-      const endH = effectiveEnd.getHours() + effectiveEnd.getMinutes() / 60;
-      return { left: Math.max(0, (startH / 24) * 100), width: Math.max(0.8, ((endH - startH) / 24) * 100) };
+      // Full month: position = (day-1)*24 + hour as fraction of totalHours
+      const totalHours = daysInMonth * 24;
+      const startH = (start.getDate() - 1) * 24 + start.getHours() + start.getMinutes() / 60;
+      const effectiveEnd = end || now;
+      const endH = (effectiveEnd.getDate() - 1) * 24 + effectiveEnd.getHours() + effectiveEnd.getMinutes() / 60;
+      return { left: Math.max(0, (startH / totalHours) * 100), width: Math.max(0.15, ((endH - startH) / totalHours) * 100) };
     }
   }, []);
 
   // ---------- Column Headers ----------
+  // Day/Hour view: show ALL days of the month, each day has 24h columns
   const columnHeaders = useMemo(() => {
     if (zoomLevel === 'month') {
       const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
@@ -199,15 +224,26 @@ export default function AttendanceMonitorPage() {
         const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), i + 1);
         const isWeekend = d.getDay() === 0 || d.getDay() === 6;
         const isToday = d.toDateString() === new Date().toDateString();
-        return { label: String(i + 1), isWeekend, isToday, key: `d${i}` };
+        return { label: String(i + 1), isWeekend, isToday, key: `d${i}`, type: 'day' as const };
       });
     } else {
-      // Day view: 24 columns (0-23h), Hour view: 24 columns but wider
-      return Array.from({ length: 24 }, (_, i) => {
-        const isWorkHour = i >= TIMELINE_CONFIG.SCHEDULE.EXPECTED_START && i < TIMELINE_CONFIG.SCHEDULE.EXPECTED_END;
-        const isNowHour = new Date().getHours() === i && viewDate.toDateString() === new Date().toDateString();
-        return { label: `${i.toString().padStart(2, '0')}:00`, isWorkHour, isNowHour, key: `h${i}` };
-      });
+      // Day/Hour view: full month — for each day, show 24 hour sub-columns
+      const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+      const headers: { label: string; isWeekend: boolean; isToday: boolean; isNowHour: boolean; isWorkHour: boolean; key: string; type: 'hour'; day: number; hour: number }[] = [];
+      const now = new Date();
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), d);
+        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+        const isToday = date.toDateString() === now.toDateString();
+        // Only show label at midnight (h=0) and noon (h=12) to avoid clutter
+        for (let h = 0; h < 24; h++) {
+          const isNowHour = isToday && now.getHours() === h;
+          const isWorkHour = h >= TIMELINE_CONFIG.SCHEDULE.EXPECTED_START && h < TIMELINE_CONFIG.SCHEDULE.EXPECTED_END;
+          const label = h === 0 ? `${d}` : h === 12 ? '12' : '';
+          headers.push({ label, isWeekend, isToday, isNowHour, isWorkHour, key: `d${d}h${h}`, type: 'hour', day: d, hour: h });
+        }
+      }
+      return headers;
     }
   }, [zoomLevel, viewDate]);
 
@@ -220,8 +256,8 @@ export default function AttendanceMonitorPage() {
   const isZoomMin = zoomValue === TIMELINE_CONFIG.ZOOM.MIN;
   const isZoomMax = zoomValue === TIMELINE_CONFIG.ZOOM.MAX;
 
-  // Column sizing: hour view = wider columns for detail
-  const colMinWidth = zoomLevel === 'month' ? 32 : zoomLevel === 'hour' ? 60 : 40;
+  // Column sizing
+  const colMinWidth = zoomLevel === 'month' ? 32 : zoomLevel === 'hour' ? 16 : 14;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--bg-base)' }}>
@@ -301,14 +337,29 @@ export default function AttendanceMonitorPage() {
             ))}
           </div>
 
-          {/* Sync Scroll Toggle */}
-          <button onClick={() => setSyncScroll(v => !v)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${syncScroll
-              ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/30' : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border)]'}`}
-            title={syncScroll ? 'Synced scroll — all rows move together' : 'Free scroll — each row independent'}>
-            {syncScroll ? <Link className="w-3 h-3" /> : <Unlink className="w-3 h-3" />}
-            {syncScroll ? 'Synced' : 'Free'}
-          </button>
+          {/* Right side: Shift buttons + Sync toggle */}
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setShowShiftModal(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border border-indigo-500/30 bg-indigo-500/8 text-indigo-500 hover:bg-indigo-500/15 transition-all"
+              title="Create / Manage Shift Templates">
+              <LayoutGrid className="w-3 h-3" />
+              <span className="hidden sm:inline">Templates</span>
+            </button>
+            <button onClick={() => setShowAssignModal(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border border-emerald-500/30 bg-emerald-500/8 text-emerald-500 hover:bg-emerald-500/15 transition-all"
+              title="Assign Working Date/Time">
+              <Calendar className="w-3 h-3" />
+              <span className="hidden sm:inline">Assign Shift</span>
+            </button>
+            <div className="w-px h-4 bg-[var(--border)]" />
+            <button onClick={() => setSyncScroll(v => !v)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${syncScroll
+                ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/30' : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border)]'}`}
+              title={syncScroll ? 'Synced scroll — all rows move together' : 'Free scroll — each row independent'}>
+              {syncScroll ? <Link className="w-3 h-3" /> : <Unlink className="w-3 h-3" />}
+              <span className="hidden sm:inline">{syncScroll ? 'Synced' : 'Free'}</span>
+            </button>
+          </div>
         </div>
 
         {/* ========== CONTROLS BAR ========== */}
@@ -474,36 +525,76 @@ export default function AttendanceMonitorPage() {
                         }
                       }}>
                       <div className="relative h-full" style={{ minWidth: columnHeaders.length * colMinWidth }}>
-                        {/* Expected work window marker (day/hour views) */}
-                        {zoomLevel !== 'month' && (
-                          <div className="absolute top-0 bottom-0 border-l-2 border-r-2 border-dashed border-emerald-400/20 bg-emerald-500/[0.03] pointer-events-none"
-                            style={{
-                              left: `${(TIMELINE_CONFIG.SCHEDULE.EXPECTED_START / 24) * 100}%`,
-                              width: `${((TIMELINE_CONFIG.SCHEDULE.EXPECTED_END - TIMELINE_CONFIG.SCHEDULE.EXPECTED_START) / 24) * 100}%`,
-                            }} />
-                        )}
+                        {/* Assigned shift backgrounds from workSchedules */}
+                        {(() => {
+                          const userSched = workSchedules[user.id] || [];
+                          const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+                          const totalHours = daysInMonth * 24;
+                          return userSched.map((entry) => {
+                            const day = new Date(entry.date).getDate();
+                            if (zoomLevel === 'month') {
+                              // month view: position by day
+                              const startD = day - 1 + entry.startHour / 24;
+                              const endD = entry.endHour < entry.startHour
+                                ? day + entry.endHour / 24  // overnight: next day
+                                : day - 1 + entry.endHour / 24;
+                              return (
+                                <div key={entry.date} className="absolute top-0 bottom-0 pointer-events-none rounded-sm"
+                                  style={{
+                                    left: `${(startD / daysInMonth) * 100}%`,
+                                    width: `${Math.max(0.5, ((endD - startD) / daysInMonth) * 100)}%`,
+                                    background: entry.color + '22',
+                                    borderLeft: `2px solid ${entry.color}60`,
+                                  }} />
+                              );
+                            } else {
+                              // day/hour view: full-month hour grid
+                              const startH = (day - 1) * 24 + entry.startHour + entry.startMinute / 60;
+                              const rawEndH = (day - 1) * 24 + entry.endHour + entry.endMinute / 60;
+                              const endH = entry.endHour < entry.startHour ? rawEndH + 24 : rawEndH;
+                              return (
+                                <div key={entry.date} className="absolute top-0 bottom-0 pointer-events-none"
+                                  style={{
+                                    left: `${(startH / totalHours) * 100}%`,
+                                    width: `${Math.max(0.3, ((endH - startH) / totalHours) * 100)}%`,
+                                    background: entry.color + '20',
+                                    borderLeft: `2px solid ${entry.color}50`,
+                                  }} />
+                              );
+                            }
+                          });
+                        })()}
 
-                        {/* Session bars */}
+                        {/* Default work window markers (only if no shift assigned for that day) */}
+                        {zoomLevel !== 'month' && (() => {
+                          const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+                          const totalHours = daysInMonth * 24;
+                          const userSched = workSchedules[user.id] || [];
+                          return Array.from({ length: daysInMonth }, (_, i) => {
+                            const day = i + 1;
+                            const dateStr = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            if (userSched.some(e => e.date === dateStr)) return null;
+                            return (
+                              <div key={`ew${i}`} className="absolute top-0 bottom-0 bg-emerald-500/[0.03] pointer-events-none"
+                                style={{
+                                  left: `${((i * 24 + TIMELINE_CONFIG.SCHEDULE.EXPECTED_START) / totalHours) * 100}%`,
+                                  width: `${((TIMELINE_CONFIG.SCHEDULE.EXPECTED_END - TIMELINE_CONFIG.SCHEDULE.EXPECTED_START) / totalHours) * 100}%`,
+                                }} />
+                            );
+                          });
+                        })()}
+
+                        {/* Step-progress-bar sessions */}
                         {user.sessions.map((session, idx) => {
                           const { left, width } = getBarPosition(session.start, session.end, viewDate, zoomLevel);
                           const isLive = !session.end;
+                          const dotColor = session.isLate ? '#f59e0b' : isLive ? TIMELINE_CONFIG.COLORS.ACTIVE : TIMELINE_CONFIG.COLORS.COMPLETED;
+                          const lineColor = session.isLate ? 'rgba(245,158,11,0.45)' : isLive ? 'rgba(16,185,129,0.45)' : 'rgba(99,102,241,0.45)';
 
                           return (
-                            <motion.div key={idx}
-                              initial={{ opacity: 0, scaleX: 0 }}
-                              animate={{ opacity: 1, scaleX: 1 }}
-                              transition={{ delay: idx * 0.05, duration: 0.3 }}
-                              className={`absolute top-1/2 -translate-y-1/2 h-5 md:h-6 rounded-lg flex items-center px-1.5 shadow-sm cursor-pointer transition-transform hover:scale-y-[1.15] ${isLive ? 'animate-pulse-subtle' : ''}`}
-                              style={{
-                                left: `${left}%`,
-                                width: `${Math.max(1.5, width)}%`,
-                                background: session.isLate
-                                  ? `linear-gradient(90deg, #f59e0b, #fbbf24)`
-                                  : isLive
-                                    ? `linear-gradient(90deg, ${TIMELINE_CONFIG.COLORS.ACTIVE}, ${TIMELINE_CONFIG.COLORS.ACTIVE_LIGHT})`
-                                    : `linear-gradient(90deg, ${TIMELINE_CONFIG.COLORS.COMPLETED}, ${TIMELINE_CONFIG.COLORS.COMPLETED_LIGHT})`,
-                                transformOrigin: 'left center',
-                              }}
+                            <div key={idx}
+                              className="absolute cursor-pointer"
+                              style={{ left: `${left}%`, width: `${Math.max(0.3, width)}%`, top: 0, bottom: 0 }}
                               onMouseEnter={(e) => {
                                 const rect = e.currentTarget.getBoundingClientRect();
                                 setTooltip({
@@ -512,33 +603,38 @@ export default function AttendanceMonitorPage() {
                                   userName: user.name,
                                   startTime: session.start.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
                                   endTime: session.end ? session.end.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : null,
-                                  duration: session.end
-                                    ? `${((session.end.getTime() - session.start.getTime()) / 3600000).toFixed(1)} hr`
-                                    : 'Working...',
+                                  duration: session.end ? `${((session.end.getTime() - session.start.getTime()) / 3600000).toFixed(1)} hr` : 'Working...',
                                   branch: session.branch || '-',
                                   isLate: session.isLate,
                                 });
                               }}
                               onMouseLeave={() => setTooltip(null)}>
-                              {width > 6 && (
-                                <>
-                                  <div className={`w-1.5 h-1.5 rounded-full bg-white/80 shrink-0 ${isLive ? 'animate-pulse' : ''}`} />
-                                  <span className="text-[7px] font-black text-white/90 ml-1 whitespace-nowrap">
-                                    {session.start.getHours().toString().padStart(2, '0')}:{session.start.getMinutes().toString().padStart(2, '0')}
-                                  </span>
-                                </>
+                              {/* Connecting line */}
+                              <div className="absolute top-1/2 -translate-y-1/2 rounded-full" style={{ left: 5, right: 5, height: 2, background: lineColor }} />
+                              {/* Start dot */}
+                              <motion.div
+                                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: idx * 0.05 }}
+                                className="absolute top-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bg-surface)] shadow-sm"
+                                style={{ left: 0, width: 10, height: 10, background: dotColor, zIndex: 2 }}
+                              />
+                              {/* End dot */}
+                              {isLive ? (
+                                <motion.div
+                                  animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
+                                  transition={{ duration: 1.5, repeat: Infinity }}
+                                  className="absolute top-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bg-surface)]"
+                                  style={{ right: 0, width: 10, height: 10, background: dotColor, zIndex: 2 }}
+                                />
+                              ) : (
+                                <motion.div
+                                  initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: idx * 0.05 + 0.1 }}
+                                  className="absolute top-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bg-surface)] shadow-sm"
+                                  style={{ right: 0, width: 10, height: 10, background: dotColor, zIndex: 2 }}
+                                />
                               )}
-                            </motion.div>
+                            </div>
                           );
                         })}
-
-                        {/* Current time marker (day/hour views) */}
-                        {zoomLevel !== 'month' && viewDate.toDateString() === new Date().toDateString() && (
-                          <div className="absolute top-0 bottom-0 w-0.5 bg-rose-500 z-10 pointer-events-none"
-                            style={{ left: `${((new Date().getHours() + new Date().getMinutes() / 60) / 24) * 100}%` }}>
-                            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-rose-500 rounded-full" />
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -598,6 +694,17 @@ export default function AttendanceMonitorPage() {
       <div className="lg:hidden">
         <BottomNav role="admin" />
       </div>
+
+      {/* ========== MODALS ========== */}
+      <ShiftTemplateModal
+        open={showShiftModal}
+        onClose={() => setShowShiftModal(false)}
+        onChanged={fetchWorkSchedules}
+      />
+      <AssignShiftModal
+        open={showAssignModal}
+        onClose={() => setShowAssignModal(false)}
+      />
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { height: 5px; width: 5px; }

@@ -95,6 +95,13 @@ export default function AdminHomePage() {
             </div>
             <div className="flex items-center gap-1.5">
               <ThemeToggle />
+              <button
+                onClick={() => router.push('/leader/settings')}
+                className="w-8 h-8 rounded-lg flex items-center justify-center border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-muted)] hover:bg-[var(--bg-inset)] transition-colors"
+                title="โปรไฟล์"
+              >
+                <User className="w-4 h-4" />
+              </button>
               <button 
                 onClick={handleLogout}
                 className="w-8 h-8 rounded-lg flex items-center justify-center border border-[var(--border)] bg-[var(--bg-surface)] text-rose-500 hover:bg-rose-500/5 transition-colors"
