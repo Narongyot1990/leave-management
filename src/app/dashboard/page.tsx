@@ -268,7 +268,7 @@ function DashboardContent() {
         }
       />
 
-      <div className="px-4 lg:px-8 py-4">
+      <div className="px-4 lg:px-8 py-3">
         <div className="max-w-3xl mx-auto space-y-4">
 
           {/* Branch Filter for Admin */}

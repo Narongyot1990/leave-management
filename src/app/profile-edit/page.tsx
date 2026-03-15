@@ -142,7 +142,7 @@ export default function ProfileEditPage() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="แก้ไขข้อมูล" backHref="/home" />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-4xl mx-auto space-y-4">
             
             {/* Success Message */}
@@ -150,7 +150,7 @@ export default function ProfileEditPage() {
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }} 
                 animate={{ opacity: 1, scale: 1 }} 
-                className="card p-6 text-center"
+                className="card p-4 text-center"
               >
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: 'var(--success-light)' }}>
                   <CheckCircle2 className="w-8 h-8" style={{ color: 'var(--success)' }} />
@@ -180,7 +180,7 @@ export default function ProfileEditPage() {
               className="grid grid-cols-1 md:grid-cols-3 gap-4"
             >
               {/* Avatar & Info */}
-              <div className="card p-6 flex flex-col items-center text-center md:col-span-1">
+              <div className="card p-4 flex flex-col items-center text-center md:col-span-1">
                 <div className="relative mb-4">
                   <UserAvatar 
                     imageUrl={user.lineProfileImage} 
@@ -260,7 +260,7 @@ export default function ProfileEditPage() {
               initial={{ y: 20, opacity: 0 }} 
               animate={{ y: 0, opacity: 1 }} 
               transition={{ delay: 0.1 }} 
-              className="card p-6 space-y-5"
+              className="card p-4 space-y-3"
             >
               <div className="flex items-center gap-2 mb-2">
                 <User className="w-5 h-5" style={{ color: 'var(--accent)' }} />
@@ -322,7 +322,7 @@ export default function ProfileEditPage() {
               <button 
                 type="submit" 
                 disabled={loading}
-                className="btn btn-primary w-full flex items-center justify-center gap-2 py-4"
+                className="btn btn-primary w-full flex items-center justify-center gap-2 py-3"
               >
                 {loading ? (
                   <>

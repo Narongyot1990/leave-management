@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -154,7 +154,7 @@ export default function AdminBranchesPage() {
       <div className="lg:pl-[240px] pb-6">
         <PageHeader title="จัดการสาขา" subtitle="กำหนดพิกัด แผนที่ และรัศมีของแต่ละสาขา" backHref="/admin/home" />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-4xl mx-auto space-y-4">
             
             {/* Header Actions */}
@@ -184,7 +184,7 @@ export default function AdminBranchesPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
-                  className="card p-6 border-t-4 border-accent shadow-2xl relative overflow-hidden"
+                  className="card p-4 border-t-4 border-accent shadow-2xl relative overflow-hidden"
                 >
                   <div className="absolute top-0 right-0 p-4">
                     <button onClick={cancelEdit} className="p-2 hover:bg-surface rounded-full transition-colors text-muted">
@@ -192,7 +192,7 @@ export default function AdminBranchesPage() {
                     </button>
                   </div>
 
-                  <h3 className="text-fluid-sm font-black mb-6 flex items-center gap-2">
+                  <h3 className="text-fluid-sm font-black mb-3 flex items-center gap-2">
                     {isAdding ? <Plus className="text-accent" /> : <Edit2 className="text-accent" />}
                     {isAdding ? 'เพิ่มสาขาใหม่' : `แก้ไขสาขา ${form.code}`}
                   </h3>
@@ -241,7 +241,7 @@ export default function AdminBranchesPage() {
                     </div>
 
                     {/* Data Section */}
-                    <div className="lg:col-span-5 space-y-5">
+                    <div className="lg:col-span-5 space-y-3">
                       <div className="space-y-4">
                         <div>
                           <label className="text-fluid-xs font-bold text-muted mb-1 block uppercase tracking-wider">รหัสสาขา</label>

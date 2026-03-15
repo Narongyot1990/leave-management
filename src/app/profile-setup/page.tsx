@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -109,7 +109,7 @@ export default function ProfileSetupPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: 'var(--bg-base)' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: 'var(--bg-base)' }}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[400px] space-y-4">
         <div className="text-center mb-2">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
@@ -134,7 +134,7 @@ export default function ProfileSetupPage() {
           </div>
         )}
 
-        <motion.form onSubmit={handleSubmit} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="card-neo p-5 space-y-4">
+        <motion.form onSubmit={handleSubmit} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="card-neo p-3 space-y-4">
           <div>
             <label className="block text-fluid-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>ชื่อ</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input" placeholder="กรอกชื่อ" required />

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -65,7 +65,7 @@ function LineCallbackContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'var(--bg-base)' }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg-base)' }}>
         <div className="card-neo p-8 text-center w-full max-w-sm">
           <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--danger-light)' }}>
             <svg className="w-7 h-7" style={{ color: 'var(--danger)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -73,7 +73,7 @@ function LineCallbackContent() {
             </svg>
           </div>
           <p className="text-fluid-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>เข้าสู่ระบบไม่สำเร็จ</p>
-          <p className="text-fluid-sm mb-6" style={{ color: 'var(--text-muted)' }}>{error}</p>
+          <p className="text-fluid-sm mb-3" style={{ color: 'var(--text-muted)' }}>{error}</p>
           <a href="/login" className="btn btn-primary w-full">
             กลับไปหน้าเข้าสู่ระบบ
           </a>

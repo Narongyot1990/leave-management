@@ -164,7 +164,7 @@ export default function TasksPage() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="Tasks" backHref="/home" />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-2xl mx-auto space-y-4">
 
             {/* Filter tabs */}
@@ -237,7 +237,7 @@ export default function TasksPage() {
                         style={{ background: catMeta.color }}
                       />
 
-                      <div className="relative p-5 flex-1 flex flex-col justify-between">
+                      <div className="relative p-3.5 flex-1 flex flex-col justify-between">
                         <div>
                           <div className="flex items-center justify-between mb-3">
                             <div 
@@ -326,7 +326,7 @@ export default function TasksPage() {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-5 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
+              <div className="flex items-center justify-between p-3.5 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
                 <div>
                   <h3 className="text-fluid-base font-bold" style={{ color: 'var(--text-primary)' }}>{activeTask.title}</h3>
                   <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>
@@ -348,7 +348,7 @@ export default function TasksPage() {
 
               {result ? (
                 /* Result screen */
-                <div className="p-6 text-center">
+                <div className="p-4 text-center">
                   <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }}>
                     <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: result.score >= result.total * 0.7 ? 'var(--success-light)' : 'var(--warning-light)' }}>
                       <Award className="w-10 h-10" style={{ color: result.score >= result.total * 0.7 ? 'var(--success)' : 'var(--warning)' }} />
@@ -360,7 +360,7 @@ export default function TasksPage() {
                   <p className="text-fluid-sm mb-1" style={{ color: 'var(--text-muted)' }}>
                     คะแนนของคุณ ({Math.round((result.score / result.total) * 100)}%)
                   </p>
-                  <p className="text-fluid-xs mb-6" style={{ color: result.score >= result.total * 0.7 ? 'var(--success)' : 'var(--warning)' }}>
+                  <p className="text-fluid-xs mb-3" style={{ color: result.score >= result.total * 0.7 ? 'var(--success)' : 'var(--warning)' }}>
                     {result.score >= result.total * 0.7 ? 'ยอดเยี่ยม! ผ่านเกณฑ์' : 'ลองอีกครั้งนะ!'}
                   </p>
                   <button onClick={() => { setActiveTask(null); setResult(null); }} className="btn btn-primary w-full">
@@ -369,7 +369,7 @@ export default function TasksPage() {
                 </div>
               ) : (
                 /* Question */
-                <div className="p-5">
+                <div className="p-3.5">
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={currentQ}

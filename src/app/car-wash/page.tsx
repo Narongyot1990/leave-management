@@ -184,7 +184,7 @@ export default function CarWashPage() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="บันทึกกิจกรรม" backHref="/home" />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-2xl mx-auto space-y-4">
 
             {error && (
@@ -195,7 +195,7 @@ export default function CarWashPage() {
             )}
 
             {/* Section 1: Activity Type */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-5">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-3.5">
               <label className="block text-fluid-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                 เลือกกิจกรรม
               </label>
@@ -236,7 +236,7 @@ export default function CarWashPage() {
                     animate={{ y: 0, opacity: 1, height: 'auto' }}
                     exit={{ y: -10, opacity: 0, height: 0 }}
                     transition={{ duration: 0.35, ease: 'easeOut' }}
-                    className="card p-5"
+                    className="card p-3.5"
                   >
                     <label className="block text-fluid-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                       รูปภาพ
@@ -302,7 +302,7 @@ export default function CarWashPage() {
                     animate={{ y: 0, opacity: 1, height: 'auto' }}
                     exit={{ y: -10, opacity: 0, height: 0 }}
                     transition={{ duration: 0.35, ease: 'easeOut', delay: 0.08 }}
-                    className="card p-5"
+                    className="card p-3.5"
                   >
                     <label className="block text-fluid-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                       รายละเอียด <span className="font-normal" style={{ color: 'var(--text-muted)' }}>(ไม่บังคับ)</span>
@@ -323,7 +323,7 @@ export default function CarWashPage() {
                     animate={{ y: 0, opacity: 1, height: 'auto' }}
                     exit={{ y: -10, opacity: 0, height: 0 }}
                     transition={{ duration: 0.35, ease: 'easeOut', delay: 0.16 }}
-                    className="card p-5"
+                    className="card p-3.5"
                   >
                     <label className="block text-fluid-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                       วันที่และเวลาที่ทำกิจกรรม

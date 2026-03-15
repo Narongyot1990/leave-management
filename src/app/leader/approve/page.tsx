@@ -224,7 +224,7 @@ export default function LeaderApprovePage() {
           }
         />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-3xl mx-auto space-y-4">
             {/* Branch Filter for Admin */}
             {role === 'admin' && (
@@ -372,7 +372,7 @@ export default function LeaderApprovePage() {
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="card-neo w-full sm:max-w-sm rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-xl)] p-6"
+              className="card-neo w-full sm:max-w-sm rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-xl)] p-4"
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-fluid-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>เหตุผลที่ไม่อนุมัติ</h3>

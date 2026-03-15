@@ -864,7 +864,7 @@ export default function LeaderCarWashPage() {
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 50, opacity: 0 }}
-              className="card w-full max-w-md p-5"
+              className="card w-full max-w-md p-3.5"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">

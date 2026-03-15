@@ -186,14 +186,14 @@ export default function AttendancePage() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="ลงเวลาทำงาน" subtitle="บันทึกเวลาเข้า-ออกงานด้วย GPS" backHref="/leader/home" />
 
-        <div className="px-4 lg:px-8 py-4">
-          <div className="max-w-xl mx-auto space-y-6">
+        <div className="px-4 lg:px-8 py-3">
+          <div className="max-w-xl mx-auto space-y-3">
             
             {/* Status Card */}
             <motion.div 
                initial={{ y: 20, opacity: 0 }}
                animate={{ y: 0, opacity: 1 }}
-               className="card p-6 overflow-hidden relative"
+               className="card p-4 overflow-hidden relative"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-accent/20 to-transparent rounded-full -mr-16 -mt-16 opacity-50" />
               

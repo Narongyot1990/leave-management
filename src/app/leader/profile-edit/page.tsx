@@ -118,10 +118,10 @@ export default function LeaderProfileEditPage() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="แก้ไขโปรไฟล์" backHref="/leader/home" />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-2xl mx-auto space-y-4">
             {success && (
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="card p-5 text-center">
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="card p-3.5 text-center">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2" style={{ background: 'var(--success-light)' }}>
                   <CheckCircle2 className="w-6 h-6" style={{ color: 'var(--success)' }} />
                 </div>
@@ -136,7 +136,7 @@ export default function LeaderProfileEditPage() {
               </div>
             )}
 
-            <motion.form onSubmit={handleSubmit} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-5 space-y-4">
+            <motion.form onSubmit={handleSubmit} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-3.5 space-y-4">
               <div>
                 <label className="block text-fluid-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>ชื่อ-นามสกุล</label>
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input" placeholder="กรอกชื่อ-นามสกุล" required />

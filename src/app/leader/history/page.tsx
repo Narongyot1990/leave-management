@@ -173,7 +173,7 @@ function LeaderHistoryContent() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="ประวัติทั้งหมด" backHref="/leader/home" />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-3xl mx-auto flex flex-col gap-4">
 
             {/* Branch Filter for Admin */}

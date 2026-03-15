@@ -87,7 +87,7 @@ export default function SettingsPage() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="ตั้งค่าข้อมูลส่วนตัว" backHref="/home" />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-2xl mx-auto space-y-4">
             <AnimatePresence>
               {success && (
@@ -113,7 +113,7 @@ export default function SettingsPage() {
             )}
 
             {/* Profile Card */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-5">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-3.5">
               <div className="flex items-center gap-4">
                 <UserAvatar imageUrl={user.lineProfileImage} displayName={user.lineDisplayName} tier={user.performanceTier} size="md" />
                 <div>
@@ -123,7 +123,7 @@ export default function SettingsPage() {
               </div>
             </motion.div>
 
-            <motion.form onSubmit={handleSubmit} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="card p-5 space-y-4">
+            <motion.form onSubmit={handleSubmit} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="card p-3.5 space-y-4">
               <div>
                 <label className="block text-fluid-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>ชื่อ-นามสกุล</label>
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)} onFocus={() => setFocused('name')} onBlur={() => setFocused(null)} className="input" placeholder="กรอกชื่อ-นามสกุล" />

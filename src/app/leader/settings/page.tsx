@@ -96,7 +96,7 @@ export default function LeaderSettingsPage() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="ตั้งค่า" backHref={role === 'admin' ? '/admin/home' : '/leader/home'} />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-2xl mx-auto space-y-4">
 
             {saved && (
@@ -124,8 +124,8 @@ export default function LeaderSettingsPage() {
             )}
 
             {/* Assigned Branch Section */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-6 border-t-[3px] border-t-[var(--accent)]">
-              <div className="flex items-center justify-between mb-6">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-4 border-t-[3px] border-t-[var(--accent)]">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[var(--accent-light)] flex items-center justify-center border border-[var(--accent)]/10">
                     <MapPin className="w-5 h-5 text-[var(--accent)]" />
@@ -172,7 +172,7 @@ export default function LeaderSettingsPage() {
             </motion.div>
 
             {/* Profile Edit */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-5">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-3.5">
               <div className="flex items-center gap-2 mb-4">
                 <Settings className="w-5 h-5" style={{ color: 'var(--accent)' }} />
                 <div>
@@ -198,7 +198,7 @@ export default function LeaderSettingsPage() {
             </motion.div>
 
             {/* Password Change */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-5">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-3.5">
               <div className="flex items-center gap-2 mb-4">
                 <Lock className="w-5 h-5" style={{ color: 'var(--accent)' }} />
                 <div>

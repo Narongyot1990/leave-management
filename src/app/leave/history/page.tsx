@@ -164,7 +164,7 @@ export default function LeaveHistoryPage() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="ประวัติการลา" backHref="/home" />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-3xl mx-auto space-y-4">
 
             {/* Quota */}
@@ -173,7 +173,7 @@ export default function LeaveHistoryPage() {
                 {quotaItems.map((q) => (
                   <div key={q.label} className="text-center p-2.5 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
                     <q.icon className="w-4 h-4 mx-auto mb-1" style={{ color: q.color }} strokeWidth={1.8} />
-                    <p className="text-fluid-2xl font-extrabold" style={{ color: q.color }}>{q.value}</p>
+                    <p className="text-fluid-lg font-extrabold" style={{ color: q.color }}>{q.value}</p>
                     <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>{q.label}</p>
                   </div>
                 ))}

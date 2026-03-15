@@ -239,7 +239,7 @@ function DriverManagementContent() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="จัดการพนักงาน" subtitle="เพิ่ม/แก้ไข/เปิดใช้งานพนักงาน" backHref="/leader/home" />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-3xl mx-auto flex flex-col gap-4">
 
         {/* Branch Filter for Admin */}
@@ -273,7 +273,7 @@ function DriverManagementContent() {
               boxShadow: activeTab === 'all' ? 'var(--shadow-accent)' : 'none'
             }}
           >
-            <p className="text-fluid-2xl font-extrabold" style={{ color: activeTab === 'all' ? 'white' : 'var(--accent)' }}>{allPersonnel.length}</p>
+            <p className="text-fluid-lg font-extrabold" style={{ color: activeTab === 'all' ? 'white' : 'var(--accent)' }}>{allPersonnel.length}</p>
             <p className="text-fluid-xs" style={{ color: activeTab === 'all' ? 'white' : 'var(--text-muted)' }}>ทั้งหมด</p>
           </button>
           <button
@@ -284,7 +284,7 @@ function DriverManagementContent() {
               boxShadow: activeTab === 'pending' ? '0 4px 12px rgba(245,158,11,0.3)' : 'none'
             }}
           >
-            <p className="text-fluid-2xl font-extrabold" style={{ color: activeTab === 'pending' ? 'white' : 'var(--warning)' }}>
+            <p className="text-fluid-lg font-extrabold" style={{ color: activeTab === 'pending' ? 'white' : 'var(--warning)' }}>
               {personnelList.filter(d => d.status === 'pending').length}
             </p>
             <p className="text-fluid-xs" style={{ color: activeTab === 'pending' ? 'white' : 'var(--text-muted)' }}>รอยืนยัน</p>
@@ -297,7 +297,7 @@ function DriverManagementContent() {
               boxShadow: activeTab === 'active' ? '0 4px 12px rgba(5,150,105,0.3)' : 'none'
             }}
           >
-            <p className="text-fluid-2xl font-extrabold" style={{ color: activeTab === 'active' ? 'white' : 'var(--success)' }}>
+            <p className="text-fluid-lg font-extrabold" style={{ color: activeTab === 'active' ? 'white' : 'var(--success)' }}>
               {personnelList.filter(d => d.status === 'active').length}
             </p>
             <p className="text-fluid-xs" style={{ color: activeTab === 'active' ? 'white' : 'var(--text-muted)' }}>พร้อมใช้</p>
@@ -410,7 +410,7 @@ function DriverManagementContent() {
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="card-neo w-full sm:max-w-md rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-xl)] p-6 max-h-[80vh] overflow-y-auto"
+              className="card-neo w-full sm:max-w-md rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-xl)] p-4 max-h-[80vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
@@ -694,7 +694,7 @@ function DriverManagementContent() {
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="card-neo w-full sm:max-w-sm rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-xl)] p-6"
+              className="card-neo w-full sm:max-w-sm rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-xl)] p-4"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center">
@@ -702,7 +702,7 @@ function DriverManagementContent() {
                   <Trash2 className="w-7 h-7" style={{ color: 'var(--danger)' }} />
                 </div>
                 <h3 className="text-fluid-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>ลบพนักงาน</h3>
-                <p className="text-fluid-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+                <p className="text-fluid-sm mb-3" style={{ color: 'var(--text-muted)' }}>
                   ต้องการลบพนักงานคนนี้ใช่หรือไม่?<br/>
                   การลบจะทำให้ข้อมูลการลาและบันทึกแทนหายไปด้วย
                 </p>

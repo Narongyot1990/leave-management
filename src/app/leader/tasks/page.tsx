@@ -263,7 +263,7 @@ export default function LeaderTasksPage() {
           }
         />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-3xl mx-auto space-y-4">
             
             {/* Branch Filter for Admin */}
@@ -499,7 +499,7 @@ export default function LeaderTasksPage() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
               transition={{ type: 'spring', damping: 25 }}
-              className="card w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-xl)] p-5"
+              className="card w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-xl)] p-3.5"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">

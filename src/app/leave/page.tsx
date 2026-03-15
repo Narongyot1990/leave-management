@@ -161,7 +161,7 @@ export default function LeavePage() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'var(--bg-base)' }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg-base)' }}>
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -171,7 +171,7 @@ export default function LeavePage() {
             <AlertCircle className="w-7 h-7" style={{ color: 'var(--warning)' }} />
           </div>
           <h2 className="text-fluid-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>รอการยืนยัน</h2>
-          <p className="text-fluid-sm mb-6" style={{ color: 'var(--text-muted)' }}>บัญชีของคุณยังไม่ได้รับการยืนยัน กรุณารอหัวหน้างานอนุมัติก่อนใช้งาน</p>
+          <p className="text-fluid-sm mb-3" style={{ color: 'var(--text-muted)' }}>บัญชีของคุณยังไม่ได้รับการยืนยัน กรุณารอหัวหน้างานอนุมัติก่อนใช้งาน</p>
           <button onClick={() => router.push('/home')} className="btn btn-primary w-full">
             กลับหน้าหลัก
           </button>
@@ -198,7 +198,7 @@ export default function LeavePage() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="ขอลา" backHref="/home" />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-2xl mx-auto space-y-4">
 
             {/* Success */}
@@ -208,7 +208,7 @@ export default function LeavePage() {
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  className="card p-6 text-center"
+                  className="card p-4 text-center"
                 >
                   <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: 'var(--success-light)' }}>
                     <CheckCircle2 className="w-7 h-7" style={{ color: 'var(--success)' }} />
@@ -233,7 +233,7 @@ export default function LeavePage() {
             )}
 
             {/* Leave Type Selection */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-5">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-3.5">
               <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
                 ประเภทการลา
               </label>
@@ -271,7 +271,7 @@ export default function LeavePage() {
             </motion.div>
 
             {/* Date Selection */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="card p-5">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="card p-3.5">
               <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
                 วันที่
               </label>
@@ -294,7 +294,7 @@ export default function LeavePage() {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="card p-5 space-y-4"
+              className="card p-3.5 space-y-4"
             >
               <div>
                 <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 280">
+  <!-- Green swooshes -->
+  <path d="M85 40c-45 25-70 65-80 110 15-35 40-65 75-85 20-12 42-18 62-20C120 42 100 38 85 40z" fill="#5BBF21"/>
+  <path d="M60 75c-40 30-55 70-60 115 12-35 35-65 65-85 18-12 38-20 58-22C100 78 78 73 60 75z" fill="#3DA515"/>
+  <path d="M40 115c-30 30-38 68-38 110 10-32 28-58 55-78 16-12 34-20 52-24C82 118 58 114 40 115z" fill="#2D8A0E"/>
+  <!-- FLS text -->
+  <path d="M175 55h95v30h-60v25h50v28h-50v52h-35V55z" fill="#1565A0"/>
+  <path d="M280 55h35v125h60v30h-95V55z" fill="#1565A0"/>
+  <path d="M385 55h90c25 0 42 15 42 38 0 18-10 30-25 35 18 5 30 18 30 38 0 28-20 44-48 44h-89V55zm82 60c0-10-7-17-18-17h-30v34h30c11 0 18-7 18-17zm5 60c0-11-8-19-20-19h-32v38h32c12 0 20-8 20-19z" fill="#1565A0"/>
+  <!-- GROUP text -->
+  <text x="175" y="255" font-family="Arial,Helvetica,sans-serif" font-weight="bold" font-size="52" fill="#1565A0" letter-spacing="8">GROUP</text>
+  <!-- Blue line -->
+  <rect x="175" y="220" width="340" height="4" rx="2" fill="#1565A0"/>
+</svg>

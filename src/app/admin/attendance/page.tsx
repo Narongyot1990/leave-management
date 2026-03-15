@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -45,7 +45,7 @@ export default function AttendanceMonitorPage() {
       <div className="lg:pl-[240px] pb-6">
         <PageHeader title="ตรวจสอบเวลาทำงาน" subtitle="ติดตามการเข้า-ออกงานของ Leader ทุกสาขา" backHref="/admin/home" />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-5xl mx-auto space-y-4">
             
             {/* Filters */}

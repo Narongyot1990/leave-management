@@ -146,7 +146,7 @@ export default function SubstitutePage() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="บันทึกการแทน" backHref="/leader/home" />
 
-        <div className="px-4 lg:px-8 py-4">
+        <div className="px-4 lg:px-8 py-3">
           <div className="max-w-2xl mx-auto space-y-4">
             
             {/* Branch Filter for Admin */}
@@ -171,7 +171,7 @@ export default function SubstitutePage() {
             )}
             <AnimatePresence>
               {success && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="card p-5 text-center">
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="card p-3.5 text-center">
                   <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2" style={{ background: 'var(--success-light)' }}>
                     <CheckCircle2 className="w-6 h-6" style={{ color: 'var(--success)' }} />
                   </div>
@@ -188,7 +188,7 @@ export default function SubstitutePage() {
             )}
 
             {/* Select Driver */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-5">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-3.5">
               <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>เลือกพนักงาน</label>
               <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} className="input" required>
                 <option value="">-- เลือกพนักงาน --</option>
@@ -201,7 +201,7 @@ export default function SubstitutePage() {
             </motion.div>
 
             {/* Record Type */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="card p-5">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="card p-3.5">
               <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>ประเภทการบันทึก</label>
               <div className="grid grid-cols-2 gap-2">
                 {RECORD_TYPES.map((type) => (
@@ -224,7 +224,7 @@ export default function SubstitutePage() {
             </motion.div>
 
             {/* Date & Description Form */}
-            <motion.form onSubmit={handleSubmit} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="card p-5 space-y-4">
+            <motion.form onSubmit={handleSubmit} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="card p-3.5 space-y-4">
               <div>
                 <label className="block text-fluid-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>วันที่</label>
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input" required />
