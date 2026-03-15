@@ -40,11 +40,10 @@ export async function GET(request: NextRequest) {
         query.branch = userBranch;
       }
     } else if (role === 'admin') {
-      // Admin: sees all unless branch specified
-      if (userBranch) {
-        query.branch = userBranch;
+      // Admin: sees all unless branch query param specified
+      if (branch) {
+        query.branch = branch;
       }
-      // If no specific filters, show all statuses unless status param provided
     }
 
     if (status) {

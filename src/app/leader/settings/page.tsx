@@ -123,32 +123,41 @@ export default function LeaderSettingsPage() {
               </motion.div>
             )}
 
-            {/* Assigned Branch (read-only) */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-                <div>
-                  <h2 className="text-fluid-sm font-bold" style={{ color: 'var(--text-primary)' }}>สาขาที่ดูแล</h2>
-                  <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>กำหนดโดย Admin</p>
+            {/* Assigned Branch Section */}
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-6 border-t-[3px] border-t-[var(--accent)]">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--accent-light)] flex items-center justify-center border border-[var(--accent)]/10">
+                    <MapPin className="w-5 h-5 text-[var(--accent)]" />
+                  </div>
+                  <div>
+                    <h2 className="text-fluid-sm font-black uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>สาขาที่ดูแล</h2>
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Assigned Branches</p>
+                  </div>
                 </div>
+                {role === 'admin' ? (
+                   <span className="px-2 py-1 rounded-md bg-[var(--accent-light)] text-[var(--accent)] text-[9px] font-black uppercase">All Access</span>
+                ) : (
+                   <span className="px-2 py-1 rounded-md bg-[var(--bg-inset)] text-[var(--text-muted)] text-[9px] font-black uppercase tracking-widest border border-[var(--border)]">Restricted</span>
+                )}
               </div>
 
               {branchesLoading ? (
-                <div className="text-center py-4" style={{ color: 'var(--text-muted)' }}>กำลังโหลด...</div>
+                <div className="flex justify-center py-6">
+                  <div className="w-6 h-6 rounded-full border-2 border-[var(--border)] border-t-[var(--accent)] animate-spin" />
+                </div>
               ) : (
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-5 gap-3">
                   {branches.map((branch) => {
-                    const isAssigned = user.branch === branch.code;
+                    const isAssigned = user.branch === branch.code || role === 'admin';
                     return (
                       <div
                         key={branch.code}
-                        className="aspect-square flex flex-col items-center justify-center rounded-[var(--radius-md)] font-bold text-fluid-sm"
-                        style={{
-                          background: isAssigned ? 'var(--accent)' : 'var(--bg-inset)',
-                          color: isAssigned ? '#fff' : 'var(--text-muted)',
-                          opacity: isAssigned ? 1 : 0.5,
-                          border: isAssigned ? 'none' : '2px solid var(--border)',
-                        }}
+                        className={`aspect-square flex flex-col items-center justify-center rounded-2xl font-black text-sm transition-all border ${
+                          isAssigned 
+                            ? 'bg-[var(--accent)] text-white border-transparent shadow-lg shadow-accent/20 scale-105' 
+                            : 'bg-[var(--bg-inset)] text-[var(--text-muted)] border-[var(--border)] opacity-40'
+                        }`}
                       >
                         {branch.code}
                       </div>
@@ -157,11 +166,9 @@ export default function LeaderSettingsPage() {
                 </div>
               )}
 
-              {role === 'admin' && (
-                <p className="text-fluid-xs mt-3" style={{ color: 'var(--text-muted)' }}>
-                  ⚠️ หากต้องการเปลี่ยนสาขา ให้ติดต่อ Super Admin
-                </p>
-              )}
+              <p className="text-[10px] font-medium mt-6 text-center italic" style={{ color: 'var(--text-muted)' }}>
+                {role === 'admin' ? '• คุณมีสิทธิ์เข้าถึงทุกสาขาในฐานะผู้ดูแลระบบ •' : '• ติดต่อ Admin หากต้องการสลับสาขาที่รับผิดชอบ •'}
+              </p>
             </motion.div>
 
             {/* Profile Edit */}

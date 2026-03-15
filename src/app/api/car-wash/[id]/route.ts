@@ -124,7 +124,7 @@ export async function PATCH(
 
       // Only comment owner or leader can delete
       const isOwner = comment.userId.toString() === visitorId;
-      const isLeader = payload.role === 'leader';
+      const isLeader = payload.role === 'leader' || payload.role === 'admin';
       if (!isOwner && !isLeader) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
@@ -142,8 +142,8 @@ export async function PATCH(
 
     // --- MARK (leader only) ---
     if (action === 'mark') {
-      if (payload.role !== 'leader') {
-        return NextResponse.json({ error: 'Forbidden: Leader access required' }, { status: 403 });
+      if (payload.role !== 'leader' && payload.role !== 'admin') {
+        return { error: NextResponse.json({ error: 'Forbidden: Management access required' }, { status: 403 }) } as any;
       }
 
       const { leaderId } = body;
@@ -165,7 +165,7 @@ export async function PATCH(
     // --- EDIT caption/activityDate/activityTime ---
     const { visitorId, caption, activityDate, activityTime } = body;
     const isOwner = activity.userId.toString() === visitorId;
-    const isLeader = payload.role === 'leader';
+    const isLeader = payload.role === 'leader' || payload.role === 'admin';
 
     if (!isOwner && !isLeader) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -211,7 +211,7 @@ export async function DELETE(
     }
 
     const isOwner = activity.userId.toString() === visitorId;
-    const isLeader = payload.role === 'leader';
+    const isLeader = payload.role === 'leader' || payload.role === 'admin';
 
     if (!isOwner && !isLeader) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

@@ -374,87 +374,107 @@ export default function LeaderTasksPage() {
                     </div>
                   </div>
 
-                  {/* Submissions list */}
+                  {/* Submissions & Pending Split View */}
                   <AnimatePresence>
-                    {expandedTask === task._id && task.submissions.length > 0 && (
+                    {(expandedTask === task._id || showPending === task._id) && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                        style={{ borderTop: '1px solid var(--border)' }}
+                        className="overflow-hidden bg-[var(--bg-inset)] border-t border-[var(--border)]"
                       >
-                        <div className="p-3 space-y-2" style={{ background: 'var(--bg-inset)' }}>
-                          {task.submissions.map((sub) => (
-                            <div key={sub.userId?._id} className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-surface)' }}>
-                              <UserAvatar imageUrl={sub.userId?.lineProfileImage} displayName={sub.userId?.name || sub.userId?.lineDisplayName} tier={sub.userId?.performanceTier} size="xs" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-fluid-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                                  {sub.userId?.name && sub.userId?.surname ? `${sub.userId.name} ${sub.userId.surname}` : sub.userId?.lineDisplayName}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Award className="w-3.5 h-3.5" style={{ color: sub.score >= sub.total * 0.7 ? 'var(--success)' : 'var(--warning)' }} />
-                                <span className="text-fluid-xs font-bold" style={{ color: sub.score >= sub.total * 0.7 ? 'var(--success)' : 'var(--warning)' }}>
-                                  {sub.score}/{sub.total}
-                                </span>
-                              </div>
+                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                          
+                          {/* Done Section */}
+                          <div className="space-y-3">
+                            <h4 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[var(--success)] ml-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              ติตตามการส่งงาน ({task.submissions.length})
+                            </h4>
+                            <div className="space-y-2">
+                              {task.submissions.length === 0 ? (
+                                <div className="p-4 rounded-[var(--radius-md)] border border-dashed border-[var(--border)] text-center">
+                                  <p className="text-[10px] text-[var(--text-muted)]">ยังไม่มีผู้ส่งงาน</p>
+                                </div>
+                              ) : (
+                                task.submissions.map((sub) => (
+                                  <div key={sub.userId?._id} className="flex items-center gap-3 p-3 rounded-[var(--radius-lg)] bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm">
+                                    <UserAvatar imageUrl={sub.userId?.lineProfileImage} displayName={sub.userId?.name || sub.userId?.lineDisplayName} tier={sub.userId?.performanceTier} size="xs" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-fluid-xs font-bold text-[var(--text-primary)] truncate">
+                                        {sub.userId?.name && sub.userId?.surname ? `${sub.userId.name} ${sub.userId.surname}` : sub.userId?.lineDisplayName}
+                                      </p>
+                                      <p className="text-[9px] text-[var(--text-muted)]">ส่งเมื่อ {new Date(sub.submittedAt).toLocaleDateString('th-TH')}</p>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-fluid-xs font-extrabold" style={{ color: sub.score >= sub.total * 0.7 ? 'var(--success)' : 'var(--warning)' }}>
+                                          {sub.score}/{sub.total}
+                                        </span>
+                                      </div>
+                                      <span className="text-[9px] font-medium text-[var(--text-muted)]">
+                                        {Math.round((sub.score / sub.total) * 100)}%
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
                             </div>
-                          ))}
+                          </div>
+
+                          {/* Pending Section */}
+                          <div className="space-y-3">
+                            {(() => {
+                              const submittedIds = new Set(task.submissions.map(s => s.userId?._id));
+                              const targetDrivers = task.branches.length > 0
+                                ? activeDrivers.filter(d => d.branch && task.branches.includes(d.branch))
+                                : activeDrivers;
+                              const pending = targetDrivers.filter(d => !submittedIds.has(d._id));
+                              
+                              return (
+                                <>
+                                  <h4 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[var(--danger)] ml-1">
+                                    <Users className="w-3 h-3" />
+                                    ยังไม่ส่ง ({pending.length})
+                                  </h4>
+                                  <div className="space-y-2">
+                                    {pending.length === 0 ? (
+                                      <div className="p-4 rounded-[var(--radius-md)] border border-dashed border-[var(--border)] text-center">
+                                        <p className="text-[10px] text-[var(--success)]">ครบทุกคนแล้ว!</p>
+                                      </div>
+                                    ) : (
+                                      pending.map((driver) => (
+                                        <div key={driver._id} className="flex items-center gap-3 p-3 rounded-[var(--radius-lg)] bg-[var(--bg-surface)] border border-[var(--border)] shadow-sm group">
+                                          <UserAvatar imageUrl={driver.lineProfileImage} displayName={driver.name || driver.lineDisplayName} tier={driver.performanceTier} size="xs" />
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-fluid-xs font-bold text-[var(--text-primary)] truncate">
+                                              {driver.name && driver.surname ? `${driver.name} ${driver.surname}` : driver.lineDisplayName}
+                                            </p>
+                                            <span className="text-[9px] text-[var(--text-muted)]">{driver.branch}</span>
+                                          </div>
+                                          {driver.phone && (
+                                            <motion.a
+                                              whileHover={{ scale: 1.1 }}
+                                              whileTap={{ scale: 0.9 }}
+                                              href={`tel:${driver.phone}`}
+                                              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm border border-[var(--success-light)]"
+                                              style={{ background: 'var(--success-light)' }}
+                                            >
+                                              <Phone className="w-3.5 h-3.5" style={{ color: 'var(--success)' }} />
+                                            </motion.a>
+                                          )}
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+
                         </div>
                       </motion.div>
                     )}
-                  </AnimatePresence>
-
-                  {/* Un-submitted drivers list */}
-                  <AnimatePresence>
-                    {showPending === task._id && (() => {
-                      const submittedIds = new Set(task.submissions.map(s => s.userId?._id));
-                      const targetDrivers = task.branches.length > 0
-                        ? activeDrivers.filter(d => d.branch && task.branches.includes(d.branch))
-                        : activeDrivers;
-                      const pending = targetDrivers.filter(d => !submittedIds.has(d._id));
-                      if (pending.length === 0) return null;
-                      return (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden"
-                          style={{ borderTop: '1px solid var(--border)' }}
-                        >
-                          <div className="p-3" style={{ background: 'rgba(239,68,68,0.03)' }}>
-                            <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--danger)' }}>
-                              ยังไม่ส่ง ({pending.length} คน)
-                            </p>
-                            <div className="space-y-2">
-                              {pending.map((driver) => (
-                                <div key={driver._id} className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-surface)' }}>
-                                  <UserAvatar imageUrl={driver.lineProfileImage} displayName={driver.name || driver.lineDisplayName} tier={driver.performanceTier} size="xs" />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-fluid-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                                      {driver.name && driver.surname ? `${driver.name} ${driver.surname}` : driver.lineDisplayName}
-                                    </p>
-                                    {driver.branch && (
-                                      <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>{driver.branch}</span>
-                                    )}
-                                  </div>
-                                  {driver.phone && (
-                                    <a
-                                      href={`tel:${driver.phone}`}
-                                      className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                                      style={{ background: 'var(--success-light)' }}
-                                    >
-                                      <Phone className="w-3.5 h-3.5" style={{ color: 'var(--success)' }} />
-                                    </a>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })()}
                   </AnimatePresence>
                 </motion.div>
               ))

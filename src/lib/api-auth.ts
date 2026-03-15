@@ -29,8 +29,8 @@ export function requireAuth(request: NextRequest): { payload: TokenPayload } | {
 export function requireLeader(request: NextRequest): { payload: TokenPayload } | { error: NextResponse } {
   const result = requireAuth(request);
   if ('error' in result) return result;
-  if (result.payload.role !== 'leader') {
-    return { error: NextResponse.json({ error: 'Forbidden: Leader access required' }, { status: 403 }) };
+  if (result.payload.role !== 'leader' && result.payload.role !== 'admin') {
+    return { error: NextResponse.json({ error: 'Forbidden: Management access required' }, { status: 403 }) };
   }
   return result;
 }

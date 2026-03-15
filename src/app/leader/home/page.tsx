@@ -19,12 +19,55 @@ const menuItems = [
   { icon: CheckSquare, label: 'อนุมัติลา', sub: 'ตรวจสอบคำขอลาใหม่', href: '/leader/approve', color: 'var(--success)' },
   { icon: Users, label: 'จัดการพนักงาน', sub: 'เพิ่ม/แก้ไข/เปิดใช้งาน', href: '/leader/drivers', color: 'var(--accent)' },
   { icon: PenSquare, label: 'บันทึกแทน', sub: 'บันทึกข้อมูลการแทน', href: '/leader/substitute', color: 'var(--info)' },
+  { icon: ClipboardCheck, label: 'จัดการ Tasks', sub: 'สร้างแบบทดสอบ/งานให้พนักงาน', href: '/leader/tasks', color: 'var(--info)' },
   { icon: CalendarDays, label: 'Dashboard', sub: 'ภาพรวมตารางวันลา', href: '/dashboard', color: 'var(--warning)' },
   { icon: Clock, label: 'ประวัติทั้งหมด', sub: 'ดูประวัติการลาและบันทึก', href: '/leader/history', color: 'var(--text-muted)' },
-  { icon: ClipboardCheck, label: 'จัดการ Tasks', sub: 'สร้างแบบทดสอบ/งานให้พนักงาน', href: '/leader/tasks', color: 'var(--info)' },
   { icon: User, label: 'แก้ไขโปรไฟล์', sub: 'แก้ไขข้อมูลส่วนตัว', href: '/leader/profile-edit', color: 'var(--danger)' },
   { icon: Settings, label: 'ตั้งค่า', sub: 'ตั้งค่าสาขาที่ดูแล', href: '/leader/settings', color: 'var(--text-muted)' },
 ];
+
+const MenuCard = ({ item, i, compact = false, pendingLeaveCount = 0, pendingDriverCount = 0 }: any) => {
+  const router = useRouter();
+  const Icon = item.icon;
+  const isApprove = item.href === '/leader/approve';
+  const isDrivers = item.href === '/leader/drivers';
+  const badgeCount = isApprove ? pendingLeaveCount : isDrivers ? pendingDriverCount : 0;
+
+  return (
+    <motion.button
+      initial={{ y: 15, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.1 + i * 0.05 }}
+      onClick={() => router.push(item.href)}
+      whileTap={{ scale: 0.98 }}
+      className={`card w-full flex items-center gap-3.5 group cursor-pointer relative overflow-hidden ${compact ? 'p-3' : 'p-4'}`}
+    >
+      <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-transparent to-black/5 dark:to-white/5 opacity-30 -mr-8 -mt-8 rotate-45" />
+      
+      {badgeCount > 0 && (
+        <span className="absolute top-3 right-3 min-w-[18px] h-[18px] px-1.5 rounded-full bg-[var(--danger)] text-white text-[10px] font-black flex items-center justify-center shadow-lg border-2 border-[var(--bg-surface)]"
+          style={{ zIndex: 10 }}>
+          {badgeCount > 99 ? '99+' : badgeCount}
+        </span>
+      )}
+
+      <div
+        className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-xl flex items-center justify-center shrink-0 border border-[var(--border)] transition-colors group-hover:border-[var(--accent)]`}
+        style={{ background: 'var(--bg-inset)' }}
+      >
+        <Icon className={`${compact ? 'w-4 h-4' : 'w-[18px] h-[18px]'}`} style={{ color: item.color }} strokeWidth={2} />
+      </div>
+
+      <div className="flex-1 text-left min-w-0">
+        <span className={`${compact ? 'text-[11px]' : 'text-fluid-sm'} font-black block leading-tight truncate`} style={{ color: 'var(--text-primary)' }}>
+          {item.label}
+        </span>
+        {!compact && <span className="text-[10px] font-medium block truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{item.sub}</span>}
+      </div>
+      {!compact && <ChevronRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5 opacity-30" />}
+    </motion.button>
+  );
+};
 
 const BRANCHES = ['AYA', 'CBI', 'RA2', 'KSN', 'BBT'];
 
@@ -164,48 +207,46 @@ export default function LeaderHomePage() {
               </motion.div>
             )}
 
-            <p className="text-fluid-xs font-semibold uppercase tracking-wider px-1 mb-2" style={{ color: 'var(--text-muted)' }}>
-              เมนู
-            </p>
+            {/* Dashboard Sections */}
+            <div className="space-y-8">
+              {/* Operations Group */}
+              <section>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>งานบริหาร (Operations)</h2>
+                  <div className="h-[1px] flex-1 ml-4 bg-gradient-to-r from-[var(--border)] to-transparent opacity-50" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {menuItems.slice(0, 3).map((item, i) => (
+                    <MenuCard key={item.label} item={item} i={i} pendingLeaveCount={pendingLeaveCount} pendingDriverCount={pendingDriverCount} />
+                  ))}
+                </div>
+              </section>
 
-            {/* Desktop: 2-col grid, Mobile: stacked cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {menuItems.map((item, i) => {
-                const Icon = item.icon;
-                const isApprove = item.href === '/leader/approve';
-                const isDrivers = item.href === '/leader/drivers';
-                const badgeCount = isApprove ? pendingLeaveCount : isDrivers ? pendingDriverCount : 0;
-                
-                return (
-                  <motion.button
-                    key={i}
-                    initial={{ y: 15, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.1 + i * 0.05 }}
-                    onClick={() => router.push(item.href)}
-                    whileTap={{ scale: 0.98 }}
-                    className="card w-full p-4 flex items-center gap-3.5 group cursor-pointer relative"
-                  >
-                    {badgeCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-5.5 px-2 rounded-full bg-[var(--danger)] text-white text-[11px] font-bold flex items-center justify-center shadow-lg border-2 border-[var(--bg-surface)] animate-pulse-glow"
-                        style={{ zIndex: 10 }}>
-                        {badgeCount > 99 ? '99+' : badgeCount}
-                      </span>
-                    )}
-                    <div
-                      className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
-                      style={{ background: 'var(--bg-inset)' }}
-                    >
-                      <Icon className="w-[18px] h-[18px]" style={{ color: item.color }} strokeWidth={1.8} />
-                    </div>
-                    <div className="flex-1 text-left min-w-0">
-                      <span className="text-fluid-sm font-semibold block" style={{ color: 'var(--text-primary)' }}>{item.label}</span>
-                      <span className="text-fluid-xs block" style={{ color: 'var(--text-muted)' }}>{item.sub}</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--text-muted)' }} />
-                  </motion.button>
-                );
-              })}
+              {/* Monitoring & Tracking */}
+              <section>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>การติดตาม (Monitoring)</h2>
+                  <div className="h-[1px] flex-1 ml-4 bg-gradient-to-r from-[var(--border)] to-transparent opacity-50" />
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {menuItems.slice(3, 6).map((item, i) => (
+                    <MenuCard key={item.label} item={item} i={i} compact />
+                  ))}
+                </div>
+              </section>
+
+              {/* Account & Settings */}
+              <section>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>บัญชีและตั้งค่า (Account)</h2>
+                  <div className="h-[1px] flex-1 ml-4 bg-gradient-to-r from-[var(--border)] to-transparent opacity-50" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {menuItems.slice(6).map((item, i) => (
+                    <MenuCard key={item.label} item={item} i={i} />
+                  ))}
+                </div>
+              </section>
             </div>
 
             <motion.button

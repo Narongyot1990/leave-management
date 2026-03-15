@@ -47,12 +47,13 @@ interface DriverProfileProps {
   onEditClick?: () => void;
 }
 
-const BentoCard = ({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) => (
+const BentoCard = ({ children, className = "", delay = 0, onClick }: { children: React.ReactNode; className?: string; delay?: number; onClick?: () => void }) => (
   <motion.div
     initial={{ opacity: 0, y: 15 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.4, delay }}
-    className={`relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] backdrop-blur-md shadow-lg ${className}`}
+    onClick={onClick}
+    className={`relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] backdrop-blur-md shadow-lg ${className} ${onClick ? 'cursor-pointer active:scale-[0.98] transition-transform' : ''}`}
   >
     {children}
   </motion.div>
@@ -82,27 +83,38 @@ export default function DriverProfile({ user, isMe = true, onEditClick }: Driver
   const [mounted, setMounted] = useState(false);
   const [taskScores, setTaskScores] = useState<TaskScores | null>(null);
   const [loadingScores, setLoadingScores] = useState(false);
-  const [activeTab, setActiveTab] = useState<'performance' | 'attendance'>('performance');
+  const [activityStats, setActivityStats] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'attendance' | 'contact'>('overview');
 
   useEffect(() => {
     setMounted(true);
-    const fetchScores = async () => {
-      const userId = user.id || user._id;
-      if (!userId) return;
+    const userId = user.id || user._id;
+    if (!userId) return;
+
+    const fetchData = async () => {
       setLoadingScores(true);
+      setLoadingStats(true);
       try {
-        const res = await fetch(`/api/tasks/scores?userId=${userId}`);
-        const data = await res.json();
-        if (data.success) {
-          setTaskScores(data.data);
-        }
+        const [scoresRes, statsRes] = await Promise.all([
+          fetch(`/api/tasks/scores?userId=${userId}`),
+          fetch(`/api/profile/stats?userId=${userId}`)
+        ]);
+        
+        const scoresData = await scoresRes.json();
+        const statsData = await statsRes.json();
+
+        if (scoresData.success) setTaskScores(scoresData.data);
+        if (statsData.success) setActivityStats(statsData.stats);
       } catch (err) {
-        console.error("Failed to fetch task scores", err);
+        console.error("Failed to fetch profile data", err);
       } finally {
         setLoadingScores(false);
+        setLoadingStats(false);
       }
     };
-    fetchScores();
+
+    fetchData();
   }, [user.id, user._id]);
 
   if (!mounted) return null;
@@ -135,6 +147,13 @@ export default function DriverProfile({ user, isMe = true, onEditClick }: Driver
     yellow: 'bg-yellow-400/5',
     violet: 'bg-violet-400/5'
   };
+
+  const tabs = [
+    { id: 'overview', label: 'ภาพรวม', icon: TrendingUp },
+    { id: 'performance', label: 'ผลงาน', icon: Zap },
+    { id: 'attendance', label: 'การลา', icon: Calendar },
+    { id: 'contact', label: 'ติดต่อ', icon: Phone }
+  ];
 
   return (
     <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)] p-3 md:p-6 font-sans selection:bg-purple-500/30 overflow-x-hidden">
@@ -207,90 +226,204 @@ export default function DriverProfile({ user, isMe = true, onEditClick }: Driver
           />
         </div>
 
-        {/* Tabs Selection */}
+        {/* Tabs Selection - 4 Pillars */}
         <div className="flex p-1 bg-[var(--bg-inset)] rounded-2xl border border-[var(--border)] mb-6">
-          {[
-            { id: 'performance', label: 'ผลการทำงาน', icon: Zap },
-            { id: 'attendance', label: 'ข้อมูลการลา', icon: Calendar }
-          ].map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-xl text-[8px] font-black uppercase tracking-tighter transition-all ${
                 activeTab === tab.id 
                   ? 'bg-[var(--bg-surface)] text-[var(--accent)] shadow-sm border border-[var(--border)]' 
                   : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
-              <tab.icon className={`w-3.5 h-3.5 ${activeTab === tab.id ? 'text-[var(--accent)]' : 'opacity-50'}`} />
+              <tab.icon className={`w-3.5 h-3.5 ${activeTab === tab.id ? 'text-[var(--accent)]' : 'opacity-40'}`} />
               {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Tab Content */}
-        <div className="grid grid-cols-2 gap-3">
-          {activeTab === 'performance' ? (
-            <>
-              {/* Performance Section */}
-              <BentoCard className="p-5 flex flex-col justify-between" delay={0.1}>
-                <div className="flex items-center justify-between mb-4">
+        {/* Tab Content Wrap */}
+        <div className="space-y-3 pb-10">
+          
+          {/* OVERVIEW TAB */}
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-2 gap-3">
+              <BentoCard className="p-5 flex flex-col justify-between aspect-square" delay={0.1}>
+                 <div className="flex items-center justify-between mb-4">
                   <Star className="w-4 h-4 text-emerald-500" />
-                  <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Knowledge</span>
+                  <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Growth</span>
                 </div>
-                {loadingScores ? (
-                  <div className="py-4"><div className="w-5 h-5 border-2 border-[var(--border)] border-t-emerald-500 rounded-full animate-spin" /></div>
-                ) : (
-                  <div>
-                    <div className="text-3xl font-black tracking-tighter mb-1 text-emerald-500">
-                      {taskScores?.overallPercentage || 0}<span className="text-sm opacity-50 ml-1">%</span>
-                    </div>
-                    <p className="text-[11px] font-bold text-[var(--text-secondary)] uppercase">{taskScores?.knowledgeLevelTh || 'กำลังประเมิน...'}</p>
+                <div>
+                   <div className="text-3xl font-black tracking-tighter mb-1 text-emerald-500">
+                    {taskScores?.overallPercentage || 0}<span className="text-sm opacity-50 ml-1">%</span>
                   </div>
-                )}
-                <div className="text-[8px] text-[var(--text-muted)] font-bold border-t border-[var(--border)] pt-3 mt-4 flex items-center justify-between">
-                  <span>Quiz Accuracy</span>
-                  <TrendingUp className="w-3 h-3" />
+                  <p className="text-[10px] font-black text-[var(--text-secondary)] uppercase">Avg Score</p>
                 </div>
               </BentoCard>
 
-              <BentoCard className="p-5 flex flex-col justify-between" delay={0.2}>
+              <BentoCard className="p-5 flex flex-col justify-between aspect-square" delay={0.2}>
                 <div className="flex items-center justify-between mb-4">
                   <Shield className="w-4 h-4 text-violet-500" />
-                  <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Leveling</span>
+                  <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Rank</span>
                 </div>
                 <div>
                   <div className="text-3xl font-black tracking-tighter mb-1">
                     Lvl <span className="text-violet-500">{user.performanceLevel || 1}</span>
                   </div>
-                  <p className="text-[11px] font-bold text-[var(--text-secondary)] uppercase">Driver Rank</p>
-                </div>
-                <div className="text-[8px] text-[var(--text-muted)] font-bold border-t border-[var(--border)] pt-3 mt-4">
-                  {user.performancePoints || 0} Points gained
+                  <p className="text-[10px] font-black text-[var(--text-secondary)] uppercase">Driver Level</p>
                 </div>
               </BentoCard>
 
-              <BentoCard className="col-span-2 p-5 flex items-center gap-5" delay={0.3}>
-                <div className="w-12 h-12 rounded-xl bg-violet-500/5 flex items-center justify-center shrink-0 border border-violet-500/10">
-                  <CheckCircle2 className="w-6 h-6 text-violet-500" />
+              <BentoCard className="col-span-2 p-5 flex items-center justify-between" delay={0.3}>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--accent-light)] flex items-center justify-center shrink-0 border border-[var(--border)]">
+                    <Calendar className="w-5 h-5 text-[var(--accent)]" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black leading-tight">โควตาวันลา</h4>
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Leave Availability</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] mb-1">Testing Progress</p>
-                  <h4 className="text-xl font-black truncate leading-tight">
-                    {taskScores?.completedTasks || 0} <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase ml-1">Modules Passed</span>
-                  </h4>
-                </div>
-                <div className="flex flex-col items-end">
-                  <div className="text-[10px] font-black text-emerald-500 leading-tight">Top 15%</div>
-                  <div className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">Performance</div>
+                <div className="flex gap-4">
+                   <div className="text-right">
+                    <div className="text-lg font-black leading-none">{user.vacationDays || 0}</div>
+                    <div className="text-[7px] font-bold text-[var(--text-muted)] uppercase">Vacation</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-black leading-none text-rose-500">{user.sickDays || 0}</div>
+                    <div className="text-[7px] font-bold text-[var(--text-muted)] uppercase">Sick</div>
+                  </div>
                 </div>
               </BentoCard>
-            </>
-          ) : (
-            <>
-              {/* Attendance Section */}
+
+              <BentoCard className="col-span-2 p-5 flex items-center gap-4" delay={0.4} onClick={() => setActiveTab('contact')}>
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/5 flex items-center justify-center shrink-0 border border-emerald-500/10">
+                  <MessageSquare className="w-5 h-5 text-emerald-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-black truncate">{user.phone || '---'}</p>
+                  <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Tap to view contact info</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[var(--text-muted)] opacity-50" />
+              </BentoCard>
+            </div>
+          )}
+
+          {/* PERFORMANCE TAB */}
+          {activeTab === 'performance' && (
+            <div className="grid grid-cols-2 gap-3">
               <BentoCard className="col-span-2 p-5" delay={0.1}>
-                <div className="flex items-center justify-between mb-5">
+                 <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-emerald-500" />
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Quiz Performance</h4>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[8px] font-black bg-emerald-500/10 text-emerald-500 uppercase tracking-widest">Verified</span>
+                </div>
+                
+                <div className="flex items-end gap-1 mb-6">
+                  <div className="text-5xl font-black tracking-tighter text-emerald-500">{taskScores?.overallPercentage || 0}</div>
+                  <div className="text-xl font-black text-emerald-500/40 mb-1.5">%</div>
+                  <div className="ml-auto text-right">
+                    <p className="text-[11px] font-bold text-[var(--text-primary)] uppercase leading-tight">{taskScores?.knowledgeLevelTh || 'กำลังประเมิน...'}</p>
+                    <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Knowledge Level</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-[var(--border)]">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                       <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                       <span className="text-[10px] font-bold">Modules Completed</span>
+                    </div>
+                    <span className="text-xs font-black">{taskScores?.completedTasks || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                       <Star className="w-3 h-3 text-emerald-500" />
+                       <span className="text-[10px] font-bold">Total Questions</span>
+                    </div>
+                    <span className="text-xs font-black">{taskScores?.totalQuestions || 0}</span>
+                  </div>
+                </div>
+              </BentoCard>
+
+              <BentoCard className="col-span-2 p-5" delay={0.2}>
+                <div className="flex items-center gap-2 mb-6">
+                  <TrendingUp className="w-4 h-4 text-violet-500" />
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">XP & Progression</h4>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 rounded-xl bg-violet-500/5 border border-violet-500/10">
+                    <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase mb-1">Points</p>
+                    <p className="text-xl font-black">{user.performancePoints || 0}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-violet-500/5 border border-violet-500/10">
+                    <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase mb-1">Level</p>
+                    <p className="text-xl font-black">{user.performanceLevel || 1}</p>
+                  </div>
+                </div>
+              </BentoCard>
+
+              {/* Activity Metrics Section */}
+              <BentoCard className="col-span-2 p-5" delay={0.3}>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-amber-500" />
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Activity Metrics</h4>
+                  </div>
+                  <span className="text-[9px] font-black text-amber-500/80 uppercase">Job Duties</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                   <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 flex flex-col justify-between aspect-square md:aspect-auto">
+                    <div>
+                      <CheckCircle2 className="w-4 h-4 text-amber-500 mb-2" />
+                      <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Total Jobs</p>
+                    </div>
+                    <div className="mt-auto">
+                      <p className="text-3xl font-black tracking-tighter">{activityStats?.total || 0}</p>
+                      <p className="text-[7px] font-bold text-[var(--text-muted)] uppercase">Lifetime Activities</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 flex flex-col justify-between aspect-square md:aspect-auto">
+                    <div>
+                      <Thermometer className="w-4 h-4 text-indigo-500 mb-2" />
+                      <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">Car Wash</p>
+                    </div>
+                    <div className="mt-auto">
+                      <p className="text-3xl font-black tracking-tighter">{activityStats?.byType?.['car-wash'] || 0}</p>
+                      <p className="text-[7px] font-bold text-[var(--text-muted)] uppercase">Verified Cleanings</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-[var(--border)] flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <p className="text-sm font-black text-[var(--text-primary)]">{activityStats?.thisMonth || 0}</p>
+                      <p className="text-[7px] font-bold text-[var(--text-muted)] uppercase">This Month</p>
+                    </div>
+                    <div className="w-[1px] h-4 bg-[var(--border)]" />
+                    <div className="text-center">
+                      <p className="text-sm font-black text-[var(--text-primary)]">{activityStats?.thisWeek || 0}</p>
+                      <p className="text-[7px] font-bold text-[var(--text-muted)] uppercase">This Week</p>
+                    </div>
+                  </div>
+                  <span className="text-[8px] font-bold text-[var(--text-muted)] bg-[var(--bg-inset)] px-2 py-1 rounded-md">Realtime Sync</span>
+                </div>
+              </BentoCard>
+            </div>
+          )}
+
+          {/* ATTENDANCE TAB */}
+          {activeTab === 'attendance' && (
+            <div className="grid grid-cols-2 gap-3">
+              <BentoCard className="col-span-2 p-5" delay={0.1}>
+                 <div className="flex items-center justify-between mb-5">
                   <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)]">Remaining Quota</h4>
                   <Calendar className="w-4 h-4 text-[var(--accent)]" />
                 </div>
@@ -309,52 +442,106 @@ export default function DriverProfile({ user, isMe = true, onEditClick }: Driver
                 </div>
               </BentoCard>
 
-              <BentoCard className="col-span-2 p-5 flex items-center gap-5" delay={0.2}>
-                <div className="w-12 h-12 rounded-xl bg-[var(--accent-light)] flex items-center justify-center shrink-0 border border-[var(--border)]">
-                  <CheckCircle2 className="w-6 h-6 text-[var(--accent)]" />
+              <BentoCard className="p-5 flex flex-col justify-between" delay={0.2}>
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-4 border border-emerald-500/20">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em] mb-1">Activity Review</p>
-                  <h4 className="text-xl font-black truncate leading-tight">
-                    {user.approvedCount || 0} <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase ml-1">Leaves Approved</span>
-                  </h4>
+                <div>
+                  <div className="text-3xl font-black leading-none mb-1">{user.approvedCount || 0}</div>
+                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">Approved</p>
                 </div>
               </BentoCard>
-            </>
+
+              <BentoCard className="p-5 flex flex-col justify-between" delay={0.3}>
+                 <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4 border border-amber-500/20">
+                  <Calendar className="w-4 h-4 text-amber-500" />
+                </div>
+                <div>
+                  <div className="text-3xl font-black leading-none mb-1">---</div>
+                   <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">Next Leave</p>
+                </div>
+              </BentoCard>
+            </div>
           )}
 
-          {/* Shared Contact Section - Always visible or moved to bottom of tabs */}
-          <BentoCard className="col-span-2 p-5 mt-2" delay={0.5}>
-            <div className="grid grid-cols-2 gap-6">
-              <a 
-                href={user.phone ? `tel:${user.phone}` : "#"} 
-                className="flex items-center gap-3.5 group active:scale-95 transition-transform"
-              >
-                <div className="w-10 h-10 rounded-xl bg-[var(--bg-inset)] group-hover:bg-emerald-500/10 flex items-center justify-center shrink-0 border border-[var(--border)] transition-colors">
-                  <Phone className="w-4 h-4 text-[var(--text-muted)] group-hover:text-emerald-500 transition-colors" />
+          {/* CONTACT TAB */}
+          {activeTab === 'contact' && (
+            <div className="grid grid-cols-1 gap-3">
+              <BentoCard className="p-5" delay={0.1}>
+                 <div className="flex items-center gap-2 mb-6">
+                  <Phone className="w-4 h-4 text-emerald-500" />
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Primary Contact</h4>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 leading-none">Callback</p>
-                  <p className="text-[12px] font-black truncate group-hover:text-emerald-500 transition-colors">{user.phone || '---'}</p>
+                
+                <div className="space-y-6">
+                  <a 
+                    href={user.phone ? `tel:${user.phone}` : "#"} 
+                    className="flex items-center gap-4 group active:scale-[0.98] transition-all"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-emerald-500/5 flex items-center justify-center shrink-0 border border-emerald-500/10 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                      <Phone className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none mb-1.5">Mobile Number</p>
+                      <p className="text-lg font-black">{user.phone || 'ไม่ระบุ'}</p>
+                    </div>
+                    <div className="hidden group-hover:block px-2 py-1 rounded-md bg-emerald-500 text-white text-[8px] font-black uppercase">Call Now</div>
+                  </a>
+
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-sky-500/5 flex items-center justify-center shrink-0 border border-sky-500/10">
+                      <MessageSquare className="w-5 h-5 text-sky-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none mb-1.5">LINE Display Name</p>
+                      <p className="text-lg font-black">@{user.lineDisplayName || '---'}</p>
+                    </div>
+                  </div>
                 </div>
-              </a>
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/5 flex items-center justify-center shrink-0 border border-emerald-500/10">
-                  <MessageSquare className="w-4 h-4 text-emerald-500/60" />
+              </BentoCard>
+
+              <BentoCard className="p-5" delay={0.2}>
+                <div className="flex items-center gap-2 mb-6">
+                  <MapPin className="w-4 h-4 text-rose-500" />
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Work Location</h4>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] font-black text-emerald-500/40 uppercase tracking-widest mb-1 leading-none">LINE ID</p>
-                  <p className="text-[12px] font-black truncate text-emerald-500/80">@{user.lineDisplayName || '---'}</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-rose-500/5 flex items-center justify-center shrink-0 border border-rose-500/10">
+                    <MapPin className="w-5 h-5 text-rose-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none mb-1.5">Assigned Branch</p>
+                    <p className="text-2xl font-black text-rose-500">{user.branch || 'Pending Assignment'}</p>
+                  </div>
                 </div>
-              </div>
+              </BentoCard>
+
+               <BentoCard className="p-5" delay={0.3}>
+                <div className="flex items-center gap-2 mb-6">
+                  <UserIcon className="w-4 h-4 text-[var(--text-muted)]" />
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Core Metadata</h4>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">Employee ID</p>
+                    <p className="text-sm font-black">{user.employeeId || '---'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">Account Status</p>
+                    <p className={`text-sm font-black uppercase ${user.status === 'active' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                      {user.status || 'Unknown'}
+                    </p>
+                  </div>
+                </div>
+              </BentoCard>
             </div>
-          </BentoCard>
+          )}
         </div>
 
         {/* Minimalist Footer */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="mt-8 text-center pb-10">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="mt-4 text-center pb-8">
           <p className="text-[8px] font-black text-[var(--text-muted)] opacity-20 uppercase tracking-[0.5em]">
-            ITL Logistics Driver Network • V2.7.0
+            ITL Logistics Driver Network • V2.8.0
           </p>
         </motion.div>
 

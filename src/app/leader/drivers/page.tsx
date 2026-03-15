@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Users, Search, Edit3, Trash2, X, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Plus, Phone, PhoneCall, MessageCircle, Shield } from 'lucide-react';
+import { Users, Search, Edit3, Trash2, X, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Plus, Phone, PhoneCall, MessageCircle, Shield, ChevronRight } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -307,14 +307,14 @@ function DriverManagementContent() {
               <p className="text-fluid-sm" style={{ color: 'var(--text-muted)' }}>ไม่มีพนักงาน</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {drivers.map((driver) => (
                 <motion.div
                   key={driver._id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   onClick={() => setSelectedDriver(driver)}
-                  className="card p-4 flex items-center gap-3 cursor-pointer"
+                  className="card p-4 flex items-center gap-4 cursor-pointer group shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
                     <UserAvatar
@@ -324,7 +324,6 @@ function DriverManagementContent() {
                       size="sm"
                       onClick={() => { setProfileUser(driver as unknown as ProfileUser); setShowProfile(true); }}
                     />
-                    {/* Online dot */}
                     <span
                       className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
                       style={{
@@ -333,54 +332,47 @@ function DriverManagementContent() {
                       }}
                     />
                   </div>
+                  
                   <div className="flex-1 min-w-0">
-                    <p className="text-fluid-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                      {driver.employeeId ? `${driver.employeeId} - ` : ''}
-                      {driver.name && driver.surname ? `${driver.name} ${driver.surname}` : driver.lineDisplayName}
-                    </p>
-                    {driver.branch && (
-                      <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>{driver.branch}</span>
-                    )}
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className="text-[11px] font-medium"
-                        style={{ color: isUserOnline(driver.lastSeen) ? 'var(--success)' : 'var(--text-muted)' }}
-                      >
-                        {isUserOnline(driver.lastSeen) ? 'ออนไลน์' : formatRelativeTime(driver.lastSeen)}
+                    <div className="flex items-center gap-2 mb-0.5">
+                       <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${driver.status === 'active' ? 'bg-[var(--success-light)] text-[var(--success)]' : 'bg-[var(--warning-light)] text-[var(--warning)]'}`}>
+                        {driver.status === 'active' ? 'Active' : 'Pending'}
                       </span>
+                      {driver.branch && (
+                        <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest leading-none">
+                          {driver.branch}
+                        </span>
+                      )}
                     </div>
+                    <h3 className="text-fluid-sm font-black truncate" style={{ color: 'var(--text-primary)' }}>
+                      {driver.name && driver.surname ? `${driver.name} ${driver.surname}` : driver.lineDisplayName}
+                    </h3>
+                    <p className="text-[10px] font-medium" style={{ color: isUserOnline(driver.lastSeen) ? 'var(--success)' : 'var(--text-muted)' }}>
+                      {isUserOnline(driver.lastSeen) ? 'ออนไลน์' : formatRelativeTime(driver.lastSeen)}
+                    </p>
                   </div>
-                  <div className="flex flex-col gap-2 items-end">
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-2">
-                      {/* LINE button */}
-                      {driver.linePublicId && (
-                        <a
-                          href={`https://line.me/R/ti/p/~${encodeURIComponent(driver.linePublicId)}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-                          style={{ background: '#00C300', color: '#fff' }}
-                          title="เปิดใน LINE"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                      {/* Call button */}
-                      {driver.phone && (
-                        <a
-                          href={`tel:${driver.phone}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-                          style={{ background: 'var(--success)', color: '#fff' }}
-                          title="โทร"
-                        >
-                          <PhoneCall className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                    </div>
-                    <span className={`badge ${driver.status === 'active' ? 'badge-success' : 'badge-warning'}`}>
-                      {driver.status === 'active' ? 'พร้อมใช้' : 'รอยืนยัน'}
-                    </span>
+
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-[var(--bg-inset)] border border-[var(--border)] group-hover:border-[var(--accent)] transition-colors">
+                    {driver.linePublicId && (
+                      <a
+                        href={`https://line.me/R/ti/p/~${encodeURIComponent(driver.linePublicId)}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/50 dark:bg-black/20 hover:scale-110 active:scale-95 transition-all"
+                        style={{ color: '#00C300' }}
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </a>
+                    )}
+                    {driver.phone && (
+                      <a
+                        href={`tel:${driver.phone}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/50 dark:bg-black/20 hover:scale-110 active:scale-95 transition-all text-[var(--success)]"
+                      >
+                        <PhoneCall className="w-4 h-4" />
+                      </a>
+                    )}
+                    <ChevronRight className="w-4 h-4 opacity-20 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </motion.div>
               ))}

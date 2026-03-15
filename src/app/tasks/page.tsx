@@ -195,7 +195,7 @@ export default function TasksPage() {
               </button>
             </div>
 
-            {/* Task cards */}
+            {/* Task Bento Grid */}
             {loading ? (
               <div className="flex justify-center py-16">
                 <div className="w-10 h-10 rounded-full border-[3px] animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
@@ -208,62 +208,94 @@ export default function TasksPage() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {displayTasks.map((task, index) => {
                   const catMeta = getCategoryMeta(task.category);
+                  const isMain = index === 0 && !showCompleted; // Make first pending task larger
+                  
                   return (
                     <motion.div
                       key={task._id}
-                      initial={{ y: 15, opacity: 0 }}
+                      initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: index * 0.05 }}
-                      className="card p-4 cursor-pointer group"
+                      whileHover={{ y: -4, scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => task.completed ? null : openQuiz(task)}
+                      className={`relative overflow-hidden cursor-pointer group rounded-[var(--radius-xl)] ${isMain ? 'sm:col-span-2' : ''}`}
+                      style={{ 
+                        background: 'var(--bg-surface)',
+                        border: '1px solid var(--border)',
+                        minHeight: isMain ? '180px' : '140px',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
                     >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className="w-11 h-11 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
-                          style={{ background: catMeta.bg }}
-                        >
-                          {task.completed ? (
-                            <CheckCircle2 className="w-5 h-5" style={{ color: 'var(--success)' }} />
-                          ) : (
-                            <ClipboardCheck className="w-5 h-5" style={{ color: catMeta.color }} />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span
-                              className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                              style={{ background: catMeta.bg, color: catMeta.color }}
+                      {/* Background Glow */}
+                      <div 
+                        className="absolute -right-10 -top-10 w-40 h-40 rounded-full blur-[60px] opacity-10 transition-opacity group-hover:opacity-20"
+                        style={{ background: catMeta.color }}
+                      />
+
+                      <div className="relative p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div 
+                              className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center"
+                              style={{ background: task.completed ? 'var(--success-light)' : catMeta.bg }}
                             >
-                              {catMeta.label}
-                            </span>
-                            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                              {task.questions.length} ข้อ
-                            </span>
+                              {task.completed ? (
+                                <CheckCircle2 className="w-5 h-5 text-[var(--success)]" />
+                              ) : (
+                                <ClipboardCheck className="w-5 h-5" style={{ color: catMeta.color }} />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span 
+                                className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider"
+                                style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}
+                              >
+                                {catMeta.label}
+                              </span>
+                              {!task.completed && (
+                                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold text-white" style={{ background: 'var(--accent)' }}>
+                                  <Clock className="w-2.5 h-2.5" strokeWidth={3} />
+                                  NEW
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <h3 className="text-fluid-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+
+                          <h3 className={`font-bold mb-1 group-hover:text-[var(--accent)] transition-colors ${isMain ? 'text-fluid-base' : 'text-fluid-sm'}`} style={{ color: 'var(--text-primary)' }}>
                             {task.title}
                           </h3>
                           {task.description && (
-                            <p className="text-fluid-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{task.description}</p>
-                          )}
-                          {task.completed && task.mySubmission && (
-                            <div className="flex items-center gap-2 mt-2">
-                              <Award className="w-4 h-4" style={{ color: 'var(--success)' }} />
-                              <span className="text-fluid-xs font-bold" style={{ color: 'var(--success)' }}>
-                                {task.mySubmission.score}/{task.mySubmission.total} คะแนน
-                              </span>
-                              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                                ({Math.round((task.mySubmission.score / task.mySubmission.total) * 100)}%)
-                              </span>
-                            </div>
+                            <p className="text-fluid-xs line-clamp-2" style={{ color: 'var(--text-muted)' }}>
+                              {task.description}
+                            </p>
                           )}
                         </div>
-                        {!task.completed && (
-                          <ChevronRight className="w-4 h-4 shrink-0 mt-3 transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--text-muted)' }} />
-                        )}
+
+                        <div className="mt-4 flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                          <span className="text-[10px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+                            {task.questions.length} ข้อ · 
+                            {task.completed ? ' สำเร็จแล้ว' : ' รอทำ'}
+                          </span>
+                          
+                          {task.completed && task.mySubmission ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-fluid-xs font-bold" style={{ color: 'var(--success)' }}>
+                                {task.mySubmission.score}/{task.mySubmission.total}
+                              </span>
+                              <div className="w-1 h-3 rounded-full" style={{ background: 'var(--border)' }} />
+                              <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>
+                                {Math.round((task.mySubmission.score / task.mySubmission.total) * 100)}%
+                              </span>
+                            </div>
+                          ) : (
+                            <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" style={{ color: 'var(--accent)' }} />
+                          )}
+                        </div>
                       </div>
                     </motion.div>
                   );

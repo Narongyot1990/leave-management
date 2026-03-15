@@ -209,12 +209,22 @@ export default function LeaderCarWashPage() {
   const [filterActivityType, setFilterActivityType] = useState('');
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('leaderUser');
-    if (!storedUser) {
-      router.push('/leader/login');
-      return;
-    }
-    setUser(JSON.parse(storedUser));
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        
+        if (data.success && (data.user.role === 'leader' || data.user.role === 'admin')) {
+          setUser(data.user);
+        } else {
+          router.push('/leader/login');
+        }
+      } catch (err) {
+        console.error('Auth check error:', err);
+        router.push('/leader/login');
+      }
+    };
+    checkAuth();
   }, [router]);
 
   // Fetch drivers list
@@ -342,7 +352,7 @@ export default function LeaderCarWashPage() {
       prev.map((a) => {
         if (a._id !== activityId) return a;
         const alreadyLiked = a.likes.some(
-          (l: any) => (l._id || l) === user.id
+          (l: any) => (l._id || l.id || l) === user.id
         );
         return {
           ...a,
@@ -483,7 +493,7 @@ export default function LeaderCarWashPage() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
-      <Sidebar role="leader" />
+      <Sidebar role={user.role || "leader"} />
 
       <div className="lg:pl-[240px] pb-20 lg:pb-6">
         <PageHeader
@@ -797,7 +807,7 @@ export default function LeaderCarWashPage() {
 
                             {/* Comment input */}
                             <div className="flex items-center gap-2 px-4 py-3">
-                              <Avatar user={{ _id: user.id, lineDisplayName: user.lineDisplayName || 'Leader', name: user.name }} size="sm" />
+                              <Avatar user={{ _id: user.id, lineDisplayName: user.name || 'Admin', name: user.name }} size="sm" />
                               <div className="flex-1 flex items-center gap-2">
                                 <input
                                   ref={commentInputRef}
