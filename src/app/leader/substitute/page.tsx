@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -49,10 +49,10 @@ export default function SubstitutePage() {
             setSelectedBranch(data.user.branch || 'all');
           }
         } else {
-          router.push('/leader/login');
+          router.push('/login');
         }
       } catch {
-        router.push('/leader/login');
+        router.push('/login');
       }
     };
     fetchMe();

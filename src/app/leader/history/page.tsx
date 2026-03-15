@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -91,10 +91,10 @@ function LeaderHistoryContent() {
             setSelectedBranch(data.user.branch || 'all');
           }
         } else {
-          router.push('/leader/login');
+          router.push('/login');
         }
       } catch {
-        router.push('/leader/login');
+        router.push('/login');
       }
     };
     fetchMe();

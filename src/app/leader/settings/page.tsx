@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Settings, CheckCircle2, MapPin, User, Phone, Save, ArrowLeft, Loader2, CreditCard, ShieldCheck } from 'lucide-react';
@@ -8,7 +8,7 @@ import Sidebar from '@/components/Sidebar';
 import BottomNav from '@/components/BottomNav';
 import LeaderProfile from '@/components/LeaderProfile';
 
-export default function LeaderSettingsPage() {
+function SettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') === 'profile' ? 'profile' : 'settings';
@@ -239,5 +239,17 @@ export default function LeaderSettingsPage() {
 
       <BottomNav role={role} />
     </div>
+  );
+}
+
+export default function LeaderSettingsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
+      </div>
+    }>
+      <SettingsContent />
+    </Suspense>
   );
 }

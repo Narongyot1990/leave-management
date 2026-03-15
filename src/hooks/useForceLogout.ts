@@ -29,7 +29,7 @@ export function useForceLogout(userId: string | undefined, userRole: 'driver' | 
       localStorage.removeItem('pendingStatus');
 
       // Redirect to appropriate login page
-      const loginPath = userRole === 'driver' ? '/login' : '/leader/login';
+      const loginPath = userRole === 'driver' ? '/login' : '/login';
       router.push(loginPath);
     },
     [userId, userRole, router]

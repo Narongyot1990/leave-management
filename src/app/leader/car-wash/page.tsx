@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -217,11 +217,11 @@ export default function LeaderCarWashPage() {
         if (data.success && (data.user.role === 'leader' || data.user.role === 'admin')) {
           setUser(data.user);
         } else {
-          router.push('/leader/login');
+          router.push('/login');
         }
       } catch (err) {
         console.error('Auth check error:', err);
-        router.push('/leader/login');
+        router.push('/login');
       }
     };
     checkAuth();

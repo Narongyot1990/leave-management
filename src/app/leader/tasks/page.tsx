@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -105,10 +105,10 @@ export default function LeaderTasksPage() {
             setSelectedBranch(data.user.branch || 'all');
           }
         } else {
-          router.push('/leader/login');
+          router.push('/login');
         }
       } catch {
-        router.push('/leader/login');
+        router.push('/login');
       }
     };
     fetchMe();
