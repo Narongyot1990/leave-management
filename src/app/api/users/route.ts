@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     }
 
     const users = await User.find(query)
-      .select('lineUserId linePublicId lineDisplayName lineProfileImage name surname phone employeeId branch status vacationDays sickDays personalDays performanceTier performancePoints performanceLevel lastSeen isOnline createdAt')
+      .select('lineUserId linePublicId lineDisplayName lineProfileImage name surname phone employeeId branch status role vacationDays sickDays personalDays performanceTier performancePoints performanceLevel lastSeen isOnline createdAt')
       .sort({ createdAt: -1 });
 
     return NextResponse.json({

@@ -25,6 +25,7 @@ interface Contact {
   phone?: string;
   employeeId?: string;
   status: string;
+  role: string;
   lastSeen?: string;
   isOnline?: boolean;
 }
@@ -125,7 +126,13 @@ export default function ContactsPage() {
     { event: 'driver-deleted', callback: handleUserChanged },
   ], !!user);
 
+  const [roleFilter, setRoleFilter] = useState<'all' | 'driver' | 'leader'>('all');
+
   const filtered = contacts.filter((c) => {
+    // Role filter
+    if (roleFilter !== 'all' && c.role !== roleFilter) return false;
+
+    // Search filter
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     const fullName = [c.name, c.surname].filter(Boolean).join(' ').toLowerCase();
@@ -168,6 +175,27 @@ export default function ContactsPage() {
                 <X className="w-3 h-3" />
               </button>
             )}
+          </div>
+
+          {/* Filter pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {[
+              { id: 'all', label: 'ทั้งหมด' },
+              { id: 'driver', label: 'พนักงานขับรถ' },
+              { id: 'leader', label: 'หัวหน้างาน' },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setRoleFilter(f.id as any)}
+                className={`px-4 py-1.5 rounded-full text-[12px] font-semibold whitespace-nowrap border transition-all ${
+                  roleFilter === f.id
+                    ? 'bg-[var(--accent)] border-[var(--accent)] text-white shadow-sm'
+                    : 'bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent-muted)]'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
 
           {/* Contact list */}
