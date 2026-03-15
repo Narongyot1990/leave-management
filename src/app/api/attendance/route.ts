@@ -89,13 +89,13 @@ export async function POST(request: NextRequest) {
     
     await dbConnect();
 
-    // Fetch user name and image from Leader model if not in payload
-    const { Leader } = await import('@/models/Leader');
+    // Fetch user name and image from User model if not in payload
+    const { User } = await import('@/models/User');
     let userName = 'Unknown';
     let userImage: string | undefined;
     if (mongoose.Types.ObjectId.isValid(userId)) {
-      const userDoc = await Leader.findById(userId);
-      userName = userDoc?.name || 'Unknown';
+      const userDoc = await User.findById(userId);
+      userName = userDoc?.name || userDoc?.lineDisplayName || 'Unknown';
       userImage = userDoc?.lineProfileImage;
     } else if (userId === 'admin_root') {
       userName = 'ITL Administrator';
