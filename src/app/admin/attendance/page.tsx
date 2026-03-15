@@ -81,11 +81,8 @@ export default function AttendanceMonitorPage() {
     try {
       setLoading(true);
       const d = new Date(viewDate);
-      let range = 'day';
-      if (zoomLevel === 'month') {
-        d.setDate(1);
-        range = 'month';
-      }
+      let range = 'month';
+      d.setDate(1);
       const dateStr = d.toISOString().split('T')[0];
       const res = await fetch(`${TIMELINE_CONFIG.API.ATTENDANCE}?date=${dateStr}&range=${range}`);
       const data = await res.json();
@@ -132,11 +129,9 @@ export default function AttendanceMonitorPage() {
   const navigateDate = useCallback((direction: 'prev' | 'next') => {
     const d = new Date(viewDate);
     const delta = direction === 'next' ? 1 : -1;
-    if (zoomLevel === 'month') d.setMonth(d.getMonth() + delta);
-    else if (zoomLevel === 'day') d.setDate(d.getDate() + delta);
-    else d.setDate(d.getDate() + delta); // hour view still navigates by day
+    d.setMonth(d.getMonth() + delta);
     setViewDate(d);
-  }, [viewDate, zoomLevel]);
+  }, [viewDate]);
 
   const goToToday = useCallback(() => setViewDate(new Date()), []);
 
@@ -250,7 +245,7 @@ export default function AttendanceMonitorPage() {
   // ---------- Date Display ----------
   const dateRangeLabel = useMemo(() => {
     if (zoomLevel === 'month') return viewDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
-    return viewDate.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    return viewDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
   }, [zoomLevel, viewDate]);
 
   const isZoomMin = zoomValue === TIMELINE_CONFIG.ZOOM.MIN;
