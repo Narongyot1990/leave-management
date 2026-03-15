@@ -345,11 +345,19 @@ export default function AdminBranchesPage() {
                         <div className={`px-3 py-1.5 rounded-xl font-black text-sm ${branch.active ? 'bg-accent text-white shadow-lg shadow-accent/10' : 'bg-surface text-muted'}`}>
                           {branch.code}
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                          <button onClick={() => startEdit(branch)} className="p-2 hover:bg-accent/10 rounded-lg text-accent transition-colors">
+                        <div className="flex gap-1 transition-all">
+                          <button 
+                            onClick={() => startEdit(branch)} 
+                            className="p-2 hover:bg-accent/10 rounded-lg text-accent transition-colors"
+                            title="แก้ไข"
+                          >
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDelete(branch.code)} className="p-2 hover:bg-red-500/10 rounded-lg text-red-500 transition-colors">
+                          <button 
+                            onClick={() => handleDelete(branch.code)} 
+                            className="p-2 hover:bg-red-500/10 rounded-lg text-red-500 transition-colors"
+                            title="ลบ"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
