@@ -97,12 +97,33 @@ export async function PATCH(request: NextRequest) {
     if (employeeId !== undefined) updateData.employeeId = employeeId;
     if (linePublicId !== undefined) updateData.linePublicId = linePublicId;
     if (status !== undefined) updateData.status = status;
-    if (newRole !== undefined) updateData.role = newRole;
+
+    // RBAC: Only admin can set leader/admin roles
+    if (newRole !== undefined) {
+      if (authResult.payload.role !== 'admin' && (newRole === 'leader' || newRole === 'admin')) {
+        return NextResponse.json({ error: 'Only admins can assign Leader/Admin roles' }, { status: 403 });
+      }
+      updateData.role = newRole;
+    }
+
+    // Role-based self-update prevention for non-admins
+    if (authResult.payload.role !== 'admin' && userId === authResult.payload.userId && newRole !== undefined) {
+       return NextResponse.json({ error: 'Cannot change your own role' }, { status: 403 });
+    }
+
     if (vacationDays !== undefined) updateData.vacationDays = vacationDays;
     if (sickDays !== undefined) updateData.sickDays = sickDays;
     if (personalDays !== undefined) updateData.personalDays = personalDays;
     if (performanceTier !== undefined) updateData.performanceTier = performanceTier;
     if (branch !== undefined) updateData.branch = branch;
+
+    // Leader validation: Leaders can only update non-leaders/non-admins
+    if (authResult.payload.role === 'leader') {
+       const targetUser = await User.findById(userId);
+       if (targetUser && (targetUser.role === 'leader' || targetUser.role === 'admin') && userId !== authResult.payload.userId) {
+         return NextResponse.json({ error: 'Leaders cannot modify other Leaders or Admins' }, { status: 403 });
+       }
+    }
 
     const user = await User.findByIdAndUpdate(
       userId,

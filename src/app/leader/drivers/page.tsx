@@ -15,6 +15,8 @@ import { usePusher } from '@/hooks/usePusher';
 import { useBranches } from '@/hooks/useBranches';
 import { useToast } from '@/components/Toast';
 
+// Rename the internal role state to avoid confusion with the Personnel interface role
+
 interface Personnel {
   _id: string;
   lineUserId: string;
@@ -129,19 +131,19 @@ function DriverManagementContent() {
     { event: 'driver-deleted', callback: handleDriverChanged },
   ], !!user);
 
-  const handleActivate = async (driverId: string) => {
+  const handleActivate = async (driverId: string, additionalData: any = {}) => {
     setActionLoading(driverId);
     try {
       const response = await fetch('/api/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: driverId, status: 'active' }),
+        body: JSON.stringify({ userId: driverId, status: 'active', ...additionalData }),
       });
       const data = await response.json();
       if (data.success) {
-        setAllPersonnel(prev => prev.map(d => d._id === driverId ? { ...d, status: 'active' } : d));
+        setAllPersonnel(prev => prev.map(d => d._id === driverId ? { ...d, status: 'active', ...additionalData } : d));
         // Instead of closing, update selectedPersonnel to transition to Step 2
-        setSelectedPersonnel(prev => prev ? { ...prev, status: 'active' } : null);
+        setSelectedPersonnel(prev => prev ? { ...prev, status: 'active', ...additionalData } : null);
       }
     } catch (err) {
       console.error(err);
@@ -460,7 +462,14 @@ function DriverManagementContent() {
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() => handleActivate(selectedPersonnel._id)}
+                        onClick={() => {
+                          const updateData: any = { status: 'active' };
+                          if (role === 'leader') {
+                             updateData.role = 'driver';
+                             updateData.branch = user?.branch;
+                          }
+                          handleActivate(selectedPersonnel._id, updateData);
+                        }}
                         disabled={actionLoading === selectedPersonnel._id}
                         className="btn flex-1 h-14 text-sm font-black uppercase tracking-widest disabled:opacity-50 shadow-xl shadow-emerald-500/10"
                         style={{ background: 'var(--success)', color: 'white' }}
@@ -484,38 +493,51 @@ function DriverManagementContent() {
                     {!selectedPersonnel.branch ? (
                       <div className="space-y-4">
                         <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 space-y-3">
-                          <div>
-                            <label className="block text-fluid-xs font-black uppercase tracking-widest mb-1 text-blue-500">2. เลือกตําแหน่งงาน (Role)</label>
-                            <div className="grid grid-cols-2 gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedPersonnel({ ...selectedPersonnel, role: 'driver' })}
-                                className={`py-2 rounded-lg text-xs font-black transition-all ${selectedPersonnel.role === 'driver' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/50 text-blue-500 border border-blue-500/20'}`}
-                              >
-                                DRIVER
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setSelectedPersonnel({ ...selectedPersonnel, role: 'leader' })}
-                                className={`py-2 rounded-lg text-xs font-black transition-all ${selectedPersonnel.role === 'leader' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/50 text-blue-500 border border-blue-500/20'}`}
-                              >
-                                LEADER
-                              </button>
+                          {role === 'admin' ? (
+                            <div>
+                              <label className="block text-fluid-xs font-black uppercase tracking-widest mb-1 text-blue-500">2. เลือกตําแหน่งงาน (Role)</label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedPersonnel({ ...selectedPersonnel, role: 'driver' })}
+                                  className={`py-2 rounded-lg text-xs font-black transition-all ${selectedPersonnel.role === 'driver' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/50 text-blue-500 border border-blue-500/20'}`}
+                                >
+                                  DRIVER
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedPersonnel({ ...selectedPersonnel, role: 'leader' })}
+                                  className={`py-2 rounded-lg text-xs font-black transition-all ${selectedPersonnel.role === 'leader' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/50 text-blue-500 border border-blue-500/20'}`}
+                                >
+                                  LEADER
+                                </button>
+                              </div>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="bg-blue-500/10 p-3 rounded-lg border border-blue-500/20">
+                              <p className="text-[10px] font-black text-blue-500 uppercase">ตำแหน่งงาน: DRIVER (พนักงานขับรถ)</p>
+                              <p className="text-[9px] text-blue-500/70">สิทธิ์ Leader จะเปิดใช้งาน Driver ได้เท่านั้น</p>
+                            </div>
+                          )}
                           <div>
                             <label className="block text-fluid-xs font-black uppercase tracking-widest mb-1 text-blue-500">3. เลือกสาขาที่สังกัด</label>
-                            <select
-                              value={selectedPersonnel.branch || ''}
-                              onChange={(e) => setSelectedPersonnel({ ...selectedPersonnel, branch: e.target.value || undefined })}
-                              className="input border-blue-500/30 bg-blue-500/5 focus:border-blue-500"
-                              required
-                            >
-                              <option value="">-- ระบุสาขา --</option>
-                              {(branchesLoading ? [] : branches).map(b => (
-                                <option key={b.code} value={b.code}>{b.code} - {b.name}</option>
-                              ))}
-                            </select>
+                            {role === 'admin' ? (
+                              <select
+                                value={selectedPersonnel.branch || ''}
+                                onChange={(e) => setSelectedPersonnel({ ...selectedPersonnel, branch: e.target.value || undefined })}
+                                className="input border-blue-500/30 bg-blue-500/5 focus:border-blue-500"
+                                required
+                              >
+                                <option value="">-- ระบุสาขา --</option>
+                                {(branchesLoading ? [] : branches).map(b => (
+                                  <option key={b.code} value={b.code}>{b.code} - {b.name}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <div className="input border-blue-500/30 bg-blue-500/20 flex items-center px-3 text-sm font-bold text-blue-600">
+                                สาขา {user?.branch} (ตามสิทธิ์ผู้ดูแล)
+                              </div>
+                            )}
                           </div>
                         </div>
                         <button 
@@ -534,30 +556,30 @@ function DriverManagementContent() {
                         </button>
                       </div>
                     ) : (
-                      /* STEP 3: FULL EDIT MODE */
                       <div className="space-y-4">
-                        {/* Role selection for existing personnel */}
-                        <div className="pt-1">
-                          <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-                            ตําแหน่งงาน (Role)
-                          </label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedPersonnel({ ...selectedPersonnel, role: 'driver' })}
-                              className={`py-2 rounded-lg text-xs font-black transition-all ${selectedPersonnel.role === 'driver' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-inset)] text-[var(--text-muted)] border border-[var(--border)]'}`}
-                            >
-                              DRIVER
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedPersonnel({ ...selectedPersonnel, role: 'leader' })}
-                              className={`py-2 rounded-lg text-xs font-black transition-all ${selectedPersonnel.role === 'leader' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-inset)] text-[var(--text-muted)] border border-[var(--border)]'}`}
-                            >
-                              LEADER
-                            </button>
+                        {role === 'admin' && (
+                          <div className="pt-1">
+                            <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
+                              ตําแหน่งงาน (Role)
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedPersonnel({ ...selectedPersonnel, role: 'driver' } as any)}
+                                className={`py-2 rounded-lg text-xs font-black transition-all ${selectedPersonnel.role === 'driver' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-inset)] text-[var(--text-muted)] border border-[var(--border)]'}`}
+                              >
+                                DRIVER
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedPersonnel({ ...selectedPersonnel, role: 'leader' } as any)}
+                                className={`py-2 rounded-lg text-xs font-black transition-all ${selectedPersonnel.role === 'leader' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-inset)] text-[var(--text-muted)] border border-[var(--border)]'}`}
+                              >
+                                LEADER
+                              </button>
+                            </div>
                           </div>
-                        </div>
+                        )}
 
                         {/* Tier selector */}
                         <div className="pt-1">
