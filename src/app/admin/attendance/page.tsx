@@ -414,10 +414,9 @@ export default function AttendanceMonitorPage() {
                 {columnHeaders.map(col => (
                   <div key={col.key}
                     className={`flex items-center justify-center py-2 border-r border-[var(--border)]/20 transition-colors
-                      ${'isWeekend' in col && col.isWeekend ? 'bg-rose-50/50 dark:bg-rose-950/15' : ''}
+                      ${'isWeekend' in col && col.isWeekend ? 'bg-rose-50/30 dark:bg-rose-950/10' : ''}
                       ${'isToday' in col && col.isToday ? 'bg-[var(--accent)]/8' : ''}
-                      ${'isNowHour' in col && col.isNowHour ? 'bg-[var(--accent)]/10' : ''}
-                      ${'isWorkHour' in col && col.isWorkHour ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''}`}
+                      ${'isNowHour' in col && col.isNowHour ? 'bg-[var(--accent)]/8' : ''}`}
                     style={{ minWidth: colMinWidth, width: colMinWidth }}>
                     <span className={`text-[8px] md:text-[9px] font-black
                       ${'isWeekend' in col && col.isWeekend ? 'text-rose-500' : ''}
@@ -458,29 +457,29 @@ export default function AttendanceMonitorPage() {
 
                 return (
                   <div key={user.id}
-                    className={`flex border-b border-[var(--border)]/20 group transition-colors min-h-[52px] cursor-pointer hover:bg-[var(--bg-inset)]/30
-                      ${noActivity ? 'bg-slate-50/10 dark:bg-slate-900/5' : ''} ${isSelected ? 'bg-[var(--accent)]/5' : ''}`}
+                    className={`flex border-b border-[var(--border)]/30 group transition-colors min-h-[48px] cursor-pointer hover:bg-[var(--accent)]/[0.03]
+                      ${isSelected ? 'bg-[var(--accent)]/5' : ''}`}
                     onClick={() => setSelectedUser(isSelected ? null : user.id)}>
 
                     {/* Staff Info (sticky left) */}
-                    <div className="w-[140px] md:w-[180px] shrink-0 px-2 py-1.5 border-r border-[var(--border)] bg-[var(--bg-surface)] sticky left-0 z-10 flex items-center gap-2 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.06)]">
+                    <div className="w-[140px] md:w-[180px] shrink-0 px-2 py-1.5 border-r border-[var(--border)]/30 bg-[var(--bg-surface)] sticky left-0 z-10 flex items-center gap-2">
                       <div className="relative shrink-0">
-                        <div className={`w-8 h-8 rounded-lg overflow-hidden ${isActive ? 'ring-2 ring-emerald-500/40' : ''}`}>
+                        <div className="w-7 h-7 rounded-full overflow-hidden bg-[var(--bg-inset)]">
                           {user.image ? (
                             <img src={user.image} className="w-full h-full object-cover" alt="" />
                           ) : (
-                            <div className={`w-full h-full flex items-center justify-center text-[11px] font-black ${isActive ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                            <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-[var(--text-muted)]">
                               {user.name.charAt(0)}
                             </div>
                           )}
                         </div>
-                        {isActive && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[var(--bg-surface)] animate-pulse" />}
+                        {isActive && <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-[var(--accent)] rounded-full border-[1.5px] border-[var(--bg-surface)]" />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] md:text-[11px] font-black truncate">{user.name}</p>
+                        <p className="text-[10px] md:text-[11px] font-bold truncate text-[var(--text-primary)]">{user.name}</p>
                         <div className="flex items-center gap-1 mt-0.5">
                           {hasLate && <AlertTriangle className="w-2.5 h-2.5 text-amber-500 shrink-0" />}
-                          <span className={`text-[7px] md:text-[8px] font-bold uppercase truncate ${isActive ? 'text-emerald-500' : hasLate ? 'text-amber-500' : 'opacity-30'}`}>
+                          <span className={`text-[7px] md:text-[8px] font-medium uppercase truncate ${isActive ? 'text-[var(--accent)]' : hasLate ? 'text-amber-500' : 'opacity-30'}`}>
                             {isActive ? 'Active' : noActivity ? 'Absent' : hasLate ? 'Late' : 'Off duty'}
                           </span>
                         </div>
@@ -507,7 +506,7 @@ export default function AttendanceMonitorPage() {
                           if (scrollContainerRef.current) scrollContainerRef.current.scrollLeft = e.currentTarget.scrollLeft;
                         }
                       }}>
-                      <div className="relative h-full min-h-[52px]" style={{ minWidth: columnHeaders.length * colMinWidth }}>
+                      <div className="relative h-full min-h-[48px]" style={{ minWidth: columnHeaders.length * colMinWidth }}>
                         {/* Assigned shift backgrounds */}
                         {(workSchedules[user.id] || []).map((entry) => {
                           const entryDate = new Date(entry.date);
@@ -517,40 +516,42 @@ export default function AttendanceMonitorPage() {
                             const s = day - 1 + entry.startHour / 24;
                             const eEnd = entry.endHour < entry.startHour ? day + entry.endHour / 24 : day - 1 + entry.endHour / 24;
                             return (
-                              <div key={entry.date} className="absolute top-0 bottom-0 pointer-events-none rounded-sm"
-                                style={{ left: `${(s / dim) * 100}%`, width: `${Math.max(0.5, ((eEnd - s) / dim) * 100)}%`, background: entry.color + '22', borderLeft: `2px solid ${entry.color}60` }} />
+                              <div key={entry.date} className="absolute top-1 bottom-1 pointer-events-none rounded"
+                                style={{ left: `${(s / dim) * 100}%`, width: `${Math.max(0.5, ((eEnd - s) / dim) * 100)}%`, background: entry.color + '15', borderLeft: `2px solid ${entry.color}40` }} />
                             );
                           } else {
                             if (entryDate.toDateString() !== viewDate.toDateString()) return null;
                             const dur = entry.endHour < entry.startHour ? 24 - entry.startHour + entry.endHour : entry.endHour - entry.startHour;
                             return (
-                              <div key={entry.date} className="absolute top-0 bottom-0 pointer-events-none rounded-sm"
-                                style={{ left: `${(entry.startHour / 24) * 100}%`, width: `${Math.max(0.5, (dur / 24) * 100)}%`, background: entry.color + '20', borderLeft: `2px solid ${entry.color}50` }} />
+                              <div key={entry.date} className="absolute top-1 bottom-1 pointer-events-none rounded"
+                                style={{ left: `${(entry.startHour / 24) * 100}%`, width: `${Math.max(0.5, (dur / 24) * 100)}%`, background: entry.color + '15', borderLeft: `2px solid ${entry.color}40` }} />
                             );
                           }
                         })}
 
-                        {/* Expected work window marker (day/hour views) */}
-                        {zoomLevel !== 'month' && (
-                          <div className="absolute top-0 bottom-0 border-l-2 border-r-2 border-dashed border-emerald-400/20 bg-emerald-500/[0.03] pointer-events-none"
-                            style={{
-                              left: `${(TIMELINE_CONFIG.SCHEDULE.EXPECTED_START / 24) * 100}%`,
-                              width: `${((TIMELINE_CONFIG.SCHEDULE.EXPECTED_END - TIMELINE_CONFIG.SCHEDULE.EXPECTED_START) / 24) * 100}%`,
-                            }} />
-                        )}
-
-                        {/* Step-progress session bars */}
+                        {/* Gradient session bars */}
                         {user.sessions.map((session, idx) => {
                           const { left, width } = getBarPosition(session.start, session.end, viewDate, zoomLevel);
                           if (width <= 0) return null;
                           const isLive = !session.end;
-                          const dotColor = session.isLate ? '#f59e0b' : isLive ? TIMELINE_CONFIG.COLORS.ACTIVE : TIMELINE_CONFIG.COLORS.COMPLETED;
-                          const lineColor = session.isLate ? 'rgba(245,158,11,0.45)' : isLive ? 'rgba(16,185,129,0.45)' : 'rgba(99,102,241,0.45)';
+                          const bg = session.isLate
+                            ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+                            : isLive
+                              ? `linear-gradient(90deg, ${TIMELINE_CONFIG.COLORS.ACTIVE}, ${TIMELINE_CONFIG.COLORS.ACTIVE_LIGHT})`
+                              : `linear-gradient(90deg, ${TIMELINE_CONFIG.COLORS.COMPLETED}, ${TIMELINE_CONFIG.COLORS.COMPLETED_LIGHT})`;
 
                           return (
-                            <div key={idx}
-                              className="absolute cursor-pointer"
-                              style={{ left: `${left}%`, width: `${Math.max(0.5, width)}%`, top: 0, bottom: 0 }}
+                            <motion.div key={idx}
+                              initial={{ opacity: 0, scaleX: 0 }}
+                              animate={{ opacity: 1, scaleX: 1 }}
+                              transition={{ delay: idx * 0.04, duration: 0.3 }}
+                              className={`absolute top-1/2 -translate-y-1/2 h-[18px] md:h-[22px] rounded-md flex items-center px-1.5 shadow-sm cursor-pointer transition-transform hover:scale-y-110 ${isLive ? 'animate-pulse-subtle' : ''}`}
+                              style={{
+                                left: `${left}%`,
+                                width: `${Math.max(1.2, width)}%`,
+                                background: bg,
+                                transformOrigin: 'left center',
+                              }}
                               onMouseEnter={(e) => {
                                 const rect = e.currentTarget.getBoundingClientRect();
                                 setTooltip({
@@ -567,30 +568,16 @@ export default function AttendanceMonitorPage() {
                                 });
                               }}
                               onMouseLeave={() => setTooltip(null)}>
-                              {/* Connecting line */}
-                              <div className="absolute top-1/2 -translate-y-1/2 rounded-full" style={{ left: 5, right: 5, height: 2, background: lineColor }} />
-                              {/* Start dot */}
-                              <motion.div
-                                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: idx * 0.05 }}
-                                className="absolute top-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bg-surface)] shadow-sm"
-                                style={{ left: 0, width: 10, height: 10, background: dotColor, zIndex: 2 }}
-                              />
-                              {/* End dot */}
-                              {isLive ? (
-                                <motion.div
-                                  animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
-                                  transition={{ duration: 1.5, repeat: Infinity }}
-                                  className="absolute top-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bg-surface)]"
-                                  style={{ right: 0, width: 10, height: 10, background: dotColor, zIndex: 2 }}
-                                />
-                              ) : (
-                                <motion.div
-                                  initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: idx * 0.05 + 0.1 }}
-                                  className="absolute top-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bg-surface)] shadow-sm"
-                                  style={{ right: 0, width: 10, height: 10, background: dotColor, zIndex: 2 }}
-                                />
+                              {width > 5 && (
+                                <>
+                                  {isLive && <div className="w-1.5 h-1.5 rounded-full bg-white/90 shrink-0 animate-pulse" />}
+                                  <span className="text-[7px] font-bold text-white/90 ml-1 whitespace-nowrap drop-shadow-sm">
+                                    {session.start.getHours().toString().padStart(2, '0')}:{session.start.getMinutes().toString().padStart(2, '0')}
+                                    {session.end && ` - ${session.end.getHours().toString().padStart(2, '0')}:${session.end.getMinutes().toString().padStart(2, '0')}`}
+                                  </span>
+                                </>
                               )}
-                            </div>
+                            </motion.div>
                           );
                         })}
                       </div>
