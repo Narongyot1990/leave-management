@@ -2,12 +2,14 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Users, ChevronLeft, ChevronRight, History as HistoryIcon, ZoomIn, ZoomOut, RotateCcw, AlertTriangle, CalendarDays } from 'lucide-react';
+import { Clock, Users, ChevronLeft, ChevronRight, History as HistoryIcon, ZoomIn, ZoomOut, RotateCcw, AlertTriangle, CalendarDays, Link, Unlink, LayoutGrid, Calendar } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import UserAvatar from '@/components/UserAvatar';
 import { usePusher } from '@/hooks/usePusher';
 import BottomNav from '@/components/BottomNav';
 import { TIMELINE_CONFIG, ZoomLevel } from '@/lib/timeline-config';
+import ShiftTemplateModal from '@/components/ShiftTemplateModal';
+import AssignShiftModal from '@/components/AssignShiftModal';
 
 interface AttendanceRecord {
   _id: string;
@@ -53,9 +55,16 @@ export default function AttendanceMonitorPage() {
   const [viewDate, setViewDate] = useState(new Date());
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [roleFilter, setRoleFilter] = useState<'all' | 'driver' | 'leader'>('all');
+  const [syncScroll, setSyncScroll] = useState(true);
+  const [showShiftModal, setShowShiftModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [workSchedules, setWorkSchedules] = useState<Record<string, { date: string; color: string; startHour: number; startMinute: number; endHour: number; endMinute: number }[]>>({});
 
   const timelineRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const rowScrollRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const isSyncingRef = useRef(false);
 
   // ---------- Data Fetching ----------
   const fetchUsers = useCallback(async () => {
@@ -95,6 +104,21 @@ export default function AttendanceMonitorPage() {
 
   usePusher(TIMELINE_CONFIG.PUSHER.USERS_CHANNEL, [{ event: TIMELINE_CONFIG.PUSHER.ATTENDANCE_EVENT, callback: fetchRecords }], true);
   usePusher(TIMELINE_CONFIG.PUSHER.USERS_CHANNEL, [{ event: TIMELINE_CONFIG.PUSHER.DRIVER_UPDATED_EVENT, callback: fetchUsers }], true);
+
+  const fetchWorkSchedules = useCallback(async () => {
+    try {
+      const month = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`;
+      const res = await fetch(`/api/work-schedule?month=${month}`);
+      const data = await res.json();
+      if (data.success) {
+        const map: typeof workSchedules = {};
+        (data.schedules as any[]).forEach((s: any) => { map[s.userId] = s.entries; });
+        setWorkSchedules(map);
+      }
+    } catch (err) { console.error(err); }
+  }, [viewDate]);
+
+  useEffect(() => { fetchWorkSchedules(); }, [fetchWorkSchedules]);
 
   // ---------- Zoom & Navigation ----------
   const handleZoomChange = useCallback((newValue: number) => {
@@ -151,18 +175,23 @@ export default function AttendanceMonitorPage() {
     return Array.from(userMap.values());
   }, [users, records]);
 
+  // ---------- Filtered by Role ----------
+  const filteredTimelineData = useMemo(() => {
+    if (roleFilter === 'all') return timelineData;
+    return timelineData.filter(u => u.role === roleFilter);
+  }, [timelineData, roleFilter]);
+
   // ---------- Stats ----------
   const stats = useMemo(() => {
-    const working = timelineData.filter(u => u.sessions.some(s => !s.end)).length;
-    const late = timelineData.filter(u => u.sessions.some(s => s.isLate)).length;
-    const onLeave = 0; // future: integrate leave data
-    const totalHours = timelineData.reduce((acc, u) =>
+    const working = filteredTimelineData.filter(u => u.sessions.some(s => !s.end)).length;
+    const late = filteredTimelineData.filter(u => u.sessions.some(s => s.isLate)).length;
+    const totalHours = filteredTimelineData.reduce((acc, u) =>
       acc + u.sessions.reduce((sa, s) => {
         if (s.start && s.end) return sa + (s.end.getTime() - s.start.getTime()) / 3600000;
         return sa;
       }, 0), 0);
-    return { working, total: users.length, late, onLeave, totalHours: totalHours.toFixed(1) };
-  }, [timelineData, users]);
+    return { working, total: filteredTimelineData.length, late, totalHours: totalHours.toFixed(1) };
+  }, [filteredTimelineData]);
 
   // ---------- Position Calculations ----------
   const getBarPosition = useCallback((start: Date, end: Date | null, vd: Date, zoom: ZoomLevel) => {
@@ -279,6 +308,36 @@ export default function AttendanceMonitorPage() {
           </div>
         </header>
 
+        {/* ========== FILTER + SHIFT + SYNC BAR ========== */}
+        <div className="px-3 md:px-5 py-1.5 flex items-center justify-between border-b border-[var(--border)] bg-[var(--bg-inset)]/40 shrink-0">
+          <div className="flex items-center gap-1 bg-[var(--bg-surface)] rounded-lg p-0.5 border border-[var(--border)]">
+            {(['all', 'driver', 'leader'] as const).map(f => (
+              <button key={f} onClick={() => setRoleFilter(f)}
+                className={`px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${roleFilter === f
+                  ? 'bg-[var(--accent)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}>
+                {f === 'all' ? `All (${timelineData.length})` : f === 'driver' ? `Driver (${timelineData.filter(u => u.role === 'driver').length})` : `Leader (${timelineData.filter(u => u.role === 'leader').length})`}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setShowShiftModal(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border border-indigo-500/30 bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 transition-all">
+              <LayoutGrid className="w-3 h-3" /><span className="hidden sm:inline">Templates</span>
+            </button>
+            <button onClick={() => setShowAssignModal(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-all">
+              <Calendar className="w-3 h-3" /><span className="hidden sm:inline">Assign Shift</span>
+            </button>
+            <div className="w-px h-4 bg-[var(--border)]" />
+            <button onClick={() => setSyncScroll(v => !v)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${syncScroll
+                ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/30' : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border)]'}`}>
+              {syncScroll ? <Link className="w-3 h-3" /> : <Unlink className="w-3 h-3" />}
+              <span className="hidden sm:inline">{syncScroll ? 'Synced' : 'Free'}</span>
+            </button>
+          </div>
+        </div>
+
         {/* ========== CONTROLS BAR ========== */}
         <div className="px-3 md:px-5 py-2 flex items-center justify-between border-b border-[var(--border)] bg-[var(--bg-surface)]/80 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-1.5">
@@ -340,10 +399,17 @@ export default function AttendanceMonitorPage() {
           <div className="flex shrink-0 border-b border-[var(--border)] bg-[var(--bg-surface)]">
             {/* Staff column header */}
             <div className="w-[140px] md:w-[180px] shrink-0 border-r border-[var(--border)] bg-slate-50 dark:bg-slate-900/50 flex items-center px-3 py-2 sticky left-0 z-20">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Staff ({users.length})</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Staff ({filteredTimelineData.length})</span>
             </div>
             {/* Timeline column headers */}
-            <div className="flex-1 overflow-x-auto custom-scrollbar" ref={scrollContainerRef}>
+            <div className="flex-1 overflow-x-auto custom-scrollbar" ref={scrollContainerRef}
+              onScroll={(e) => {
+                if (isSyncingRef.current) return;
+                isSyncingRef.current = true;
+                const sl = e.currentTarget.scrollLeft;
+                rowScrollRefs.current.forEach(el => { el.scrollLeft = sl; });
+                isSyncingRef.current = false;
+              }}>
               <div className="flex min-w-max">
                 {columnHeaders.map(col => (
                   <div key={col.key}
@@ -368,14 +434,14 @@ export default function AttendanceMonitorPage() {
 
           {/* Scrollable Rows */}
           <div ref={timelineRef} className="flex-1 overflow-auto custom-scrollbar">
-            {loading && timelineData.length === 0 ? (
+            {loading && filteredTimelineData.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center opacity-40">
                   <div className="w-8 h-8 rounded-full border-2 border-[var(--border)] border-t-[var(--accent)] animate-spin mx-auto mb-3" />
                   <p className="text-[11px] font-bold uppercase tracking-widest">Loading...</p>
                 </div>
               </div>
-            ) : timelineData.length === 0 ? (
+            ) : filteredTimelineData.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center opacity-40 p-10">
                   <Users className="w-12 h-12 mx-auto mb-4 opacity-20" />
@@ -384,7 +450,7 @@ export default function AttendanceMonitorPage() {
                 </div>
               </div>
             ) : (
-              timelineData.map((user, userIdx) => {
+              filteredTimelineData.map((user, userIdx) => {
                 const isActive = user.sessions.some(s => !s.end);
                 const hasLate = user.sessions.some(s => s.isLate);
                 const noActivity = user.sessions.length === 0;
@@ -423,10 +489,47 @@ export default function AttendanceMonitorPage() {
 
                     {/* Timeline Track */}
                     <div className="flex-1 relative overflow-x-auto custom-scrollbar"
+                      ref={(el) => {
+                        if (el) rowScrollRefs.current.set(user.id, el);
+                        else rowScrollRefs.current.delete(user.id);
+                      }}
                       onScroll={(e) => {
-                        if (scrollContainerRef.current) scrollContainerRef.current.scrollLeft = e.currentTarget.scrollLeft;
+                        if (isSyncingRef.current) return;
+                        if (syncScroll) {
+                          isSyncingRef.current = true;
+                          const sl = e.currentTarget.scrollLeft;
+                          if (scrollContainerRef.current) scrollContainerRef.current.scrollLeft = sl;
+                          rowScrollRefs.current.forEach((el, id) => {
+                            if (id !== user.id) el.scrollLeft = sl;
+                          });
+                          isSyncingRef.current = false;
+                        } else {
+                          if (scrollContainerRef.current) scrollContainerRef.current.scrollLeft = e.currentTarget.scrollLeft;
+                        }
                       }}>
-                      <div className="relative h-full" style={{ minWidth: columnHeaders.length * colMinWidth }}>
+                      <div className="relative h-full min-h-[52px]" style={{ minWidth: columnHeaders.length * colMinWidth }}>
+                        {/* Assigned shift backgrounds */}
+                        {(workSchedules[user.id] || []).map((entry) => {
+                          const entryDate = new Date(entry.date);
+                          if (zoomLevel === 'month') {
+                            const dim = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+                            const day = entryDate.getDate();
+                            const s = day - 1 + entry.startHour / 24;
+                            const eEnd = entry.endHour < entry.startHour ? day + entry.endHour / 24 : day - 1 + entry.endHour / 24;
+                            return (
+                              <div key={entry.date} className="absolute top-0 bottom-0 pointer-events-none rounded-sm"
+                                style={{ left: `${(s / dim) * 100}%`, width: `${Math.max(0.5, ((eEnd - s) / dim) * 100)}%`, background: entry.color + '22', borderLeft: `2px solid ${entry.color}60` }} />
+                            );
+                          } else {
+                            if (entryDate.toDateString() !== viewDate.toDateString()) return null;
+                            const dur = entry.endHour < entry.startHour ? 24 - entry.startHour + entry.endHour : entry.endHour - entry.startHour;
+                            return (
+                              <div key={entry.date} className="absolute top-0 bottom-0 pointer-events-none rounded-sm"
+                                style={{ left: `${(entry.startHour / 24) * 100}%`, width: `${Math.max(0.5, (dur / 24) * 100)}%`, background: entry.color + '20', borderLeft: `2px solid ${entry.color}50` }} />
+                            );
+                          }
+                        })}
+
                         {/* Expected work window marker (day/hour views) */}
                         {zoomLevel !== 'month' && (
                           <div className="absolute top-0 bottom-0 border-l-2 border-r-2 border-dashed border-emerald-400/20 bg-emerald-500/[0.03] pointer-events-none"
@@ -436,27 +539,18 @@ export default function AttendanceMonitorPage() {
                             }} />
                         )}
 
-                        {/* Session bars */}
+                        {/* Step-progress session bars */}
                         {user.sessions.map((session, idx) => {
                           const { left, width } = getBarPosition(session.start, session.end, viewDate, zoomLevel);
+                          if (width <= 0) return null;
                           const isLive = !session.end;
+                          const dotColor = session.isLate ? '#f59e0b' : isLive ? TIMELINE_CONFIG.COLORS.ACTIVE : TIMELINE_CONFIG.COLORS.COMPLETED;
+                          const lineColor = session.isLate ? 'rgba(245,158,11,0.45)' : isLive ? 'rgba(16,185,129,0.45)' : 'rgba(99,102,241,0.45)';
 
                           return (
-                            <motion.div key={idx}
-                              initial={{ opacity: 0, scaleX: 0 }}
-                              animate={{ opacity: 1, scaleX: 1 }}
-                              transition={{ delay: idx * 0.05, duration: 0.3 }}
-                              className={`absolute top-1/2 -translate-y-1/2 h-5 md:h-6 rounded-lg flex items-center px-1.5 shadow-sm cursor-pointer transition-transform hover:scale-y-[1.15] ${isLive ? 'animate-pulse-subtle' : ''}`}
-                              style={{
-                                left: `${left}%`,
-                                width: `${Math.max(1.5, width)}%`,
-                                background: session.isLate
-                                  ? `linear-gradient(90deg, #f59e0b, #fbbf24)`
-                                  : isLive
-                                    ? `linear-gradient(90deg, ${TIMELINE_CONFIG.COLORS.ACTIVE}, ${TIMELINE_CONFIG.COLORS.ACTIVE_LIGHT})`
-                                    : `linear-gradient(90deg, ${TIMELINE_CONFIG.COLORS.COMPLETED}, ${TIMELINE_CONFIG.COLORS.COMPLETED_LIGHT})`,
-                                transformOrigin: 'left center',
-                              }}
+                            <div key={idx}
+                              className="absolute cursor-pointer"
+                              style={{ left: `${left}%`, width: `${Math.max(0.5, width)}%`, top: 0, bottom: 0 }}
                               onMouseEnter={(e) => {
                                 const rect = e.currentTarget.getBoundingClientRect();
                                 setTooltip({
@@ -473,25 +567,32 @@ export default function AttendanceMonitorPage() {
                                 });
                               }}
                               onMouseLeave={() => setTooltip(null)}>
-                              {width > 6 && (
-                                <>
-                                  <div className={`w-1.5 h-1.5 rounded-full bg-white/80 shrink-0 ${isLive ? 'animate-pulse' : ''}`} />
-                                  <span className="text-[7px] font-black text-white/90 ml-1 whitespace-nowrap">
-                                    {session.start.getHours().toString().padStart(2, '0')}:{session.start.getMinutes().toString().padStart(2, '0')}
-                                  </span>
-                                </>
+                              {/* Connecting line */}
+                              <div className="absolute top-1/2 -translate-y-1/2 rounded-full" style={{ left: 5, right: 5, height: 2, background: lineColor }} />
+                              {/* Start dot */}
+                              <motion.div
+                                initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: idx * 0.05 }}
+                                className="absolute top-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bg-surface)] shadow-sm"
+                                style={{ left: 0, width: 10, height: 10, background: dotColor, zIndex: 2 }}
+                              />
+                              {/* End dot */}
+                              {isLive ? (
+                                <motion.div
+                                  animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
+                                  transition={{ duration: 1.5, repeat: Infinity }}
+                                  className="absolute top-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bg-surface)]"
+                                  style={{ right: 0, width: 10, height: 10, background: dotColor, zIndex: 2 }}
+                                />
+                              ) : (
+                                <motion.div
+                                  initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: idx * 0.05 + 0.1 }}
+                                  className="absolute top-1/2 -translate-y-1/2 rounded-full border-2 border-[var(--bg-surface)] shadow-sm"
+                                  style={{ right: 0, width: 10, height: 10, background: dotColor, zIndex: 2 }}
+                                />
                               )}
-                            </motion.div>
+                            </div>
                           );
                         })}
-
-                        {/* Current time marker (day/hour views) */}
-                        {zoomLevel !== 'month' && viewDate.toDateString() === new Date().toDateString() && (
-                          <div className="absolute top-0 bottom-0 w-0.5 bg-rose-500 z-10 pointer-events-none"
-                            style={{ left: `${((new Date().getHours() + new Date().getMinutes() / 60) / 24) * 100}%` }}>
-                            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-rose-500 rounded-full" />
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -545,6 +646,17 @@ export default function AttendanceMonitorPage() {
       <div className="lg:hidden">
         <BottomNav role="admin" />
       </div>
+
+      {/* ========== MODALS ========== */}
+      <ShiftTemplateModal
+        open={showShiftModal}
+        onClose={() => setShowShiftModal(false)}
+        onChanged={fetchWorkSchedules}
+      />
+      <AssignShiftModal
+        open={showAssignModal}
+        onClose={() => setShowAssignModal(false)}
+      />
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { height: 5px; width: 5px; }
