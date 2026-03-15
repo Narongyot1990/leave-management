@@ -60,11 +60,18 @@ export default function AttendanceMonitorPage() {
   const [showShiftModal, setShowShiftModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [workSchedules, setWorkSchedules] = useState<Record<string, { date: string; color: string; startHour: number; startMinute: number; endHour: number; endMinute: number }[]>>({});
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const timelineRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const rowScrollRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const isSyncingRef = useRef(false);
+
+  // Update time every minute for real-time growing bars
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   // ---------- Data Fetching ----------
   const fetchUsers = useCallback(async () => {
@@ -194,20 +201,42 @@ export default function AttendanceMonitorPage() {
   }, [filteredTimelineData]);
 
   // ---------- Position Calculations ----------
-  const getBarPosition = useCallback((start: Date, end: Date | null, vd: Date, zoom: ZoomLevel) => {
-    const now = new Date();
+  const getBarPosition = useCallback((start: Date, end: Date | null, vd: Date, zoom: ZoomLevel, now: Date) => {
+    // Current date range boundaries for the view
+    const viewStart = new Date(vd);
+    viewStart.setHours(0, 0, 0, 0);
+    const viewEnd = new Date(vd);
+    viewEnd.setHours(23, 59, 59, 999);
+
     if (zoom === 'month') {
+      const monthStart = new Date(vd.getFullYear(), vd.getMonth(), 1);
       const daysInMonth = new Date(vd.getFullYear(), vd.getMonth() + 1, 0).getDate();
-      const startD = start.getDate() - 1 + start.getHours() / 24;
-      const effectiveEnd = end || (now.getMonth() === vd.getMonth() ? now : new Date(vd.getFullYear(), vd.getMonth(), daysInMonth, 23, 59));
-      const endD = effectiveEnd.getDate() - 1 + effectiveEnd.getHours() / 24;
-      return { left: Math.max(0, (startD / daysInMonth) * 100), width: Math.max(0.5, ((endD - startD) / daysInMonth) * 100) };
+      const monthEnd = new Date(vd.getFullYear(), vd.getMonth(), daysInMonth, 23, 59, 59, 999);
+
+      // Clip start/end to month boundaries
+      const effectiveStart = start < monthStart ? monthStart : start;
+      const finishedEnd = end || (now > monthEnd ? monthEnd : now);
+      const effectiveEnd = finishedEnd > monthEnd ? monthEnd : finishedEnd;
+
+      if (effectiveEnd < monthStart || effectiveStart > monthEnd) return { left: 0, width: 0 };
+
+      const startD = effectiveStart.getDate() - 1 + effectiveStart.getHours() / 24 + effectiveStart.getMinutes() / 1440;
+      const endD = effectiveEnd.getDate() - 1 + effectiveEnd.getHours() / 24 + effectiveEnd.getMinutes() / 1440;
+      
+      return { left: (startD / daysInMonth) * 100, width: Math.max(0.2, ((endD - startD) / daysInMonth) * 100) };
     } else {
-      // day and hour both show 24 columns (hours), hour view just has wider columns
-      const startH = start.getHours() + start.getMinutes() / 60;
-      const effectiveEnd = end || (vd.toDateString() === now.toDateString() ? now : new Date(vd.getFullYear(), vd.getMonth(), vd.getDate(), 23, 59));
+      // Day/Hour view (24h)
+      // Clip start/end to day boundaries
+      const effectiveStart = start < viewStart ? viewStart : start;
+      const finishedEnd = end || (now > viewEnd ? viewEnd : now);
+      const effectiveEnd = finishedEnd > viewEnd ? viewEnd : finishedEnd;
+
+      if (effectiveEnd < viewStart || effectiveStart > viewEnd) return { left: 0, width: 0 };
+
+      const startH = effectiveStart.getHours() + effectiveStart.getMinutes() / 60;
       const endH = effectiveEnd.getHours() + effectiveEnd.getMinutes() / 60;
-      return { left: Math.max(0, (startH / 24) * 100), width: Math.max(0.8, ((endH - startH) / 24) * 100) };
+      
+      return { left: (startH / 24) * 100, width: Math.max(0.5, ((endH - startH) / 24) * 100) };
     }
   }, []);
 
@@ -531,7 +560,7 @@ export default function AttendanceMonitorPage() {
 
                         {/* Gradient session bars */}
                         {user.sessions.map((session, idx) => {
-                          const { left, width } = getBarPosition(session.start, session.end, viewDate, zoomLevel);
+                          const { left, width } = getBarPosition(session.start, session.end, viewDate, zoomLevel, currentTime);
                           if (width <= 0) return null;
                           const isLive = !session.end;
                           const bg = session.isLate

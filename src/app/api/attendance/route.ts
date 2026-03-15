@@ -86,14 +86,37 @@ export async function GET(request: NextRequest) {
         start.setHours(0, 0, 0, 0);
         end = new Date(baseDate);
         end.setHours(23, 59, 59, 999);
-      }
+        
+        // For single day view, we also need to fetch the last 'in' record before this day 
+        // to see if it's an ongoing session that crosses into today.
+        const lastInBefore = await Attendance.findOne({
+          ...query,
+          type: 'in',
+          timestamp: { $lt: start }
+        }).sort({ timestamp: -1 });
 
-      query.timestamp = { $gte: start, $lte: end };
+        if (lastInBefore) {
+          // Check if it has a matching 'out' before 'start'
+          const matchingOut = await Attendance.findOne({
+            userId: lastInBefore.userId,
+            type: 'out',
+            timestamp: { $gt: lastInBefore.timestamp, $lt: start }
+          });
+
+          if (!matchingOut) {
+            // It's an ongoing session from yesterday! 
+            // Include this 'in' record in the results.
+            query.timestamp = { $gte: lastInBefore.timestamp, $lte: end };
+          }
+        }
+      }
+    } else {
+      // No date specified, just return latest
     }
 
     // Higher limit for admin month views
     const limit = (role === 'admin' && range === 'month') ? 2000 : 500;
-    const records = await Attendance.find(query).sort({ timestamp: -1 }).limit(limit);
+    const records = await Attendance.find(query).sort({ timestamp: 1 }).limit(limit);
 
     return NextResponse.json({ success: true, records });
   } catch (error) {
@@ -118,30 +141,21 @@ export async function POST(request: NextRequest) {
 
     await dbConnect();
 
-    // Enforce strict sequence: 1 In, 1 Out per day
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
-
-    const todayRecords = await Attendance.find({
+    // Relaxed sequence: Look back 24h for an open 'in' session
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    const lastRecord = await Attendance.findOne({
       userId,
-      timestamp: { $gte: startOfToday, $lte: endOfToday }
-    }).sort({ timestamp: 1 });
+      timestamp: { $gte: twentyFourHoursAgo }
+    }).sort({ timestamp: -1 });
 
     if (type === 'in') {
-      if (todayRecords.length > 0) {
-        return NextResponse.json({ error: 'วันนี้คุณได้ลงเวลาเข้างานไปแล้ว' }, { status: 400 });
+      if (lastRecord && lastRecord.type === 'in') {
+        return NextResponse.json({ error: 'คุณอยู่ในระบบแล้ว (Missing Clock Out?)' }, { status: 400 });
       }
     } else if (type === 'out') {
-      const hasIn = todayRecords.some(r => r.type === 'in');
-      const hasOut = todayRecords.some(r => r.type === 'out');
-      
-      if (!hasIn) {
+      if (!lastRecord || lastRecord.type === 'out') {
         return NextResponse.json({ error: 'กรุณาลงเวลาเข้างานก่อน' }, { status: 400 });
-      }
-      if (hasOut) {
-        return NextResponse.json({ error: 'คุณได้ลงเวลาออกงานไปแล้วสำหรับวันนี้' }, { status: 400 });
       }
     }
 
