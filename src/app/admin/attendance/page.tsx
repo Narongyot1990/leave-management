@@ -42,7 +42,7 @@ export default function AttendanceMonitorPage() {
   
   // Zoom level from config: 0 = Month, 1 = Day, 2 = Time
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(TIMELINE_CONFIG.ZOOM.LEVELS[TIMELINE_CONFIG.ZOOM.DEFAULT]);
-  const [zoomValue, setZoomValue] = useState(TIMELINE_CONFIG.ZOOM.DEFAULT);
+  const [zoomValue, setZoomValue] = useState<number>(TIMELINE_CONFIG.ZOOM.DEFAULT);
   const [viewDate, setViewDate] = useState(new Date());
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
