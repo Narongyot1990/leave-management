@@ -186,8 +186,9 @@ export default function LeaderHomePage() {
                     whileTap={{ scale: 0.98 }}
                     className="card w-full p-4 flex items-center gap-3.5 group cursor-pointer relative"
                   >
-                    {(isApprove || isDrivers) && badgeCount > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-[var(--danger)] text-white text-xs font-bold flex items-center justify-center">
+                    {badgeCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[22px] h-5.5 px-2 rounded-full bg-[var(--danger)] text-white text-[11px] font-bold flex items-center justify-center shadow-lg border-2 border-[var(--bg-surface)] animate-pulse-glow"
+                        style={{ zIndex: 10 }}>
                         {badgeCount > 99 ? '99+' : badgeCount}
                       </span>
                     )}

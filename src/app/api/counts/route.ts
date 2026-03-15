@@ -18,32 +18,35 @@ export async function GET(request: NextRequest) {
 
     await dbConnect();
 
-    // Prepare filter based on role and requested branch
+    // For Leave Requests: Filter by branch users (case-insensitive)
     let leaveFilter: any = { status: 'pending' };
     let userFilter: any = { status: { $ne: 'active' } };
 
-    if (role === 'admin') {
-      if (filterBranch && filterBranch !== 'all') {
-        leaveFilter.branch = filterBranch; // This assumes LeaveRequest has branch, but usually it's in userId
-        // Join with User to filter by branch
-      }
-    } else if (role === 'leader') {
-      // Leaders always filtered by their branch
-      // We need to find users in that branch first or use populate
-    }
-
-    // Since LeaveRequest doesn't have branch directly (usually), we might need to use aggregate or separate queries
-    // BUT the current implementation of LeaveRequest model might not have branch.
-    // Let's check how users are associated.
-    
-    // For simplicity, let's just get the users of the branch first.
-    let branchUserIds: any[] = [];
     if (role === 'leader' || (role === 'admin' && filterBranch && filterBranch !== 'all')) {
       const targetBranch = role === 'admin' ? filterBranch : userBranch;
-      const usersInBranch = await User.find({ branch: targetBranch }).select('_id');
-      branchUserIds = usersInBranch.map(u => u._id);
+      
+      // Find users in same branch (case-insensitive)
+      const usersInBranch = await User.find({ 
+        branch: { $regex: new RegExp(`^${targetBranch}$`, 'i') } 
+      }).select('_id');
+      const branchUserIds = usersInBranch.map(u => u._id);
+      
       leaveFilter.userId = { $in: branchUserIds };
-      userFilter.branch = targetBranch;
+      
+      // For pending drivers: include target branch (case-insensitive) OR missing branch
+      userFilter = {
+        $and: [
+          { status: { $ne: 'active' } },
+          {
+            $or: [
+              { branch: { $regex: new RegExp(`^${targetBranch}$`, 'i') } },
+              { branch: { $exists: false } },
+              { branch: '' },
+              { branch: null }
+            ]
+          }
+        ]
+      };
     }
 
     if (!type || type === 'all') {
