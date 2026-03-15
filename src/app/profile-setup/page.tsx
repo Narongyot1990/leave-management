@@ -6,7 +6,19 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Clock } from 'lucide-react';
 import UserAvatar from '@/components/UserAvatar';
-import { DriverUser } from '@/lib/types';
+
+interface DriverUser {
+  id: string;
+  lineUserId: string;
+  lineDisplayName: string;
+  lineProfileImage?: string;
+  performanceTier?: string;
+  name?: string;
+  surname?: string;
+  phone?: string;
+  employeeId?: string;
+  status: string;
+}
 
 export default function ProfileSetupPage() {
   const router = useRouter();

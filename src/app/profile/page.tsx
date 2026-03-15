@@ -8,7 +8,24 @@ import { X, Phone, PhoneCall, User, Hash, Circle, CheckCircle2, AlertCircle, Pen
 import Sidebar from '@/components/Sidebar';
 import BottomNav from '@/components/BottomNav';
 import DriverProfile from '@/components/DriverProfile';
-import { DriverUser } from '@/lib/types';
+
+interface DriverUser {
+  id: string;
+  lineDisplayName: string;
+  linePublicId?: string;
+  lineProfileImage?: string;
+  performanceTier?: string;
+  performancePoints?: number;
+  performanceLevel?: number;
+  name?: string;
+  surname?: string;
+  phone?: string;
+  employeeId?: string;
+  branch?: string;
+  status?: string;
+  lastSeen?: string;
+  isOnline?: boolean;
+}
 
 export default function ProfilePage() {
   const router = useRouter();

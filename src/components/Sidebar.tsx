@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Home, Clock, User, FileText, Users, CheckSquare, Settings, PenSquare, LogOut, Car, Rss, Contact2, MapPin, Navigation, History as HistoryIcon, CalendarDays, ClipboardList } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ThemeToggle from './ThemeToggle';
-import { performLogout } from '@/lib/logout';
 
 interface NavItem {
   icon: React.ElementType;
@@ -184,9 +183,9 @@ export default function Sidebar({ role }: { role: 'driver' | 'leader' | 'admin' 
            )}
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={async () => {
-              const loginPath = await performLogout(role);
-              router.push(loginPath);
+            onClick={() => {
+              localStorage.clear();
+              router.push(role === 'driver' ? '/login' : '/leader/login');
             }}
             className="w-10 h-10 flex items-center justify-center rounded-[var(--radius-md)] transition-colors hover:bg-red-500/5 text-red-500/60 hover:text-red-500"
             title="ออกจากระบบ"

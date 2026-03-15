@@ -14,7 +14,6 @@ import { getLeaveTypeMeta, getStatusBadge, LEAVE_TYPE_LIST } from '@/lib/leave-t
 import { formatDateThai } from '@/lib/date-utils';
 import { usePusher } from '@/hooks/usePusher';
 import { useToast } from '@/components/Toast';
-import { DriverUser } from '@/lib/types';
 
 interface LeaveRequest {
   _id: string;
@@ -37,6 +36,15 @@ interface LeaveRequest {
   approvedAt?: string;
   createdAt: string;
 }
+
+interface DriverUser {
+  id: string;
+  lineDisplayName: string;
+  vacationDays: number;
+  sickDays: number;
+  personalDays: number;
+}
+
 
 export default function LeaveHistoryPage() {
   const router = useRouter();
@@ -154,7 +162,7 @@ export default function LeaveHistoryPage() {
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role="driver" />
 
-      <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
+      <div className="lg:pl-[240px] pb-20 lg:pb-6">
         <PageHeader title="ประวัติการลา" backHref="/home" />
 
         <div className="px-4 lg:px-8 py-4">

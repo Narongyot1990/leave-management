@@ -14,7 +14,6 @@ import { formatDateThai, formatRelativeTime, isUserOnline } from '@/lib/date-uti
 import { usePusher } from '@/hooks/usePusher';
 import { useBranches } from '@/hooks/useBranches';
 import { useToast } from '@/components/Toast';
-import LoadingSpinner from '@/components/LoadingSpinner';
 
 // Rename the internal role state to avoid confusion with the Personnel interface role
 
@@ -237,7 +236,7 @@ function DriverManagementContent() {
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role={role} />
 
-      <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
+      <div className="lg:pl-[240px] pb-20 lg:pb-6">
         <PageHeader title="จัดการพนักงาน" subtitle="เพิ่ม/แก้ไข/เปิดใช้งานพนักงาน" backHref="/leader/home" />
 
         <div className="px-4 lg:px-8 py-4">
@@ -308,7 +307,7 @@ function DriverManagementContent() {
         <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
           {loading ? (
             <div className="flex justify-center py-12">
-              <LoadingSpinner fullScreen={false} />
+              <div className="w-10 h-10 rounded-full border-[3px] animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
             </div>
           ) : personnelList.length === 0 ? (
             <div className="card p-12 text-center">
@@ -735,9 +734,17 @@ function DriverManagementContent() {
   );
 }
 
+function Loading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+      <div className="w-10 h-10 rounded-full border-[3px] animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+    </div>
+  );
+}
+
 export default function DriverManagementPage() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<Loading />}>
       <DriverManagementContent />
     </Suspense>
   );

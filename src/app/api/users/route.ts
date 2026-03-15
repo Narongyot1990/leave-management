@@ -139,15 +139,6 @@ export async function PATCH(request: NextRequest) {
     if (status === 'active') {
       await triggerPusher(CHANNELS.USERS, EVENTS.DRIVER_ACTIVATED, { userId: userId });
     }
-
-    // Force logout when role or status changes so user gets fresh tokens
-    if (newRole !== undefined || status !== undefined) {
-      await triggerPusher(CHANNELS.USERS, EVENTS.FORCE_LOGOUT, {
-        userId: userId,
-        reason: newRole !== undefined ? 'role_changed' : 'status_changed',
-      });
-    }
-
     await triggerPusher(CHANNELS.USERS, EVENTS.DRIVER_UPDATED, { userId: userId });
 
     return NextResponse.json({

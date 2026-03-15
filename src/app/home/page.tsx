@@ -10,10 +10,21 @@ import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
 import UserAvatar from '@/components/UserAvatar';
 import { usePusherMulti } from '@/hooks/usePusher';
-import { useForceLogout } from '@/hooks/useForceLogout';
-import { DriverUser } from '@/lib/types';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import { performLogout } from '@/lib/logout';
+
+interface DriverUser {
+  id: string;
+  lineDisplayName: string;
+  lineProfileImage?: string;
+  performanceTier?: string;
+  name?: string;
+  surname?: string;
+  phone?: string;
+  branch?: string;
+  status?: string;
+  vacationDays?: number;
+  sickDays?: number;
+  personalDays?: number;
+}
 
 const menuItems = [
   { icon: FilePlus, label: 'ขอลา', sub: 'ยื่นคำขอลาใหม่', href: '/leave', color: 'var(--accent)' },
@@ -86,9 +97,6 @@ export default function DriverHomePage() {
     } catch { /* ignore */ }
   }, []);
 
-  // Auto-logout when admin changes role/status
-  useForceLogout(user?.id, 'driver');
-
   usePusherMulti([
     { channel: 'leave-requests', bindings: [
       { event: 'leave-status-changed', callback: handleRefresh },
@@ -98,13 +106,21 @@ export default function DriverHomePage() {
     ]},
   ], !!user);
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+        <div className="w-10 h-10 rounded-full border-[3px] animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+      </div>
+    );
+  }
 
   if (!user) return null;
 
   const handleLogout = async () => {
-    const loginPath = await performLogout('driver');
-    router.push(loginPath);
+    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
+    localStorage.removeItem('driverUser');
+    localStorage.removeItem('pendingStatus');
+    router.push('/login');
   };
 
   const quotaItems = [
@@ -117,9 +133,9 @@ export default function DriverHomePage() {
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role="driver" />
 
-      <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
+      <div className="lg:pl-[240px] pb-20 lg:pb-6">
         {/* Header */}
-        <header className="px-4 lg:px-8 pt-4 pb-1">
+        <header className="px-4 lg:px-8 pt-6 pb-2">
           <div className="max-w-3xl mx-auto">
             <motion.div
               initial={{ y: -10, opacity: 0 }}
@@ -152,8 +168,8 @@ export default function DriverHomePage() {
           </div>
         </header>
 
-        <div className="px-4 lg:px-8 py-2">
-          <div className="max-w-3xl mx-auto space-y-3">
+        <div className="px-4 lg:px-8 py-4">
+          <div className="max-w-3xl mx-auto space-y-4">
 
             {/* Leave Quota — Hero Section */}
             {user.status === 'active' && (
@@ -161,23 +177,23 @@ export default function DriverHomePage() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="card-neo p-4"
+                className="card-neo p-5"
               >
-                <p className="text-[10px] font-semibold uppercase tracking-wider mb-2.5" style={{ color: 'var(--text-muted)' }}>
+                <p className="text-fluid-xs font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--text-muted)' }}>
                   วันลาคงเหลือ
                 </p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-3">
                   {quotaItems.map((q) => (
                     <div
                       key={q.label}
-                      className="text-center py-2.5 px-2 rounded-[var(--radius-md)]"
+                      className="text-center p-3 rounded-[var(--radius-md)]"
                       style={{ background: 'var(--bg-inset)' }}
                     >
-                      <q.icon className="w-4 h-4 mx-auto mb-1" style={{ color: q.color }} strokeWidth={1.8} />
-                      <p className="font-extrabold leading-none" style={{ color: q.color, fontSize: 'clamp(1.25rem, 1rem + 1vw, 1.75rem)' }}>
+                      <q.icon className="w-5 h-5 mx-auto mb-1.5" style={{ color: q.color }} strokeWidth={1.8} />
+                      <p className="stat-number" style={{ color: q.color, fontSize: 'clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem)' }}>
                         {q.value}
                       </p>
-                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{q.label}</p>
+                      <p className="text-fluid-xs mt-1" style={{ color: 'var(--text-muted)' }}>{q.label}</p>
                     </div>
                   ))}
                 </div>
@@ -190,20 +206,20 @@ export default function DriverHomePage() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="card p-4 text-center"
+                className="card p-5 text-center"
                 style={{ borderLeftWidth: '4px', borderLeftColor: 'var(--warning)' }}
               >
-                <div className="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2" style={{ background: 'var(--warning-light)' }}>
-                  <AlertCircle className="w-4 h-4" style={{ color: 'var(--warning)' }} />
+                <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: 'var(--warning-light)' }}>
+                  <AlertCircle className="w-5 h-5" style={{ color: 'var(--warning)' }} />
                 </div>
-                <p className="text-fluid-xs font-semibold" style={{ color: 'var(--warning)' }}>บัญชีอยู่ระหว่างตรวจสอบ</p>
-                <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>กรุณารอหัวหน้างานเปิดใช้งาน</p>
+                <p className="text-fluid-sm font-semibold" style={{ color: 'var(--warning)' }}>บัญชีอยู่ระหว่างตรวจสอบ</p>
+                <p className="text-fluid-xs mt-1" style={{ color: 'var(--text-muted)' }}>กรุณารอหัวหน้างานเปิดใช้งาน</p>
               </motion.div>
             )}
 
             {/* Quick Actions */}
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider px-1" style={{ color: 'var(--text-muted)' }}>
+            <div className="space-y-2">
+              <p className="text-fluid-xs font-semibold uppercase tracking-wider px-1" style={{ color: 'var(--text-muted)' }}>
                 เมนู
               </p>
               {menuItems.map((item, i) => {
@@ -216,19 +232,19 @@ export default function DriverHomePage() {
                     transition={{ delay: 0.2 + i * 0.07 }}
                     onClick={() => router.push(item.href)}
                     whileTap={{ scale: 0.98 }}
-                    className="card w-full p-3 flex items-center gap-3 group cursor-pointer"
+                    className="card w-full p-4 flex items-center gap-3.5 group cursor-pointer"
                   >
                     <div
-                      className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
+                      className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
                       style={{ background: 'var(--bg-inset)' }}
                     >
-                      <Icon className="w-4 h-4" style={{ color: item.color }} strokeWidth={1.8} />
+                      <Icon className="w-[18px] h-[18px]" style={{ color: item.color }} strokeWidth={1.8} />
                     </div>
                     <div className="flex-1 text-left min-w-0">
-                      <span className="text-fluid-xs font-semibold block" style={{ color: 'var(--text-primary)' }}>{item.label}</span>
-                      <span className="text-[10px] block" style={{ color: 'var(--text-muted)' }}>{item.sub}</span>
+                      <span className="text-fluid-sm font-semibold block" style={{ color: 'var(--text-primary)' }}>{item.label}</span>
+                      <span className="text-fluid-xs block" style={{ color: 'var(--text-muted)' }}>{item.sub}</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--text-muted)' }} />
+                    <ChevronRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--text-muted)' }} />
                   </motion.button>
                 );
               })}
@@ -239,7 +255,7 @@ export default function DriverHomePage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
-              className="flex justify-center lg:hidden mt-3 mb-1"
+              className="flex justify-center lg:hidden mt-6 mb-2"
             >
               <button
                 onClick={() => { if (confirm('ต้องการออกจากระบบหรือไม่?')) handleLogout(); }}
