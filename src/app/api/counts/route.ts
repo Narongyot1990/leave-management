@@ -25,28 +25,47 @@ export async function GET(request: NextRequest) {
     if (role === 'leader' || (role === 'admin' && filterBranch && filterBranch !== 'all')) {
       const targetBranch = role === 'admin' ? filterBranch : userBranch;
       
-      // Find users in same branch (case-insensitive)
-      const usersInBranch = await User.find({ 
-        branch: { $regex: new RegExp(`^${targetBranch}$`, 'i') } 
-      }).select('_id');
-      const branchUserIds = usersInBranch.map(u => u._id);
-      
-      leaveFilter.userId = { $in: branchUserIds };
-      
-      // For pending drivers: include target branch (case-insensitive) OR missing branch
-      userFilter = {
-        $and: [
-          { status: { $ne: 'active' } },
-          {
-            $or: [
-              { branch: { $regex: new RegExp(`^${targetBranch}$`, 'i') } },
-              { branch: { $exists: false } },
-              { branch: '' },
-              { branch: null }
-            ]
-          }
-        ]
-      };
+      if (targetBranch) {
+        // Find users in same branch (case-insensitive)
+        const usersInBranch = await User.find({ 
+          branch: { $regex: new RegExp(`^${targetBranch}$`, 'i') } 
+        }).select('_id');
+        const branchUserIds = usersInBranch.map(u => u._id);
+        
+        leaveFilter.userId = { $in: branchUserIds };
+        
+        // For pending drivers: include target branch (case-insensitive) OR missing branch
+        userFilter = {
+          $and: [
+            { status: { $ne: 'active' } },
+            {
+              $or: [
+                { branch: { $regex: new RegExp(`^${targetBranch}$`, 'i') } },
+                { branch: { $exists: false } },
+                { branch: '' },
+                { branch: null }
+              ]
+            }
+          ]
+        };
+      } else if (role === 'leader') {
+        // If leader has no branch, we should probably still show branchless pending drivers
+        userFilter = {
+          $and: [
+            { status: { $ne: 'active' } },
+            {
+              $or: [
+                { branch: { $exists: false } },
+                { branch: '' },
+                { branch: null }
+              ]
+            }
+          ]
+        };
+        // Leaves might need to be hidden or restricted if no branch is set
+        // But for debugging, let's keep leaveFilter as status: 'pending' if no branch is set for leader
+        leaveFilter = { status: 'pending' };
+      }
     }
 
     if (!type || type === 'all') {
