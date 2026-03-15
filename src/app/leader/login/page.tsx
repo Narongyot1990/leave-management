@@ -1,12 +1,12 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { AlertCircle, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import ParticleEmitter from '@/components/ParticleEmitter';
+import SnowEmitter from '@/components/SnowEmitter';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -15,6 +15,15 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains('dark'));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,20 +49,38 @@ export default function AdminLoginPage() {
     }
   };
 
-  return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 relative overflow-hidden" style={{ background: 'var(--bg-base)' }}>
-      {/* Particle VFX */}
-      <ParticleEmitter
-        count={40}
-        speed={0.25}
-        maxSize={2}
-        lineDistance={100}
-        colors={['rgba(139,92,246,0.5)', 'rgba(99,102,241,0.4)', 'rgba(168,85,247,0.35)', 'rgba(79,70,229,0.3)']}
-      />
+  const lightBg = 'linear-gradient(160deg, #ede9fe 0%, #f5f3ff 40%, #ddd6fe 70%, #ede9fe 100%)';
+  const darkBg  = 'var(--bg-base)';
 
-      {/* Gradient orbs */}
-      <div className="absolute top-[-25%] right-[-15%] w-[60vw] h-[60vw] rounded-full opacity-[0.1] blur-[80px] animate-pulse" style={{ background: 'radial-gradient(circle, #8b5cf6, transparent 70%)' }} />
-      <div className="absolute bottom-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full opacity-[0.07] blur-[80px]" style={{ background: 'radial-gradient(circle, var(--accent), transparent 70%)', animation: 'pulse 4s ease-in-out infinite reverse' }} />
+  return (
+    <div
+      className="min-h-[100dvh] flex flex-col items-center justify-center p-4 relative overflow-hidden transition-colors duration-700"
+      style={{ background: isDark ? darkBg : lightBg }}
+    >
+      {/* Conditional BG FX */}
+      {isDark ? (
+        <ParticleEmitter
+          count={40}
+          speed={0.25}
+          maxSize={2}
+          lineDistance={100}
+          colors={['rgba(139,92,246,0.5)', 'rgba(99,102,241,0.4)', 'rgba(168,85,247,0.35)', 'rgba(79,70,229,0.3)']}
+        />
+      ) : (
+        <>
+          <SnowEmitter count={100} />
+          <div className="absolute top-[-20%] right-[-10%] w-[65vw] h-[65vw] rounded-full opacity-25 blur-[100px] pointer-events-none" style={{ background: 'radial-gradient(circle, #c4b5fd, transparent 70%)' }} />
+          <div className="absolute bottom-[-20%] left-[-10%] w-[55vw] h-[55vw] rounded-full opacity-20 blur-[100px] pointer-events-none" style={{ background: 'radial-gradient(circle, #a78bfa, transparent 70%)' }} />
+          <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(255,255,255,0.85), transparent)', zIndex: 1 }} />
+        </>
+      )}
+
+      {isDark && (
+        <>
+          <div className="absolute top-[-25%] right-[-15%] w-[60vw] h-[60vw] rounded-full opacity-[0.1] blur-[80px] animate-pulse pointer-events-none" style={{ background: 'radial-gradient(circle, #8b5cf6, transparent 70%)' }} />
+          <div className="absolute bottom-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full opacity-[0.07] blur-[80px] pointer-events-none" style={{ background: 'radial-gradient(circle, var(--accent), transparent 70%)', animation: 'pulse 4s ease-in-out infinite reverse' }} />
+        </>
+      )}
 
       <div className="absolute top-4 right-4 z-10">
         <ThemeToggle />
@@ -65,26 +92,26 @@ export default function AdminLoginPage() {
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-[300px] relative z-10"
       >
-        {/* FLS Logo */}
+        {/* Title */}
         <motion.div
-          initial={{ scale: 0.6, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.15, type: 'spring', stiffness: 180, damping: 14 }}
-          className="flex justify-center mb-4"
-        >
-          <Image src="/logo.svg" alt="FLS Group" width={140} height={70} priority className="drop-shadow-lg" />
-        </motion.div>
-
-        {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-center text-[11px] font-medium mb-5"
-          style={{ color: 'var(--text-muted)' }}
+          transition={{ delay: 0.2 }}
+          className="text-center mb-6"
         >
-          เข้าสู่ระบบผู้ดูแล
-        </motion.p>
+          <h1
+            className="text-3xl font-extrabold tracking-tight"
+            style={{ color: isDark ? 'white' : '#3b0764' }}
+          >
+            FLS Fleet
+          </h1>
+          <p
+            className="text-[12px] font-medium mt-1"
+            style={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(59,7,100,0.5)' }}
+          >
+            เข้าสู่ระบบผู้ดูแล
+          </p>
+        </motion.div>
 
         {/* Login Form */}
         <motion.form
@@ -94,12 +121,15 @@ export default function AdminLoginPage() {
           transition={{ delay: 0.4, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="rounded-2xl p-5 space-y-3 backdrop-blur-md"
           style={{
-            background: 'color-mix(in srgb, var(--bg-surface) 85%, transparent)',
-            border: '1px solid var(--border)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.08)',
+            background: isDark
+              ? 'color-mix(in srgb, var(--bg-surface) 85%, transparent)'
+              : 'rgba(255,255,255,0.72)',
+            border: isDark ? '1px solid var(--border)' : '1px solid rgba(196,181,253,0.5)',
+            boxShadow: isDark
+              ? '0 8px 40px rgba(0,0,0,0.2)'
+              : '0 8px 40px rgba(167,139,250,0.2), 0 2px 8px rgba(0,0,0,0.06)',
           }}
         >
-          {/* Error */}
           <AnimatePresence>
             {error && (
               <motion.div
@@ -115,7 +145,6 @@ export default function AdminLoginPage() {
             )}
           </AnimatePresence>
 
-          {/* Email */}
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
             <input
@@ -129,7 +158,6 @@ export default function AdminLoginPage() {
             />
           </div>
 
-          {/* Password */}
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
             <input
@@ -152,7 +180,6 @@ export default function AdminLoginPage() {
             </button>
           </div>
 
-          {/* Submit */}
           <motion.button
             whileHover={{ scale: 1.02, boxShadow: '0 6px 28px rgba(124,58,237,0.4)' }}
             whileTap={{ scale: 0.96 }}
@@ -171,7 +198,6 @@ export default function AdminLoginPage() {
           </motion.button>
         </motion.form>
 
-        {/* Driver link */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -181,20 +207,19 @@ export default function AdminLoginPage() {
           <a
             href="/login"
             className="text-[11px] font-medium transition-opacity hover:opacity-70"
-            style={{ color: 'var(--text-muted)' }}
+            style={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(59,7,100,0.4)' }}
           >
             เข้าสู่ระบบด้วย LINE
           </a>
         </motion.div>
       </motion.div>
 
-      {/* Bottom brand */}
       <motion.p
         initial={{ opacity: 0 }}
-        animate={{ opacity: 0.4 }}
+        animate={{ opacity: 0.35 }}
         transition={{ delay: 1 }}
         className="absolute bottom-5 text-[9px] font-medium tracking-widest uppercase z-10"
-        style={{ color: 'var(--text-muted)' }}
+        style={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(59,7,100,0.4)' }}
       >
         FLS Fleet Management
       </motion.p>

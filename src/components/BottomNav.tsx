@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, CalendarDays, Users, Rss, User, CheckSquare, ClipboardCheck, Settings, Clock, Contact2 } from 'lucide-react';
+import { Home, CalendarDays, Users, Rss, User, CheckSquare, ClipboardCheck, Settings, Clock, Contact2, UserCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface NavItem {
@@ -21,10 +21,10 @@ const driverNav: NavItem[] = [
 
 const managementNav: NavItem[] = [
   { icon: Home, label: 'หน้าหลัก', href: '/leader/home' },
-  { icon: Clock, label: 'ลงเวลา', href: '/leader/attendance' },
-  { icon: CheckSquare, label: 'อนุมัติลา', href: '/leader/approve' },
-  { icon: Users, label: 'พนักงาน', href: '/leader/drivers' },
+  { icon: Rss, label: 'Moments', href: '/leader/car-wash' },
+  { icon: CalendarDays, label: 'Dashboard', href: '/dashboard' },
   { icon: Settings, label: 'ตั้งค่า', href: '/leader/settings' },
+  { icon: UserCircle, label: 'โปรไฟล์', href: '/leader/profile-edit' },
 ];
 
 export default function BottomNav({ role }: { role: 'driver' | 'leader' | 'admin' }) {

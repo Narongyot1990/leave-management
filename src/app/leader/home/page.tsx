@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { CheckSquare, Users, Clock, CalendarDays, ClipboardCheck, PenSquare, Settings, User, LogOut, ChevronRight } from 'lucide-react';
+import { CheckSquare, Users, Clock, CalendarDays, ClipboardCheck, PenSquare, Settings, Rss, LogOut } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -14,8 +14,9 @@ import { performLogout } from '@/lib/logout';
 const menu = [
   { icon: Clock, label: 'ลงเวลา', href: '/leader/attendance', color: 'var(--accent)' },
   { icon: CheckSquare, label: 'อนุมัติลา', href: '/leader/approve', color: 'var(--success)', badge: 'leave' },
-  { icon: ClipboardCheck, label: 'มอบหมายงาน', href: '/leader/tasks', color: 'var(--info)' },
+  { icon: ClipboardCheck, label: 'มอบหมาย', href: '/leader/tasks', color: 'var(--info)' },
   { icon: Users, label: 'พนักงาน', href: '/leader/drivers', color: 'var(--accent)', badge: 'driver' },
+  { icon: Rss, label: 'Moments', href: '/leader/car-wash', color: 'var(--info)' },
   { icon: CalendarDays, label: 'Dashboard', href: '/dashboard', color: 'var(--warning)' },
   { icon: PenSquare, label: 'แทนงาน', href: '/leader/substitute', color: 'var(--info)' },
   { icon: Clock, label: 'ประวัติ', href: '/leader/history', color: 'var(--text-muted)' },
@@ -153,9 +154,13 @@ export default function LeaderHomePage() {
               })}
             </div>
 
-            {/* Logout */}
-            <div className="flex justify-center lg:hidden pt-2">
-              <button onClick={() => { if (confirm('ออกจากระบบ?')) handleLogout(); }} className="flex items-center gap-1.5 text-[11px] py-2 px-4 rounded-full" style={{ color: 'var(--text-muted)' }}>
+            {/* Logout — bottom of page, subtle */}
+            <div className="flex justify-center pb-2">
+              <button
+                onClick={() => { if (confirm('ต้องการออกจากระบบ?')) handleLogout(); }}
+                className="flex items-center gap-1.5 text-[11px] py-2 px-5 rounded-full border transition-colors hover:bg-red-500/10"
+                style={{ color: 'var(--danger)', borderColor: 'var(--danger)', opacity: 0.7 }}
+              >
                 <LogOut className="w-3.5 h-3.5" />
                 ออกจากระบบ
               </button>

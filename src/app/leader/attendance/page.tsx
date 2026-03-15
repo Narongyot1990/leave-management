@@ -206,6 +206,7 @@ export default function AttendancePage() {
                       center={branchLocation}
                       radius={branchRadius}
                       userLocation={location}
+                      userProfileImage={user?.lineProfileImage}
                       readOnly={true}
                     />
                   )}

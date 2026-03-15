@@ -50,8 +50,14 @@ function LineCallbackContent() {
         console.log('Login response:', data);
 
         if (data.success) {
-          localStorage.setItem('driverUser', JSON.stringify(data.user));
-          router.push('/home');
+          const role = data.user?.role;
+          if (role === 'leader' || role === 'admin') {
+            localStorage.setItem('leaderUser', JSON.stringify(data.user));
+            router.push('/leader/home');
+          } else {
+            localStorage.setItem('driverUser', JSON.stringify(data.user));
+            router.push('/home');
+          }
         } else {
           setError(data.error + (data.details ? ' - ' + JSON.stringify(data.details) : ''));
         }

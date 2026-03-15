@@ -29,6 +29,7 @@ interface BranchMapProps {
   center: { lat: number; lon: number };
   radius: number;
   userLocation?: { lat: number; lon: number } | null;
+  userProfileImage?: string | null;
   onLocationChange?: (lat: number, lon: number) => void;
   readOnly?: boolean;
 }
@@ -72,13 +73,26 @@ function DraggableMarker({ position, onMove, radius, readOnly }: { position: [nu
   );
 }
 
-export default function BranchMap({ center, radius, userLocation, onLocationChange, readOnly = false }: BranchMapProps) {
+export default function BranchMap({ center, radius, userLocation, userProfileImage, onLocationChange, readOnly = false }: BranchMapProps) {
   useEffect(() => {
     FIX_LEAFLET_ICON();
   }, []);
 
   const branchPos: [number, number] = [center.lat, center.lon];
   const userPos: [number, number] | null = userLocation ? [userLocation.lat, userLocation.lon] : null;
+
+  // Build user icon: LINE profile image or fallback person icon
+  const userIcon = typeof window !== 'undefined'
+    ? (userProfileImage
+        ? new L.Icon({
+            iconUrl: userProfileImage,
+            iconSize: [36, 36],
+            iconAnchor: [18, 18],
+            popupAnchor: [0, -18],
+            className: 'rounded-full border-2 border-white shadow-lg',
+          })
+        : PERSON_ICON)
+    : null;
 
   return (
     <div className="h-[300px] w-full rounded-2xl overflow-hidden border border-border relative z-0">
@@ -102,11 +116,9 @@ export default function BranchMap({ center, radius, userLocation, onLocationChan
           readOnly={readOnly} 
         />
 
-        {/* User Marker (Person Icon) */}
-        {userPos && PERSON_ICON && (
-          <Marker position={userPos} icon={PERSON_ICON}>
-            {/* Optional popup for user */}
-          </Marker>
+        {/* User Marker — LINE profile image or fallback icon */}
+        {userPos && userIcon && (
+          <Marker position={userPos} icon={userIcon} />
         )}
       </MapContainer>
       

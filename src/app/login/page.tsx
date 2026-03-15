@@ -1,16 +1,25 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import ThemeToggle from '@/components/ThemeToggle';
 import ParticleEmitter from '@/components/ParticleEmitter';
+import SnowEmitter from '@/components/SnowEmitter';
 
 const LINE_ICON_PATH =
   'M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains('dark'));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
 
   const handleLineLogin = () => {
     setLoading(true);
@@ -26,14 +35,37 @@ export default function LoginPage() {
     window.location.href = `https://access.line.me/oauth2/v2.1/authorize?${params.toString()}`;
   };
 
-  return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 relative overflow-hidden" style={{ background: 'var(--bg-base)' }}>
-      {/* Particle VFX */}
-      <ParticleEmitter count={55} speed={0.3} maxSize={2.5} lineDistance={110} />
+  // Light mode: winter/snow theme. Dark mode: deep space particles.
+  const lightBg = 'linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #bfdbfe 70%, #dbeafe 100%)';
+  const darkBg  = 'var(--bg-base)';
 
-      {/* Gradient orbs */}
-      <div className="absolute top-[-25%] left-[-15%] w-[65vw] h-[65vw] rounded-full opacity-[0.12] blur-[80px] animate-pulse" style={{ background: 'radial-gradient(circle, var(--accent) 0%, transparent 70%)' }} />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full opacity-[0.08] blur-[80px]" style={{ background: 'radial-gradient(circle, var(--info) 0%, transparent 70%)', animation: 'pulse 4s ease-in-out infinite reverse' }} />
+  return (
+    <div
+      className="min-h-[100dvh] flex flex-col items-center justify-center p-4 relative overflow-hidden transition-colors duration-700"
+      style={{ background: isDark ? darkBg : lightBg }}
+    >
+      {/* Conditional BG FX */}
+      {isDark ? (
+        <ParticleEmitter count={55} speed={0.3} maxSize={2.5} lineDistance={110} />
+      ) : (
+        <>
+          {/* Snow */}
+          <SnowEmitter count={130} />
+          {/* Soft winter orbs */}
+          <div className="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] rounded-full opacity-30 blur-[100px] pointer-events-none" style={{ background: 'radial-gradient(circle, #bfdbfe, transparent 70%)' }} />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full opacity-20 blur-[100px] pointer-events-none" style={{ background: 'radial-gradient(circle, #93c5fd, transparent 70%)' }} />
+          {/* Ground snow */}
+          <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(255,255,255,0.9), transparent)', zIndex: 1 }} />
+        </>
+      )}
+
+      {/* Dark mode gradient orbs */}
+      {isDark && (
+        <>
+          <div className="absolute top-[-25%] left-[-15%] w-[65vw] h-[65vw] rounded-full opacity-[0.12] blur-[80px] animate-pulse pointer-events-none" style={{ background: 'radial-gradient(circle, var(--accent) 0%, transparent 70%)' }} />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full opacity-[0.08] blur-[80px] pointer-events-none" style={{ background: 'radial-gradient(circle, var(--info) 0%, transparent 70%)', animation: 'pulse 4s ease-in-out infinite reverse' }} />
+        </>
+      )}
 
       <div className="absolute top-4 right-4 z-10">
         <ThemeToggle />
@@ -45,26 +77,26 @@ export default function LoginPage() {
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-[300px] relative z-10"
       >
-        {/* FLS Logo */}
+        {/* Title + subtitle */}
         <motion.div
-          initial={{ scale: 0.6, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.15, type: 'spring', stiffness: 180, damping: 14 }}
-          className="flex justify-center mb-4"
-        >
-          <Image src="/logo.svg" alt="FLS Group" width={160} height={80} priority className="drop-shadow-lg" />
-        </motion.div>
-
-        {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="text-center text-fluid-xs font-medium mb-3"
-          style={{ color: 'var(--text-muted)' }}
+          transition={{ delay: 0.2 }}
+          className="text-center mb-6"
         >
-          ระบบจัดการพนักงานขนส่ง
-        </motion.p>
+          <h1
+            className="text-3xl font-extrabold tracking-tight"
+            style={{ color: isDark ? 'white' : '#1e3a5f' }}
+          >
+            FLS Fleet
+          </h1>
+          <p
+            className="text-[12px] font-medium mt-1"
+            style={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(30,58,95,0.55)' }}
+          >
+            ระบบจัดการพนักงานขนส่ง
+          </p>
+        </motion.div>
 
         {/* Login Card */}
         <motion.div
@@ -73,9 +105,13 @@ export default function LoginPage() {
           transition={{ delay: 0.4, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="rounded-2xl p-5 backdrop-blur-md"
           style={{
-            background: 'color-mix(in srgb, var(--bg-surface) 85%, transparent)',
-            border: '1px solid var(--border)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.08)',
+            background: isDark
+              ? 'color-mix(in srgb, var(--bg-surface) 85%, transparent)'
+              : 'rgba(255,255,255,0.72)',
+            border: isDark ? '1px solid var(--border)' : '1px solid rgba(147,197,253,0.5)',
+            boxShadow: isDark
+              ? '0 8px 40px rgba(0,0,0,0.2)'
+              : '0 8px 40px rgba(147,197,253,0.25), 0 2px 8px rgba(0,0,0,0.06)',
           }}
         >
           <motion.button
@@ -111,7 +147,7 @@ export default function LoginPage() {
           <a
             href="/leader/login"
             className="text-[11px] font-medium transition-opacity hover:opacity-70"
-            style={{ color: 'var(--text-muted)' }}
+            style={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(30,58,95,0.45)' }}
           >
             เข้าสู่ระบบสำหรับผู้ดูแล
           </a>
@@ -121,10 +157,10 @@ export default function LoginPage() {
       {/* Bottom brand */}
       <motion.p
         initial={{ opacity: 0 }}
-        animate={{ opacity: 0.4 }}
+        animate={{ opacity: 0.35 }}
         transition={{ delay: 1 }}
         className="absolute bottom-5 text-[9px] font-medium tracking-widest uppercase z-10"
-        style={{ color: 'var(--text-muted)' }}
+        style={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(30,58,95,0.4)' }}
       >
         FLS Fleet Management
       </motion.p>
