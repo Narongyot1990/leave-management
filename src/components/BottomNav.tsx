@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, CalendarDays, Users, Rss, User, CheckSquare, ClipboardCheck, Settings, Clock } from 'lucide-react';
+import { Home, CalendarDays, Users, Rss, User, CheckSquare, ClipboardCheck, Settings, Clock, Contact2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface NavItem {
@@ -15,7 +15,7 @@ const driverNav: NavItem[] = [
   { icon: Home, label: 'หน้าหลัก', href: '/home' },
   { icon: CalendarDays, label: 'ปฏิทิน', href: '/dashboard' },
   { icon: Rss, label: 'Moments', href: '/car-wash/feed' },
-  { icon: ClipboardCheck, label: 'งานของฉัน', href: '/tasks' },
+  { icon: Contact2, label: 'เพื่อนร่วมงาน', href: '/contacts' },
   { icon: User, label: 'โปรไฟล์', href: '/profile' },
 ];
 
