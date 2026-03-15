@@ -26,15 +26,20 @@ export default function AttendanceMonitorPage() {
   const { branches } = useBranches();
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterBranch, setFilterBranch] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState<'day' | 'month'>('day');
+  const [viewDate, setViewDate] = useState(new Date());
 
   const fetchRecords = useCallback(async () => {
     try {
       setLoading(true);
-      const today = new Date().toISOString().split('T')[0];
-      const res = await fetch(`/api/attendance?date=${today}`);
+      // For Month view, fetch a wider range. For Day view, just today.
+      const start = new Date(viewDate);
+      if (zoomLevel === 'month') {
+        start.setDate(1);
+      }
+      const dateStr = start.toISOString().split('T')[0];
+      const res = await fetch(`/api/attendance?date=${dateStr}&range=${zoomLevel}`);
       const data = await res.json();
       if (data.success) {
         setRecords(data.records || []);
@@ -44,7 +49,7 @@ export default function AttendanceMonitorPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [viewDate, zoomLevel]);
 
   useEffect(() => {
     fetchRecords();
@@ -56,7 +61,6 @@ export default function AttendanceMonitorPage() {
   const timelineData = useMemo(() => {
     const userMap = new Map<string, { name: string; image?: string; groups: { start: Date; end: Date | null }[] }>();
     
-    // Sort chronological for processing
     const sorted = [...records].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
     sorted.forEach(rec => {
@@ -74,10 +78,8 @@ export default function AttendanceMonitorPage() {
       }
     });
 
-    return Array.from(userMap.entries())
-      .map(([id, data]) => ({ id, ...data }))
-      .filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [records, searchQuery]);
+    return Array.from(userMap.entries()).map(([id, data]) => ({ id, ...data }));
+  }, [records]);
 
   const stats = useMemo(() => {
     const ins = records.filter(r => r.type === 'in').length;
@@ -148,116 +150,142 @@ export default function AttendanceMonitorPage() {
           <div className="card-neo overflow-hidden flex flex-col min-h-[500px]">
             {/* Timeline Tools */}
             <div className="p-4 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-4">
-               <div className="relative flex-1 max-w-xs">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted opacity-30" />
-                  <input 
-                    type="text" 
-                    placeholder="ค้นหาชื่อ Leader..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-10 pl-10 pr-4 rounded-xl bg-[var(--bg-inset)] border border-[var(--border)] text-xs font-bold outline-none focus:border-[var(--accent)] transition-all"
-                  />
-               </div>
                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 text-[10px] font-black uppercase tracking-widest">
-                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                     Live Status
+                  <button 
+                    onClick={() => setZoomLevel('day')}
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${zoomLevel === 'day' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-inset)] opacity-40'}`}
+                  >
+                    Daily
+                  </button>
+                  <button 
+                    onClick={() => setZoomLevel('month')}
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${zoomLevel === 'month' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-inset)] opacity-40'}`}
+                  >
+                    Monthly
+                  </button>
+               </div>
+               
+               <div className="flex items-center gap-3">
+                  <button onClick={() => {
+                    const d = new Date(viewDate);
+                    if (zoomLevel === 'month') d.setMonth(d.getMonth() - 1);
+                    else d.setDate(d.getDate() - 1);
+                    setViewDate(d);
+                  }} className="text-muted hover:text-[var(--text-primary)] transition-colors">
+                    <ChevronRight className="rotate-180 w-5 h-5" />
+                  </button>
+                  <div className="flex flex-col items-center">
+                    <p className="text-xs font-black uppercase tracking-widest">
+                      {zoomLevel === 'month' 
+                        ? viewDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })
+                        : viewDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+                    </p>
                   </div>
+                  <button onClick={() => {
+                    const d = new Date(viewDate);
+                    if (zoomLevel === 'month') d.setMonth(d.getMonth() + 1);
+                    else d.setDate(d.getDate() + 1);
+                    setViewDate(d);
+                  }} className="text-muted hover:text-[var(--text-primary)] transition-colors">
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
                </div>
             </div>
 
-            {/* Timeline Scrollable Area */}
-            <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar">
-               <div className="min-w-[1200px] h-full p-4">
-                  {/* Timeline Header (Hours) */}
-                  <div className="flex items-center border-b border-[var(--border)] mb-4 pb-2">
-                     <div className="w-[180px] shrink-0" />
-                     <div className="flex-1 flex justify-between px-2">
-                        {hours.map(h => (
-                          <div key={h} className="text-[9px] font-black opacity-30 w-0 flex justify-center">
-                             {(h % 4 === 0 || h === 24) && <span>{h.toString().padStart(2, '0')}:00</span>}
+            {/* Timeline Scrollable Area with Fixed Column */}
+            <div className="flex-1 overflow-hidden flex flex-col relative h-[600px]">
+               {/* Fixed Header Row */}
+               <div className="flex border-b border-[var(--border)] bg-[var(--bg-surface)] sticky top-0 z-20">
+                  <div className="w-[160px] shrink-0 p-3 border-r border-[var(--border)] bg-[var(--bg-surface)] sticky left-0 z-30">
+                     <span className="text-[10px] font-black opacity-30 uppercase">Staff Member</span>
+                  </div>
+                  <div className="flex-1 overflow-x-hidden relative">
+                    <div className="flex h-10 px-4">
+                       {zoomLevel === 'day' ? (
+                         Array.from({ length: 25 }, (_, i) => (
+                           <div key={i} className="flex-1 min-w-[60px] flex items-center justify-center border-r last:border-r-0 border-[var(--border)]/30">
+                              <span className="text-[9px] font-black opacity-30">{i.toString().padStart(2, '0')}:00</span>
+                           </div>
+                         ))
+                       ) : (
+                         Array.from({ length: new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate() }, (_, i) => (
+                           <div key={i} className="flex-1 min-w-[40px] flex items-center justify-center border-r last:border-r-0 border-[var(--border)]/30">
+                              <span className="text-[9px] font-black opacity-30">{i + 1}</span>
+                           </div>
+                         ))
+                       )}
+                    </div>
+                  </div>
+               </div>
+
+               {/* Scrollable Content */}
+               <div className="flex-1 overflow-auto custom-scrollbar relative">
+                  {timelineData.map(user => (
+                    <div key={user.id} className="flex border-b border-[var(--border)]/50 group hover:bg-[var(--bg-inset)]/20 transition-colors">
+                       {/* Fixed Left Column */}
+                       <div className="w-[160px] shrink-0 p-3 border-r border-[var(--border)] bg-[var(--bg-surface)] sticky left-0 z-10 flex items-center gap-2 group-hover:bg-[var(--bg-inset)] transition-colors">
+                          <UserAvatar imageUrl={user.image} displayName={user.name} size="xs" />
+                          <div className="min-w-0">
+                             <p className="text-[10px] font-black truncate leading-none">{user.name}</p>
+                             <p className="text-[7px] font-bold opacity-30 uppercase mt-0.5">Leader</p>
                           </div>
-                        ))}
-                     </div>
-                  </div>
-
-                  {/* User Rows */}
-                  <div className="space-y-4">
-                     {timelineData.length === 0 ? (
-                       <div className="py-20 text-center opacity-20">
-                          <Users className="w-10 h-10 mx-auto mb-2" />
-                          <p className="text-xs font-black uppercase tracking-widest">No Leader Activity Found</p>
                        </div>
-                     ) : (
-                       timelineData.map(user => (
-                         <div key={user.id} className="flex items-center group">
-                            {/* User Profile Info */}
-                            <div className="w-[180px] shrink-0 flex items-center gap-3">
-                               <UserAvatar imageUrl={user.image} displayName={user.name} size="sm" />
-                               <div className="min-w-0">
-                                  <p className="text-[11px] font-black truncate leading-tight">{user.name}</p>
-                                  <p className="text-[8px] font-bold text-muted uppercase tracking-tighter">Leader</p>
-                               </div>
-                            </div>
+                       
+                       {/* Timeline Tracks */}
+                       <div className="flex-1 relative h-14 bg-[var(--bg-inset)]/10">
+                          {user.groups.map((group, idx) => {
+                             let left = 0;
+                             let width = 0;
 
-                            {/* Timeline Bar Area */}
-                            <div className="flex-1 h-10 relative bg-[var(--bg-inset)] rounded-xl group-hover:bg-[var(--bg-surface)] transition-all border border-transparent group-hover:border-[var(--border)]">
-                               {/* Hour Grids */}
-                               <div className="absolute inset-0 flex justify-between px-2 pointer-events-none opacity-[0.03]">
-                                  {hours.map(h => <div key={h} className="w-[1px] h-full bg-black dark:bg-white" />)}
-                               </div>
+                             if (zoomLevel === 'day') {
+                               const startH = group.start.getHours() + group.start.getMinutes() / 60;
+                               const effectiveEnd = group.end || (viewDate.toDateString() === new Date().toDateString() ? new Date() : new Date(viewDate.setHours(23,59,59)));
+                               const endH = effectiveEnd.getHours() + effectiveEnd.getMinutes() / 60;
+                               left = (startH / 24) * 100;
+                               width = ((endH - startH) / 24) * 100;
+                             } else {
+                               const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+                               const startD = group.start.getDate() - 1 + group.start.getHours() / 24;
+                               const effectiveEnd = group.end || new Date(viewDate.getFullYear(), viewDate.getMonth(), daysInMonth, 23, 59);
+                               const endD = effectiveEnd.getDate() - 1 + effectiveEnd.getHours() / 24;
+                               left = (startD / daysInMonth) * 100;
+                               width = ((endD - startD) / daysInMonth) * 100;
+                             }
 
-                               {/* Dynamic Segments */}
-                               {user.groups.map((group, idx) => {
-                                  const startH = group.start.getHours() + group.start.getMinutes() / 60;
-                                  const effectiveEnd = group.end || new Date();
-                                  const endH = effectiveEnd.getHours() + effectiveEnd.getMinutes() / 60;
-                                  
-                                  const left = (startH / 24) * 100;
-                                  const width = ((endH - startH) / 24) * 100;
-                                  
-                                  const isLive = !group.end;
+                             const isLive = !group.end;
 
-                                  return (
-                                    <motion.div
-                                      key={idx}
-                                      initial={{ scaleX: 0 }}
-                                      animate={{ scaleX: 1 }}
-                                      className="absolute top-1/2 -translate-y-1/2 h-4 rounded-full flex items-center"
-                                      style={{ 
-                                        left: `${left}%`, 
-                                        width: `${width}%`, 
-                                        background: isLive ? 'linear-gradient(90deg, var(--emerald), #10b981)' : 'var(--border)',
-                                        opacity: isLive ? 1 : 0.4,
-                                        transformOrigin: 'left',
-                                        boxShadow: isLive ? '0 0 15px var(--emerald-glow)' : 'none'
-                                      }}
-                                    >
-                                       {/* Connection Visuals */}
-                                       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white border border-emerald-500 z-10" />
-                                       {!isLive && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-slate-400 border border-white z-10" />}
-                                       
-                                       {/* Range Label */}
-                                       {width > 2 && (
-                                         <span className={`text-[7px] font-black uppercase text-white px-2 tracking-tighter ${isLive ? 'opacity-100' : 'opacity-0'}`}>
-                                            {group.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} 
-                                            {group.end ? ` - ${group.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : ' [LIVE]'}
-                                         </span>
-                                       )}
-                                    </motion.div>
-                                  );
-                               })}
-                            </div>
-                         </div>
-                       ))
-                     )}
-                  </div>
+                             return (
+                               <motion.div
+                                 key={idx}
+                                 initial={{ scaleX: 0 }}
+                                 animate={{ scaleX: 1 }}
+                                 className="absolute top-1/2 -translate-y-1/2 h-3 rounded-full shadow-lg"
+                                 style={{ 
+                                   left: `${Math.max(0, left)}%`, 
+                                   width: `${Math.max(1, width)}%`, 
+                                   background: isLive ? 'linear-gradient(90deg, #10b981, #34d399)' : 'var(--text-muted)',
+                                   opacity: isLive ? 1 : 0.3,
+                                   transformOrigin: 'left',
+                                   boxShadow: isLive ? '0 0 10px rgba(16, 185, 129, 0.3)' : 'none'
+                                 }}
+                               >
+                                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/20 rounded-full z-10">
+                                     <span className="text-[7px] font-black text-white px-1 whitespace-nowrap">
+                                        {group.start.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                                     </span>
+                                  </div>
+                               </motion.div>
+                             );
+                          })}
+                       </div>
+                    </div>
+                  ))}
                </div>
             </div>
           </div>
-
         </main>
       </div>
+
       <BottomNav role="admin" />
 
       <style jsx global>{`

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { 
   User as UserIcon, Calendar, Award, 
@@ -59,8 +59,8 @@ export default function LeaderProfile({ user, isMe = false, onEditClick, onClose
 
   const tabs = [
     { id: 'overview', label: 'ภาพรวม', icon: TrendingUp },
-    { id: 'access', label: 'การสิทธิ์', icon: Shield },
-    { id: 'contact', label: 'ติดต่อ', icon: Phone }
+    { id: 'access', label: 'สิทธิ์การใช้งาน', icon: Shield },
+    { id: 'contact', label: 'ข้อมูลติดต่อ', icon: Phone }
   ];
 
   return (
@@ -93,14 +93,16 @@ export default function LeaderProfile({ user, isMe = false, onEditClick, onClose
 
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-black tracking-tight mb-0.5 truncate leading-tight">
-              {displayName}
+              {displayName || '---'}
             </h1>
             <div className="flex items-center gap-2">
               <span className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest">
-                {isAdmin ? 'System Root' : `${user.branch || '---'}`}
+                {isAdmin ? 'System Root' : `${user.branch || 'PENDING'}`}
               </span>
               <span className="w-1 h-1 rounded-full bg-emerald-500" />
-              <span className="text-[9px] font-black uppercase text-emerald-500/80 tracking-widest">Active</span>
+              <span className="text-[9px] font-black uppercase text-emerald-500/80 tracking-widest">
+                {user.status === 'active' ? 'Active' : 'Pending'}
+              </span>
             </div>
           </div>
         </div>

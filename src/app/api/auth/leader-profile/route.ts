@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
+import { User } from '@/models/User';
 import { Leader } from '@/models/Leader';
 import bcrypt from 'bcryptjs';
 import { requireAuth, requireSuperuser } from '@/lib/api-auth';
@@ -29,34 +30,27 @@ export async function PATCH(request: NextRequest) {
 
     await dbConnect();
 
-    const leader = await Leader.findById(leaderId);
+    // Check User model first (Refactored Unified System)
+    let userRecord = await User.findById(leaderId);
+    let isLegacyLeader = false;
 
-    if (!leader) {
-      return NextResponse.json({ error: 'Leader not found' }, { status: 404 });
+    if (!userRecord) {
+      // Check legacy Leader model
+      userRecord = await Leader.findById(leaderId) as any;
+      isLegacyLeader = true;
     }
 
-    // For non-admin users, they can only edit their own profile (no branch/role changes)
-    const isAdmin = authResult.payload.role === 'admin';
-    const isOwnProfile = authResult.payload.userId === leaderId;
-
-    if (!isAdmin && !isOwnProfile) {
-      return NextResponse.json({ error: 'ไม่มีสิทธิ์แก้ไขโปรไฟล์ผู้อื่น' }, { status: 403 });
+    if (!userRecord) {
+      return NextResponse.json({ error: 'User not found' }, { status: 0 });
     }
 
-    if (name) {
-      leader.name = name;
-    }
-
-    // Only admin can change branch and role
-    if (isAdmin && branch !== undefined) {
-      leader.branch = branch || null;
-    }
-    if (isAdmin && role !== undefined) {
-      leader.role = role;
-    }
+    const { surname, phone, employeeId } = body;
+    if (surname !== undefined) userRecord.surname = surname;
+    if (phone !== undefined) userRecord.phone = phone;
+    if (employeeId !== undefined) userRecord.employeeId = employeeId;
 
     if (currentPassword && newPassword) {
-      const isValid = await bcrypt.compare(currentPassword, leader.password);
+      const isValid = await bcrypt.compare(currentPassword, (userRecord as any).password);
       
       if (!isValid) {
         return NextResponse.json(
@@ -65,7 +59,7 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      leader.password = await bcrypt.hash(newPassword, 12);
+      (userRecord as any).password = await bcrypt.hash(newPassword, 12);
     } else if (newPassword && !currentPassword) {
       return NextResponse.json(
         { error: 'กรุณากรอกรหัสผ่านปัจจุบัน' },
@@ -73,16 +67,18 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    await leader.save();
+    await (userRecord as any).save();
 
     return NextResponse.json({
       success: true,
-      leader: {
-        id: leader._id,
-        email: leader.email,
-        name: leader.name,
-        branch: leader.branch,
-        role: leader.role,
+      user: {
+        id: userRecord._id,
+        name: userRecord.name,
+        surname: userRecord.surname,
+        phone: userRecord.phone,
+        employeeId: userRecord.employeeId,
+        branch: userRecord.branch,
+        role: userRecord.role,
       },
     });
   } catch (error) {
