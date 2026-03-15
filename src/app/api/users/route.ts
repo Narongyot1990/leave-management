@@ -35,14 +35,23 @@ export async function GET(request: NextRequest) {
         query._id = userId;
       }
     } else if (role === 'leader') {
-      // Leader: sees ONLY their branch (no pending/unassigned - those are for driver management)
-      if (userBranch) {
-        query.branch = userBranch;
+      const targetBranch = userBranch;
+      if (targetBranch) {
+        query.$or = [
+          { branch: { $regex: new RegExp(`^${targetBranch}$`, 'i') } },
+          { branch: { $exists: false } },
+          { branch: '' },
+          { branch: null }
+        ];
       }
     } else if (role === 'admin') {
-      // Admin: sees all unless branch query param specified
-      if (branch) {
-        query.branch = branch;
+      if (branch && branch !== 'all') {
+        query.$or = [
+          { branch: { $regex: new RegExp(`^${branch}$`, 'i') } },
+          { branch: { $exists: false } },
+          { branch: '' },
+          { branch: null }
+        ];
       }
     }
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { Home, CalendarDays, Users, Rss, User, CheckSquare, ClipboardList, Contact2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -39,8 +38,6 @@ const adminNav: NavItem[] = [
 export default function BottomNav({ role }: { role: 'driver' | 'leader' | 'admin' }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [pendingCount, setPendingCount] = useState(0);
-  const [pendingDrivers, setPendingDrivers] = useState(0);
 
   let items = driverNav;
   if (role === 'admin') {
@@ -48,40 +45,6 @@ export default function BottomNav({ role }: { role: 'driver' | 'leader' | 'admin
   } else if (role === 'leader') {
     items = leaderNav;
   }
-
-  // Fetch pending counts for leader/admin
-  useEffect(() => {
-    if (role !== 'leader' && role !== 'admin') return;
-
-    const fetchCounts = async () => {
-      try {
-        const res = await fetch('/api/counts');
-        const data = await res.json();
-        if (data.success) {
-          setPendingCount(data.counts.pendingLeaves || 0);
-          setPendingDrivers(data.counts.pendingDrivers || 0);
-        }
-      } catch (e) {
-        console.error('Failed to fetch counts', e);
-      }
-    };
-
-    fetchCounts();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchCounts, 30000);
-    return () => clearInterval(interval);
-  }, [role]);
-
-  // Calculate badge for approve (pending leaves) or drivers (pending drivers)
-  const getBadge = (itemHref: string) => {
-    if (itemHref.includes('approve') || itemHref.includes('dashboard')) {
-      return pendingCount > 0 ? pendingCount : 0;
-    }
-    if (itemHref.includes('drivers')) {
-      return pendingDrivers > 0 ? pendingDrivers : 0;
-    }
-    return 0;
-  };
 
   return (
     <nav
@@ -93,7 +56,6 @@ export default function BottomNav({ role }: { role: 'driver' | 'leader' | 'admin
           const isActive = pathname === item.href || 
             (item.href !== '/home' && item.href !== '/leader/home' && item.href !== '/admin/home' && pathname.startsWith(item.href));
           const Icon = item.icon;
-          const badge = getBadge(item.href);
 
           return (
             <motion.button
@@ -108,14 +70,6 @@ export default function BottomNav({ role }: { role: 'driver' | 'leader' | 'admin
             >
               <Icon className="w-5 h-5" strokeWidth={isActive ? 2.2 : 1.8} />
               <span className="text-[10px] font-medium leading-none">{item.label}</span>
-              
-              {/* Badge */}
-              {badge > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full text-[10px] font-bold text-white"
-                  style={{ background: 'var(--danger)' }}>
-                  {badge > 99 ? '99+' : badge}
-                </span>
-              )}
             </motion.button>
           );
         })}
