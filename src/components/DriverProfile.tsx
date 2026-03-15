@@ -5,7 +5,7 @@ import {
   User as UserIcon, Calendar, Award, Star, 
   MapPin, Phone, Shield, Zap, TrendingUp, 
   MessageSquare, ChevronRight, Briefcase, 
-  Umbrella, Thermometer, CheckCircle2
+  Umbrella, Thermometer, CheckCircle2, ShieldAlert
 } from "lucide-react";
 import { normalizePerformanceTier, PERFORMANCE_TIER_CONFIG, PerformanceTier } from "@/lib/profile-tier";
 
@@ -45,6 +45,7 @@ interface DriverProfileProps {
   user: ProfileUserData;
   isMe?: boolean;
   onEditClick?: () => void;
+  onClose?: () => void;
 }
 
 const BentoCard = ({ children, className = "", delay = 0, onClick }: { children: React.ReactNode; className?: string; delay?: number; onClick?: () => void }) => (
@@ -79,7 +80,7 @@ const getStatusColor = (user: ProfileUserData) => {
   return diffInMins < 5 ? "bg-emerald-500" : "bg-[var(--text-muted)]/40";
 };
 
-export default function DriverProfile({ user, isMe = true, onEditClick }: DriverProfileProps) {
+export default function DriverProfile({ user, isMe = false, onEditClick, onClose }: DriverProfileProps) {
   const [mounted, setMounted] = useState(false);
   const [taskScores, setTaskScores] = useState<TaskScores | null>(null);
   const [loadingScores, setLoadingScores] = useState(false);
@@ -154,6 +155,79 @@ export default function DriverProfile({ user, isMe = true, onEditClick }: Driver
     { id: 'attendance', label: 'การลา', icon: Calendar },
     { id: 'contact', label: 'ติดต่อ', icon: Phone }
   ];
+
+  // Check if user is pending or unassigned (Step 1 & 2)
+  const isPending = user?.status !== 'active';
+  const isUnassigned = !user?.branch;
+
+  if (isPending || isUnassigned) {
+    return (
+      <div className="min-h-screen bg-[var(--bg-base)] flex flex-col items-center justify-center p-6 text-center space-y-8">
+        <div className="max-w-xs w-full space-y-8">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center border-4 border-white/10 shadow-2xl shadow-orange-500/20"
+          >
+            <ShieldAlert className="w-12 h-12 text-white" />
+          </motion.div>
+          
+          <div className="space-y-3">
+            <h2 className="text-2xl font-black uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              {isPending ? 'อยู่ระหว่างการยืนยัน' : 'รอยืนยันสาขา'}
+            </h2>
+            <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              {isPending 
+                ? 'บัญชีของคุณกำลังรอการตรวจสอบจากหัวหน้างาน เมื่อได้รับอนุมัติแล้ว คุณจะสามารถเข้าใช้งานส่วนต่างๆ ได้ครับ' 
+                : 'บัญชีผ่านการอนุมัติแล้ว! แต่ยังไม่ถูกระบุสาขา กรุณาแจ้งหัวหน้างานให้ระบุสาขาที่สังกัดให้คุณครับ'}
+            </p>
+          </div>
+
+          <div className="card p-5 bg-[var(--bg-inset)] border-[var(--border)] overflow-hidden relative">
+             <div className="absolute top-0 left-0 w-1 h-full bg-[var(--accent)] opacity-20" />
+             
+             <div className="space-y-4 relative z-10">
+                <div className="flex items-center gap-4 text-left">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isPending ? 'bg-[var(--warning)]' : 'bg-[var(--success)]'} text-white shadow-lg shadow-black/10`}>
+                    <span className="text-xs font-black">1</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)]">Step 1: อนุมัติพนักงาน</p>
+                    <p className={`text-xs font-black ${isPending ? 'text-[var(--warning)]' : 'text-[var(--success)]'}`}>
+                      {isPending ? 'กำลังดำเนินการ...' : 'สำเร็จแล้ว'}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="w-[1px] h-6 bg-[var(--border)] ml-4" />
+
+                <div className="flex items-center gap-4 text-left">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${!isPending && isUnassigned ? 'bg-[var(--warning)]' : !isPending && !isUnassigned ? 'bg-[var(--success)]' : 'bg-[var(--border)]'} shadow-lg shadow-black/5`}>
+                    <span className={`text-xs font-black ${!isPending ? 'text-white' : 'text-[var(--text-muted)]'}`}>2</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)]">Step 2: ระบุสาขา</p>
+                    <p className={`text-xs font-black ${!isPending && isUnassigned ? 'text-[var(--warning)]' : !isPending && !isUnassigned ? 'text-[var(--success)]' : 'text-[var(--text-muted)]'}`}>
+                      {!isPending && isUnassigned ? 'รอระบุสาขา...' : !isPending && !isUnassigned ? 'สำเร็จแล้ว' : 'รอดำเนินการ'}
+                    </p>
+                  </div>
+                </div>
+             </div>
+          </div>
+
+        {onClose && (
+          <button 
+            onClick={onClose}
+            className="w-full h-14 rounded-2xl bg-[var(--bg-inset)] border border-[var(--border)] font-black uppercase tracking-[0.2em] text-xs transition-transform active:scale-95"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            ออกหน้าโปรไฟล์
+          </button>
+        )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)] p-3 md:p-6 font-sans selection:bg-purple-500/30 overflow-x-hidden">
