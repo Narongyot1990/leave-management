@@ -8,6 +8,8 @@ import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
 import { usePusherMulti } from '@/hooks/usePusher';
+import { useForceLogout } from '@/hooks/useForceLogout';
+import { performLogout } from '@/lib/logout';
 
 interface LeaderUser {
   id: string;
@@ -46,7 +48,7 @@ const MenuCard = ({ item, i, compact = false, pendingLeaveCount = 0, pendingDriv
       transition={{ delay: 0.1 + i * 0.05 }}
       onClick={() => router.push(item.href)}
       whileTap={{ scale: 0.98 }}
-      className={`card w-full flex items-center gap-3.5 group cursor-pointer relative overflow-hidden ${compact ? 'p-3' : 'p-4'}`}
+      className={`card w-full flex items-center gap-3 group cursor-pointer relative overflow-hidden ${compact ? 'p-2.5' : 'p-3'}`}
     >
       <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-transparent to-black/5 dark:to-white/5 opacity-30 -mr-8 -mt-8 rotate-45" />
       
@@ -58,17 +60,17 @@ const MenuCard = ({ item, i, compact = false, pendingLeaveCount = 0, pendingDriv
       )}
 
       <div
-        className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-xl flex items-center justify-center shrink-0 border border-[var(--border)] transition-colors group-hover:border-[var(--accent)]`}
+        className={`${compact ? 'w-7 h-7' : 'w-9 h-9'} rounded-xl flex items-center justify-center shrink-0 border border-[var(--border)] transition-colors group-hover:border-[var(--accent)]`}
         style={{ background: 'var(--bg-inset)' }}
       >
-        <Icon className={`${compact ? 'w-4 h-4' : 'w-[18px] h-[18px]'}`} style={{ color: item.color }} strokeWidth={2} />
+        <Icon className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} style={{ color: item.color }} strokeWidth={2} />
       </div>
 
       <div className="flex-1 text-left min-w-0">
-        <span className={`${compact ? 'text-[11px]' : 'text-fluid-sm'} font-black block leading-tight truncate`} style={{ color: 'var(--text-primary)' }}>
+        <span className={`${compact ? 'text-[10px]' : 'text-fluid-xs'} font-black block leading-tight truncate`} style={{ color: 'var(--text-primary)' }}>
           {item.label}
         </span>
-        {!compact && <span className="text-[10px] font-medium block truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{item.sub}</span>}
+        {!compact && <span className="text-[9px] font-medium block truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{item.sub}</span>}
       </div>
       {!compact && <ChevronRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5 opacity-30" />}
     </motion.button>
@@ -137,6 +139,9 @@ export default function LeaderHomePage() {
     fetchCounts();
   }, [role, selectedBranch, user]);
 
+  // Auto-logout when admin changes role/status
+  useForceLogout(user?.id, role);
+
   usePusherMulti([
     { channel: 'leave-requests', bindings: [
       { event: 'new-leave-request', callback: refetchCounts },
@@ -151,10 +156,8 @@ export default function LeaderHomePage() {
   ], !!user);
 
   const handleLogout = async () => {
-    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
-    localStorage.removeItem('leaderUser');
-    localStorage.removeItem('driverUser');
-    router.push('/leader/login');
+    const loginPath = await performLogout(role);
+    router.push(loginPath);
   };
 
   if (!user) return null;
@@ -163,9 +166,9 @@ export default function LeaderHomePage() {
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role={role} />
 
-      <div className="lg:pl-[240px] pb-20 lg:pb-6">
+      <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         {/* Header */}
-        <header className="px-4 lg:px-8 pt-6 pb-2">
+        <header className="px-4 lg:px-8 pt-4 pb-1">
           <div className="max-w-3xl mx-auto">
             <motion.div
               initial={{ y: -10, opacity: 0 }}
@@ -194,8 +197,8 @@ export default function LeaderHomePage() {
           </div>
         </header>
 
-        <div className="px-4 lg:px-8 py-4">
-          <div className="max-w-3xl mx-auto space-y-4">
+        <div className="px-4 lg:px-8 py-2">
+          <div className="max-w-3xl mx-auto space-y-3">
             
             {/* Pending Status */}
             {user.status === 'pending' && (
@@ -236,14 +239,14 @@ export default function LeaderHomePage() {
             )}
 
             {/* Dashboard Sections */}
-            <div className="space-y-8">
+            <div className="space-y-5">
               {/* Operations Group */}
               <section>
-                <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center justify-between mb-2 px-1">
                   <h2 className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>งานบริหาร (Operations)</h2>
                   <div className="h-[1px] flex-1 ml-4 bg-gradient-to-r from-[var(--border)] to-transparent opacity-50" />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {menuItems.slice(0, 3).map((item, i) => (
                     <MenuCard key={item.label} item={item} i={i} pendingLeaveCount={pendingLeaveCount} pendingDriverCount={pendingDriverCount} />
                   ))}
@@ -252,11 +255,11 @@ export default function LeaderHomePage() {
 
               {/* Monitoring & Tracking */}
               <section>
-                <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center justify-between mb-2 px-1">
                   <h2 className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>การติดตาม (Monitoring)</h2>
                   <div className="h-[1px] flex-1 ml-4 bg-gradient-to-r from-[var(--border)] to-transparent opacity-50" />
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {menuItems.slice(3, 6).map((item, i) => (
                     <MenuCard key={item.label} item={item} i={i} compact />
                   ))}
@@ -265,11 +268,11 @@ export default function LeaderHomePage() {
 
               {/* Account & Settings */}
               <section>
-                <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center justify-between mb-2 px-1">
                   <h2 className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>บัญชีและตั้งค่า (Account)</h2>
                   <div className="h-[1px] flex-1 ml-4 bg-gradient-to-r from-[var(--border)] to-transparent opacity-50" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   {menuItems.slice(6).map((item, i) => (
                     <MenuCard key={item.label} item={item} i={i} />
                   ))}

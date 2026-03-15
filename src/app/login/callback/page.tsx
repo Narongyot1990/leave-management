@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 function LineCallbackContent() {
   const router = useRouter();
@@ -82,30 +83,12 @@ function LineCallbackContent() {
     );
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
-      <div className="text-center">
-        <div className="w-10 h-10 rounded-full border-[3px] animate-spin mx-auto mb-4" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
-        <p className="text-fluid-sm font-medium" style={{ color: 'var(--text-muted)' }}>กำลังเข้าสู่ระบบ...</p>
-      </div>
-    </div>
-  );
-}
-
-function Loading() {
-  return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
-      <div className="text-center">
-        <div className="w-10 h-10 rounded-full border-[3px] animate-spin mx-auto mb-4" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
-        <p className="text-fluid-sm" style={{ color: 'var(--text-muted)' }}>กำลังโหลด...</p>
-      </div>
-    </div>
-  );
+  return <LoadingSpinner label="กำลังเข้าสู่ระบบ..." />;
 }
 
 export default function LineCallbackPage() {
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<LoadingSpinner label="กำลังโหลด..." />}>
       <LineCallbackContent />
     </Suspense>
   );

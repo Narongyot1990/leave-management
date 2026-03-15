@@ -8,16 +8,7 @@ import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import UserAvatar from '@/components/UserAvatar';
-
-interface DriverUser {
-  id: string;
-  lineDisplayName: string;
-  lineProfileImage?: string;
-  performanceTier?: string;
-  name?: string;
-  surname?: string;
-  phone?: string;
-}
+import { DriverUser } from '@/lib/types';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -84,11 +75,11 @@ export default function SettingsPage() {
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role="driver" />
 
-      <div className="lg:pl-[240px] pb-20 lg:pb-6">
+      <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="ตั้งค่าข้อมูลส่วนตัว" backHref="/home" />
 
-        <div className="px-4 lg:px-8 py-4">
-          <div className="max-w-2xl mx-auto space-y-4">
+        <div className="px-4 lg:px-8 py-3">
+          <div className="max-w-2xl mx-auto space-y-3">
             <AnimatePresence>
               {success && (
                 <motion.div
@@ -113,8 +104,8 @@ export default function SettingsPage() {
             )}
 
             {/* Profile Card */}
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-5">
-              <div className="flex items-center gap-4">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-4">
+              <div className="flex items-center gap-3">
                 <UserAvatar imageUrl={user.lineProfileImage} displayName={user.lineDisplayName} tier={user.performanceTier} size="md" />
                 <div>
                   <h2 className="text-fluid-lg font-bold" style={{ color: 'var(--text-primary)' }}>{user.lineDisplayName}</h2>
@@ -123,7 +114,7 @@ export default function SettingsPage() {
               </div>
             </motion.div>
 
-            <motion.form onSubmit={handleSubmit} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="card p-5 space-y-4">
+            <motion.form onSubmit={handleSubmit} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="card p-4 space-y-3">
               <div>
                 <label className="block text-fluid-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>ชื่อ-นามสกุล</label>
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)} onFocus={() => setFocused('name')} onBlur={() => setFocused(null)} className="input" placeholder="กรอกชื่อ-นามสกุล" />

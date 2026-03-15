@@ -495,7 +495,7 @@ export default function LeaderCarWashPage() {
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role={user.role || "leader"} />
 
-      <div className="lg:pl-[240px] pb-20 lg:pb-6">
+      <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader
           title="Moments กิจกรรม"
           backHref="/leader/home"

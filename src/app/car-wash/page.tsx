@@ -11,18 +11,10 @@ import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import DatePickerModal from '@/components/DatePickerModal';
 import TimePickerModal from '@/components/TimePickerModal';
-import { formatDateThai } from '@/lib/types';
+import { formatDateThai } from '@/lib/date-utils';
+import { DriverUser } from '@/lib/types';
 
 dayjs.locale('th');
-
-interface DriverUser {
-  id: string;
-  lineDisplayName: string;
-  lineProfileImage?: string;
-  name?: string;
-  surname?: string;
-  status: string;
-}
 
 const activityTypes = [
   { key: 'car-wash', label: 'ล้างรถ', icon: Car },
@@ -181,7 +173,7 @@ export default function CarWashPage() {
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role="driver" />
 
-      <div className="lg:pl-[240px] pb-20 lg:pb-6">
+      <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="บันทึกกิจกรรม" backHref="/home" />
 
         <div className="px-4 lg:px-8 py-4">

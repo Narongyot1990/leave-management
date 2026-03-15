@@ -247,7 +247,7 @@ function DashboardContent() {
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role={role} />
 
-      <div className="lg:pl-[240px] pb-20 lg:pb-6">
+      <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
       <PageHeader
         title="Dashboard"
         backHref="/home"

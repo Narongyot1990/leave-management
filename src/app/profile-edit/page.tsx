@@ -8,24 +8,7 @@ import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import UserAvatar from '@/components/UserAvatar';
-
-interface DriverUser {
-  id: string;
-  lineUserId: string;
-  lineDisplayName: string;
-  lineProfileImage?: string;
-  performanceTier?: string;
-  performancePoints?: number;
-  name?: string;
-  surname?: string;
-  phone?: string;
-  employeeId?: string;
-  branch?: string;
-  status: string;
-  vacationDays?: number;
-  sickDays?: number;
-  personalDays?: number;
-}
+import { DriverUser } from '@/lib/types';
 
 export default function ProfileEditPage() {
   const router = useRouter();
@@ -139,7 +122,7 @@ export default function ProfileEditPage() {
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role="driver" />
 
-      <div className="lg:pl-[240px] pb-20 lg:pb-6">
+      <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="แก้ไขข้อมูล" backHref="/home" />
 
         <div className="px-4 lg:px-8 py-4">

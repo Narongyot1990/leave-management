@@ -124,7 +124,7 @@ export default function AdminHomePage() {
         <span className="text-fluid-xs font-semibold">Superuser Mode</span>
       </div>
 
-      <div className="lg:pl-[240px] pb-20 lg:pb-6 pt-10 lg:pt-0">
+      <div className="lg:pl-[240px] pb-[72px] lg:pb-6 pt-10 lg:pt-0">
         <div className="px-4 lg:px-8 py-6">
           {/* Welcome */}
           <motion.div 

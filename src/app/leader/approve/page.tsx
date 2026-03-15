@@ -215,7 +215,7 @@ export default function LeaderApprovePage() {
         )}
       </AnimatePresence>
 
-      <div className="lg:pl-[240px] pb-20 lg:pb-6">
+      <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader
           title="อนุมัติการลา"
           backHref="/leader/home"

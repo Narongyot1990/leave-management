@@ -12,15 +12,7 @@ import DatePickerModal from '@/components/DatePickerModal';
 import { LEAVE_TYPE_LIST } from '@/lib/leave-types';
 import { usePusher } from '@/hooks/usePusher';
 import { useToast } from '@/components/Toast';
-
-interface DriverUser {
-  id: string;
-  lineDisplayName: string;
-  status?: string;
-  vacationDays?: number;
-  sickDays?: number;
-  personalDays?: number;
-}
+import { DriverUser } from '@/lib/types';
 
 export default function LeavePage() {
   const router = useRouter();
@@ -195,7 +187,7 @@ export default function LeavePage() {
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role="driver" />
 
-      <div className="lg:pl-[240px] pb-20 lg:pb-6">
+      <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="ขอลา" backHref="/home" />
 
         <div className="px-4 lg:px-8 py-4">

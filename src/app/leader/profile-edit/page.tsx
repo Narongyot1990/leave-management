@@ -115,7 +115,7 @@ export default function LeaderProfileEditPage() {
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role={role} />
 
-      <div className="lg:pl-[240px] pb-20 lg:pb-6">
+      <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader title="แก้ไขโปรไฟล์" backHref="/leader/home" />
 
         <div className="px-4 lg:px-8 py-4">

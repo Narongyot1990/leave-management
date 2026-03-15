@@ -31,6 +31,8 @@ export const EVENTS = {
   DRIVER_UPDATED: 'driver-updated',
   DRIVER_DELETED: 'driver-deleted',
   NEW_DRIVER: 'new-driver',
+  // Auth
+  FORCE_LOGOUT: 'force-logout',
   // Tasks
   NEW_TASK: 'new-task',
   TASK_UPDATED: 'task-updated',
