@@ -56,24 +56,43 @@ export default function Sidebar({ role }: { role: 'driver' | 'leader' | 'admin' 
   const driverNavItems: NavItem[] = [
     { icon: FileText, label: 'ขอลาพักผ่อน', href: '/leave' },
     { icon: Clock, label: 'ประวัติของฉัน', href: '/leave/history' },
+    { icon: Navigation, label: 'ลงเวลาทำงาน', href: '/attendance' },
     { icon: Car, label: 'กิจกรรมบริษัท', href: '/car-wash' },
     { icon: Contact2, label: 'ผู้ติดต่อ', href: '/contacts' },
     { icon: Settings, label: 'ตั้งค่าระบบ', href: '/settings' },
   ];
 
   const leaderNavItems: NavItem[] = [
+    // Core Ops
     { icon: Clock, label: 'ลงเวลาทำงาน', href: '/leader/attendance' },
     { icon: CheckSquare, label: 'อนุมัติคำขอลา', href: '/leader/approve' },
+    { icon: ClipboardList, label: 'มอบหมายงาน (Tasks)', href: '/leader/tasks' },
+    
+    // Management
+    { icon: Users, label: 'จัดการพนักงาน', href: '/leader/drivers' },
+    { icon: History, label: 'ตรวจสอบประวัติ', href: '/leader/history' },
     { icon: FileText, label: 'บันทึกการแทน', href: '/leader/substitute' },
-    { icon: User, label: 'แก้ไขข้อมูลโปรไฟล์', href: '/leader/profile-edit' },
+    
+    // System
+    { icon: Rss, label: 'Moments กิจกรรม', href: '/leader/car-wash' },
+    { icon: CalendarDays, label: 'ภาพรวมระบบ', href: '/dashboard' },
+    { icon: User, label: 'ตั้งค่าส่วนตัว', href: '/leader/profile-edit' },
   ];
 
   const adminNavItems: NavItem[] = [
-    { icon: Clock, label: 'ตรวจสอบเวลาทำงาน', href: '/admin/attendance' },
-    { icon: MapPin, label: 'จัดการสาขา', href: '/admin/branches' },
-    { icon: ClipboardList, label: 'ตรวจสอบประวัติทั้งหมด', href: '/leader/history' },
-    { icon: Rss, label: 'Moments กิจกรรม', href: '/leader/car-wash' },
-    { icon: User, label: 'จัดการโปรไฟล์ส่วนตัว', href: '/leader/profile-edit' },
+    // Core Ops
+    { icon: CheckSquare, label: 'อนุมัติทุกสาขา', href: '/leader/approve' },
+    { icon: Clock, label: 'เช็กการเข้างาน', href: '/admin/attendance' },
+    
+    // Config & Mgmt
+    { icon: MapPin, label: 'ตั้งค่าจุดพิกัดสาขา', href: '/admin/branches' },
+    { icon: Users, label: 'พนักงานทั้งหมด', href: '/leader/drivers' },
+    { icon: ClipboardList, label: 'ประวัติภาพรวม', href: '/leader/history' },
+    
+    // Insights
+    { icon: CalendarDays, label: 'Dashboard สรุป', href: '/dashboard' },
+    { icon: Rss, label: 'กิจกรรม/Moments', href: '/leader/car-wash' },
+    { icon: User, label: 'บัญชีดูแลระบบ', href: '/leader/profile-edit' },
   ];
 
   useEffect(() => {

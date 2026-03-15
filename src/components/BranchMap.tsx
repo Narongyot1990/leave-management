@@ -17,10 +17,20 @@ const FIX_LEAFLET_ICON = () => {
   });
 };
 
+// Custom Person Icon
+const PERSON_ICON = typeof window !== 'undefined' ? new L.Icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png', // A simple person icon
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32],
+}) : null;
+
 interface BranchMapProps {
   center: { lat: number; lon: number };
   radius: number;
-  onLocationChange: (lat: number, lon: number) => void;
+  userLocation?: { lat: number; lon: number } | null;
+  onLocationChange?: (lat: number, lon: number) => void;
+  readOnly?: boolean;
 }
 
 function MapUpdater({ center }: { center: [number, number] }) {
@@ -31,10 +41,10 @@ function MapUpdater({ center }: { center: [number, number] }) {
   return null;
 }
 
-function DraggableMarker({ position, onMove, radius }: { position: [number, number], onMove: (lat: number, lon: number) => void, radius: number }) {
-  const map = useMapEvents({
+function DraggableMarker({ position, onMove, radius, readOnly }: { position: [number, number], onMove?: (lat: number, lon: number) => void, radius: number, readOnly?: boolean }) {
+  useMapEvents({
     click(e) {
-      onMove(e.latlng.lat, e.latlng.lng);
+      if (!readOnly && onMove) onMove(e.latlng.lat, e.latlng.lng);
     },
   });
 
@@ -42,12 +52,14 @@ function DraggableMarker({ position, onMove, radius }: { position: [number, numb
     <>
       <Marker 
         position={position} 
-        draggable={true}
+        draggable={!readOnly}
         eventHandlers={{
           dragend: (e) => {
-            const marker = e.target;
-            const position = marker.getLatLng();
-            onMove(position.lat, position.lng);
+            if (!readOnly && onMove) {
+              const marker = e.target;
+              const pos = marker.getLatLng();
+              onMove(pos.lat, pos.lng);
+            }
           },
         }}
       />
@@ -60,17 +72,18 @@ function DraggableMarker({ position, onMove, radius }: { position: [number, numb
   );
 }
 
-export default function BranchMap({ center, radius, onLocationChange }: BranchMapProps) {
+export default function BranchMap({ center, radius, userLocation, onLocationChange, readOnly = false }: BranchMapProps) {
   useEffect(() => {
     FIX_LEAFLET_ICON();
   }, []);
 
-  const pos: [number, number] = [center.lat, center.lon];
+  const branchPos: [number, number] = [center.lat, center.lon];
+  const userPos: [number, number] | null = userLocation ? [userLocation.lat, userLocation.lon] : null;
 
   return (
     <div className="h-[300px] w-full rounded-2xl overflow-hidden border border-border relative z-0">
       <MapContainer 
-        center={pos} 
+        center={branchPos} 
         zoom={16} 
         scrollWheelZoom={false} 
         style={{ height: '100%', width: '100%' }}
@@ -79,12 +92,29 @@ export default function BranchMap({ center, radius, onLocationChange }: BranchMa
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapUpdater center={pos} />
-        <DraggableMarker position={pos} onMove={onLocationChange} radius={radius} />
+        <MapUpdater center={branchPos} />
+        
+        {/* Branch Marker & Geofence */}
+        <DraggableMarker 
+          position={branchPos} 
+          onMove={onLocationChange} 
+          radius={radius} 
+          readOnly={readOnly} 
+        />
+
+        {/* User Marker (Person Icon) */}
+        {userPos && PERSON_ICON && (
+          <Marker position={userPos} icon={PERSON_ICON}>
+            {/* Optional popup for user */}
+          </Marker>
+        )}
       </MapContainer>
-      <div className="absolute bottom-2 left-2 z-[1000] bg-white/90 dark:bg-black/90 px-2 py-1 rounded text-[10px] font-bold shadow-sm backdrop-blur-sm border border-border">
-         คลิกที่แผนที่หรือลาก Pin เพื่อเปลี่ยนตำแหน่ง
-      </div>
+      
+      {!readOnly && (
+        <div className="absolute bottom-2 left-2 z-[1000] bg-white/90 dark:bg-black/90 px-2 py-1 rounded text-[10px] font-bold shadow-sm backdrop-blur-sm border border-border">
+           คลิกที่แผนที่หรือลาก Pin เพื่อเปลี่ยนตำแหน่ง
+        </div>
+      )}
     </div>
   );
 }

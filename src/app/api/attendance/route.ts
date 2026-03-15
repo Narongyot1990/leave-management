@@ -114,3 +114,38 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+// DELETE /api/attendance?id=...
+export async function DELETE(request: NextRequest) {
+  try {
+    const authResult = requireAuth(request);
+    if ('error' in authResult) return authResult.error;
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    await dbConnect();
+
+    const record = await Attendance.findById(id);
+    if (!record) {
+      return NextResponse.json({ error: 'Record not found' }, { status: 404 });
+    }
+
+    // Permission check: only owner or admin
+    const { userId, role } = authResult.payload;
+    if (role !== 'admin' && record.userId.toString() !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    await Attendance.findByIdAndDelete(id);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete Attendance Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

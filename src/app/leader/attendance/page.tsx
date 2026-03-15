@@ -3,13 +3,19 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { MapPin, Clock, CheckCircle2, AlertCircle, ChevronRight, History, Navigation, LocateFixed, LogOut } from 'lucide-react';
+import { MapPin, Clock, CheckCircle2, AlertCircle, ChevronRight, History, Navigation, LocateFixed, LogOut, Trash2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import { useBranches } from '@/hooks/useBranches';
 import { useToast } from '@/components/Toast';
 import { formatRelativeTime } from '@/lib/date-utils';
+
+const BranchMap = dynamic(() => import('@/components/BranchMap'), { 
+  ssr: false,
+  loading: () => <div className="h-[200px] w-full bg-inset animate-pulse rounded-2xl flex items-center justify-center text-xs text-muted">Loading Map...</div>
+});
 
 export default function AttendancePage() {
   const router = useRouter();
@@ -136,7 +142,8 @@ export default function AttendancePage() {
           type,
           location,
           branchCode: targetBranchCode,
-          branchLocation: currentBranch?.location
+          branchLocation: currentBranch?.location,
+          radius: branchRadius
         })
       });
       const data = await res.json();
@@ -150,6 +157,23 @@ export default function AttendancePage() {
       showToast('error', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleDeleteRecord = async (id: string) => {
+    if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) return;
+    
+    try {
+      const res = await fetch(`/api/attendance?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', 'ลบรายการสำเร็จ');
+        fetchRecords();
+      } else {
+        showToast('error', data.error || 'ลบไม่สำเร็จ');
+      }
+    } catch (err) {
+      showToast('error', 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
     }
   };
 
@@ -174,20 +198,17 @@ export default function AttendancePage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-accent/20 to-transparent rounded-full -mr-16 -mt-16 opacity-50" />
               
               <div className="flex flex-col items-center text-center space-y-4">
-                <div className="relative">
-                   <div className={`w-24 h-24 rounded-full flex items-center justify-center border-4 ${isInRange ? 'border-emerald-500/30' : 'border-amber-500/30'} shadow-2xl`}>
-                      <div className={`w-20 h-20 rounded-full flex items-center justify-center ${isInRange ? 'bg-emerald-500' : 'bg-amber-500'} text-white`}>
-                         <LocateFixed className={`w-10 h-10 ${locLoading ? 'animate-pulse' : ''}`} />
-                      </div>
-                   </div>
-                   {isInRange && (
-                     <motion.div 
-                       initial={{ scale: 0 }} animate={{ scale: 1 }}
-                       className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white dark:bg-black border-2 border-emerald-500 flex items-center justify-center text-emerald-500 shadow-lg"
-                     >
-                       <CheckCircle2 className="w-5 h-5" />
-                     </motion.div>
-                   )}
+
+                {/* Real-time Map Integration */}
+                <div className="w-full h-[180px] rounded-2xl overflow-hidden border border-border shadow-inner">
+                  {branchLocation && (
+                    <BranchMap 
+                      center={branchLocation}
+                      radius={branchRadius}
+                      userLocation={location}
+                      readOnly={true}
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -303,7 +324,15 @@ export default function AttendancePage() {
                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${rec.isInside ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
                             {rec.isInside ? 'In Area' : 'Outside'}
                          </span>
-                         <p className="text-[10px] font-bold mt-1 opacity-50">{Math.round(rec.distance)}m</p>
+                         <div className="flex items-center justify-end gap-2 mt-1">
+                            <p className="text-[10px] font-bold opacity-50">{Math.round(rec.distance)}m</p>
+                            <button 
+                              onClick={() => handleDeleteRecord(rec._id)}
+                              className="p-1 hover:bg-red-500/10 rounded-lg text-red-500 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                         </div>
                       </div>
                     </motion.div>
                   ))

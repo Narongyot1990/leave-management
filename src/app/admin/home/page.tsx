@@ -11,13 +11,21 @@ import { usePusherMulti } from '@/hooks/usePusher';
 import { useBranches } from '@/hooks/useBranches';
 
 const menuItems = [
-  { icon: CheckSquare, label: 'อนุมัติลา', sub: 'ตรวจสอบคำขอลาทุกสาขา', href: '/leader/approve', color: 'var(--success)' },
-  { icon: Users, label: 'จัดการพนักงาน', sub: 'ดู/เพิ่ม/แก้ไขพนักงานทุกสาขา', href: '/leader/drivers', color: 'var(--accent)' },
-  { icon: MapPin, label: 'จัดการสาขา', sub: 'กำหนดพิกัดและข้อมูลสาขา', href: '/admin/branches', color: 'var(--info)' },
-  { icon: CalendarDays, label: 'Dashboard', sub: 'ภาพรวมตารางวันลาทุกสาขา', href: '/dashboard', color: 'var(--warning)' },
-  { icon: Clock, label: 'ประวัติทั้งหมด', sub: 'ดูประวัติการลาทุกสาขา', href: '/leader/history', color: 'var(--text-muted)' },
-  { icon: ClipboardCheck, label: 'จัดการ Tasks', sub: 'สร้างแบบทดสอบ/งานให้พนักงาน', href: '/leader/tasks', color: 'var(--info)' },
-  { icon: User, label: 'ตั้งค่าโปรไฟล์', sub: 'แก้ไขข้อมูลและรหัสผ่าน', href: '/leader/settings', color: 'var(--text-muted)' },
+  // Operations
+  { icon: CheckSquare, label: 'อนุมัติการลา', sub: 'ตรวจสอบคำขอลาจากทุกสาขา', href: '/leader/approve', color: 'var(--success)' },
+  { icon: Clock, label: 'ตรวจสอบลงเวลา', sub: 'ดูประวัติการเข้า-ออกงานพนักงาน', href: '/admin/attendance', color: 'var(--accent)' },
+  
+  // Resources
+  { icon: Users, label: 'จัดการพนักงาน', sub: 'ดู/เพิ่ม/แก้ไขข้อมูลพนักงานทุกสาขา', href: '/leader/drivers', color: 'var(--accent)' },
+  { icon: MapPin, label: 'จัดการสาขา', sub: 'กำหนดพิกัด แผนที่ และรัศมีสาขา', href: '/admin/branches', color: 'var(--info)' },
+  
+  // Monitoring
+  { icon: CalendarDays, label: 'ภาพรวมระบบ', sub: 'Dashboard ตารางวันลาและสถิติ', href: '/dashboard', color: 'var(--warning)' },
+  { icon: ClipboardCheck, label: 'งานมอบหมาย (Tasks)', sub: 'สร้างงานหรือแบบทดสอบให้พนักงาน', href: '/leader/tasks', color: 'var(--info)' },
+  
+  // History & Support
+  { icon: Clock, label: 'ประวัติทั้งหมด', sub: 'สืบค้นประวัติย้อนหลังทุกประเภท', href: '/leader/history', color: 'var(--text-muted)' },
+  { icon: User, label: 'ตั้งค่าบัญชีระบบ', sub: 'จัดการโปรไฟล์และรหัสผ่าน', href: '/leader/settings', color: 'var(--text-muted)' },
 ];
 
 export default function AdminHomePage() {

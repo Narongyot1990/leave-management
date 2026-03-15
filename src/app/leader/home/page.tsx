@@ -16,15 +16,20 @@ interface LeaderUser {
 }
 
 const menuItems = [
-  { icon: Clock, label: 'ลงเวลาทำงาน', sub: 'บันทึกเวลาเข้า-ออกงาน', href: '/leader/attendance', color: 'var(--accent)' },
-  { icon: CheckSquare, label: 'อนุมัติลา', sub: 'ตรวจสอบคำขอลาใหม่', href: '/leader/approve', color: 'var(--success)' },
-  { icon: Users, label: 'จัดการพนักงาน', sub: 'เพิ่ม/แก้ไข/เปิดใช้งาน', href: '/leader/drivers', color: 'var(--accent)' },
-  { icon: PenSquare, label: 'บันทึกแทน', sub: 'บันทึกข้อมูลการแทน', href: '/leader/substitute', color: 'var(--info)' },
-  { icon: ClipboardCheck, label: 'จัดการ Tasks', sub: 'สร้างแบบทดสอบ/งานให้พนักงาน', href: '/leader/tasks', color: 'var(--info)' },
-  { icon: CalendarDays, label: 'Dashboard', sub: 'ภาพรวมตารางวันลา', href: '/dashboard', color: 'var(--warning)' },
-  { icon: Clock, label: 'ประวัติทั้งหมด', sub: 'ดูประวัติการลาและบันทึก', href: '/leader/history', color: 'var(--text-muted)' },
-  { icon: User, label: 'แก้ไขโปรไฟล์', sub: 'แก้ไขข้อมูลส่วนตัว', href: '/leader/profile-edit', color: 'var(--danger)' },
-  { icon: Settings, label: 'ตั้งค่า', sub: 'ตั้งค่าสาขาที่ดูแล', href: '/leader/settings', color: 'var(--text-muted)' },
+  // Primary Actions
+  { icon: Clock, label: 'ลงเวลาทำงาน', sub: 'บันทึกเวลาเข้า-ออกงานปัจจุบัน', href: '/leader/attendance', color: 'var(--accent)' },
+  { icon: CheckSquare, label: 'อนุมัติการลา', sub: 'จัดการคำขอลาพักผ่อนของพนักงาน', href: '/leader/approve', color: 'var(--success)' },
+  { icon: ClipboardCheck, label: 'งานมอบหมาย (Tasks)', sub: 'ส่งงานหรือข้อสอบให้พนักงาน', href: '/leader/tasks', color: 'var(--info)' },
+  
+  // Team Management
+  { icon: Users, label: 'รายชื่อพนักงาน', sub: 'จัดการพนักงานในความดูแล', href: '/leader/drivers', color: 'var(--accent)' },
+  { icon: Clock, label: 'ประวัติการลงเวลา', sub: 'ดูบันทึกย้อนหลังของสาขา', href: '/leader/history', color: 'var(--text-muted)' },
+  { icon: PenSquare, label: 'บันทึกการแทนงาน', sub: 'จัดเก็บข้อมูลการทำงานแทนกัน', href: '/leader/substitute', color: 'var(--info)' },
+  
+  // System & Overview
+  { icon: CalendarDays, label: 'ภาพรวม Dashboard', sub: 'ตารางวันลาและสถานะสาขา', href: '/dashboard', color: 'var(--warning)' },
+  { icon: User, label: 'แก้ไขข้อมูลส่วนตัว', sub: 'อัปเดตโปรไฟล์และรูปภาพ', href: '/leader/profile-edit', color: 'var(--danger)' },
+  { icon: Settings, label: 'ตั้งค่าระบบ', sub: 'ข้อมูลสาขาและการตั้งค่าทั่วไป', href: '/leader/settings', color: 'var(--text-muted)' },
 ];
 
 const MenuCard = ({ item, i, compact = false, pendingLeaveCount = 0, pendingDriverCount = 0 }: any) => {
