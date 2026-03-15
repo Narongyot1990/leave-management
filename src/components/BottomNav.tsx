@@ -27,14 +27,21 @@ const managementNav: NavItem[] = [
   { icon: UserCircle, label: 'โปรไฟล์', href: '/leader/profile-edit' },
 ];
 
+const adminNav: NavItem[] = [
+  { icon: Home, label: 'หน้าหลัก', href: '/admin/home' },
+  { icon: Rss, label: 'Moments', href: '/leader/car-wash' },
+  { icon: CalendarDays, label: 'Dashboard', href: '/dashboard' },
+  { icon: Settings, label: 'ตั้งค่า', href: '/leader/settings' },
+  { icon: UserCircle, label: 'โปรไฟล์', href: '/leader/profile-edit' },
+];
+
 export default function BottomNav({ role }: { role: 'driver' | 'leader' | 'admin' }) {
   const pathname = usePathname();
   const router = useRouter();
 
   let items = driverNav;
-  if (role === 'admin' || role === 'leader') {
-    items = managementNav;
-  }
+  if (role === 'admin') items = adminNav;
+  else if (role === 'leader') items = managementNav;
 
   return (
     <nav

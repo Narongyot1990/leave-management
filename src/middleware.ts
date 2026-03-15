@@ -92,8 +92,14 @@ function redirectToLogin(pathname: string, baseUrl: string): NextResponse {
 function checkRoleAccess(payload: any, pathname: string, request: NextRequest): NextResponse {
   const { role, status } = payload;
 
-  // Admin has access to everything
+  // Admin access control
   if (role === 'admin') {
+    // Admins should strictly stay in /admin or /dashboard
+    // If they accidentally hit a /leader path that is NOT a management tool, send them home
+    const leaderOnlyPaths = ['/leader/home', '/leader/settings']; 
+    if (leaderOnlyPaths.includes(pathname)) {
+      return NextResponse.redirect(new URL('/admin/home', request.url));
+    }
     return NextResponse.next();
   }
 
@@ -111,6 +117,10 @@ function checkRoleAccess(payload: any, pathname: string, request: NextRequest): 
 
   // Leader access control
   if (role === 'leader') {
+    // Leaders cannot access /admin paths
+    if (pathname.startsWith('/admin/')) {
+      return NextResponse.redirect(new URL('/leader/home', request.url));
+    }
     // Leaders should stay in /leader paths or dashboard
     if (!pathname.startsWith('/leader') && !pathname.startsWith('/api') && !pathname.startsWith('/dashboard')) {
       return NextResponse.redirect(new URL('/leader/home', request.url));
@@ -120,8 +130,8 @@ function checkRoleAccess(payload: any, pathname: string, request: NextRequest): 
 
   // Driver access control
   if (role === 'driver') {
-    // Drivers cannot access /leader paths
-    if (pathname.startsWith('/leader/') && !pathname.startsWith('/leader/login')) {
+    // Drivers cannot access /leader or /admin paths
+    if ((pathname.startsWith('/leader/') && pathname !== '/leader/login') || pathname.startsWith('/admin/')) {
       return NextResponse.redirect(new URL('/home', request.url));
     }
     return NextResponse.next();

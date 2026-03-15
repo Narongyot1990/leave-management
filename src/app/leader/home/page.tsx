@@ -92,14 +92,23 @@ export default function LeaderHomePage() {
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         {/* Header */}
         <header className="px-4 lg:px-8 pt-5 pb-3">
-          <div className="max-w-2xl mx-auto flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-lg" style={{ background: 'var(--accent)' }}>
-              {user.name?.charAt(0) || 'L'}
+          <div className="max-w-2xl mx-auto flex items-center gap-4">
+            <div className="relative shrink-0">
+               <div className="w-12 h-12 rounded-2xl overflow-hidden border border-[var(--border)] bg-[var(--bg-inset)]">
+                  {user.lineProfileImage ? (
+                    <img src={user.lineProfileImage} alt={user.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white font-bold text-lg" style={{ background: 'var(--accent)' }}>
+                       {user.name?.charAt(0) || 'L'}
+                    </div>
+                  )}
+               </div>
+               <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[var(--bg-base)] bg-emerald-500 shadow-sm" />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-fluid-lg font-bold truncate" style={{ color: 'var(--text-primary)' }}>{user.name}</h1>
-              <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>
-                {role === 'admin' ? 'ผู้ดูแลระบบ' : `หัวหน้า ${user.branch || ''}`}
+              <h1 className="text-xl font-black tracking-tight truncate leading-tight" style={{ color: 'var(--text-primary)' }}>{user.name}</h1>
+              <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+                {role === 'admin' ? 'SYSTEM ADMINISTRATOR' : `BRANCH LEADER • ${user.branch || 'PENDING'}`}
               </p>
             </div>
             <ThemeToggle />

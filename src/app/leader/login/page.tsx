@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { ShieldCheck as Shield, Mail as MailIcon, Lock as LockIcon, Eye as EyeIcon, EyeOff as EyeOffIcon, AlertCircle as AlertIcon } from 'lucide-react';
+
 import ThemeToggle from '@/components/ThemeToggle';
 import ParticleEmitter from '@/components/ParticleEmitter';
 import SnowEmitter from '@/components/SnowEmitter';
@@ -40,13 +41,14 @@ export default function AdminLoginPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Handle both 'user' (admin) and 'leader' response structures
         const sessionUser = data.user || data.leader;
         localStorage.setItem('leaderUser', JSON.stringify(sessionUser));
         
         if (sessionUser?.role === 'admin') {
           router.push('/admin/home');
         } else {
+          // If a leader tries to login via email/pass, redirect them to LINE login if not authorized here
+          // But usually, only admin_root has email/pass in this system
           router.push('/leader/home');
         }
       } else {
@@ -59,13 +61,10 @@ export default function AdminLoginPage() {
     }
   };
 
-  const lightBg = 'linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%)';
-  const darkBg  = 'var(--bg-base)';
-
   return (
     <div
       className="min-h-[100dvh] flex flex-col items-center justify-center p-6 relative overflow-hidden transition-colors duration-700"
-      style={{ background: isDark ? darkBg : lightBg }}
+      style={{ background: isDark ? 'var(--bg-base)' : 'linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%)' }}
     >
       <div className="absolute top-4 right-4 z-50">
         <ThemeToggle />
@@ -73,23 +72,9 @@ export default function AdminLoginPage() {
 
       {/* Effects Layer */}
       {isDark ? (
-        <ParticleEmitter
-          count={50}
-          speed={0.15}
-          maxSize={2}
-          lineDistance={120}
-          colors={['rgba(99,102,241,0.2)', 'rgba(6,182,212,0.1)']}
-        />
+        <ParticleEmitter count={40} speed={0.15} maxSize={2} lineDistance={120} colors={['rgba(99,102,241,0.2)']} />
       ) : (
-        <SnowEmitter count={80} />
-      )}
-
-      {/* Decorative Orbs (Subtle) */}
-      {!isDark && (
-        <>
-          <div className="absolute top-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full opacity-25 blur-[100px] pointer-events-none" style={{ background: 'radial-gradient(circle, #8b5cf6, transparent 70%)' }} />
-          <div className="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full opacity-15 blur-[80px] pointer-events-none" style={{ background: 'radial-gradient(circle, #38bdf8, transparent 70%)' }} />
-        </>
+        <SnowEmitter count={60} />
       )}
 
       <motion.div
@@ -98,25 +83,17 @@ export default function AdminLoginPage() {
         transition={{ duration: 0.8 }}
         className="w-full max-w-[360px] relative z-10"
       >
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex justify-center mb-10"
-        >
-          <div
-            className="w-20 h-20 rounded-[28px] flex items-center justify-center text-white shadow-2xl"
-            style={{ 
-              background: 'var(--accent)', 
-              boxShadow: isDark ? '0 10px 40px rgba(0,0,0,0.6)' : 'var(--shadow-accent)' 
-            }}
-          >
-            <ShieldCheck className="w-10 h-10" strokeWidth={1.5} />
-          </div>
-        </motion.div>
-
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-black tracking-tighter" style={{ color: 'var(--text-primary)' }}>Staff Portal</h1>
-          <p className="text-sm font-semibold mt-2 opacity-50 uppercase tracking-[0.3em]" style={{ color: 'var(--text-primary)' }}>Authorized Only</p>
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="inline-flex w-20 h-20 rounded-[28px] items-center justify-center text-white shadow-2xl mb-6"
+            style={{ background: 'var(--accent)', boxShadow: isDark ? '0 10px 40px rgba(0,0,0,0.6)' : 'var(--shadow-accent)' }}
+          >
+            <Shield className="w-10 h-10" />
+          </motion.div>
+          <h1 className="text-4xl font-black tracking-tighter" style={{ color: 'var(--text-primary)' }}>Admin Portal</h1>
+          <p className="text-[10px] font-black mt-2 opacity-30 uppercase tracking-[0.4em]" style={{ color: 'var(--text-primary)' }}>Secure Access Only</p>
         </div>
 
         <form
@@ -133,29 +110,29 @@ export default function AdminLoginPage() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="flex items-center gap-2 p-3 rounded-xl text-xs font-bold overflow-hidden"
+                className="flex items-center gap-2 p-3 rounded-xl text-xs font-bold"
                 style={{ background: 'var(--danger-light)', color: 'var(--danger)' }}
               >
-                <AlertCircle className="w-4 h-4 shrink-0" />
+                <AlertIcon className="w-4 h-4 shrink-0" />
                 {error}
               </motion.div>
             )}
           </AnimatePresence>
 
           <div className="relative group">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 transition-colors group-focus-within:text-[var(--accent)]" />
+            <MailIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 transition-colors group-focus-within:text-[var(--accent)]" />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input pl-12 h-14 rounded-2xl font-bold bg-white/50 dark:bg-black/20"
-              placeholder="Email Address"
+              placeholder="Administrator Email"
               required
             />
           </div>
 
           <div className="relative group">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 transition-colors group-focus-within:text-[var(--accent)]" />
+            <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 transition-colors group-focus-within:text-[var(--accent)]" />
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
@@ -169,7 +146,7 @@ export default function AdminLoginPage() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-slate-500 hover:text-[var(--text-primary)] transition-colors"
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
             </button>
           </div>
 
@@ -186,19 +163,19 @@ export default function AdminLoginPage() {
           </motion.button>
         </form>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 text-center">
+        <div className="mt-8 text-center">
           <a
             href="/login"
-            className="text-[11px] font-black uppercase tracking-[0.2em] transition-opacity hover:opacity-60"
-            style={{ color: 'var(--text-muted)' }}
+            className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-opacity"
+            style={{ color: 'var(--text-primary)' }}
           >
-            กลับไปหน้าเข้าสู่ระบบ LINE
+            Back to LINE Login
           </a>
-        </motion.div>
+        </div>
       </motion.div>
 
-      <div className="absolute bottom-6 text-center opacity-20 pointer-events-none">
-        <p className="text-[10px] font-black tracking-[0.5em] uppercase" style={{ color: 'var(--text-primary)' }}>ITL Fleet Control</p>
+      <div className="absolute bottom-8 text-center opacity-10 pointer-events-none">
+        <p className="text-[9px] font-black tracking-[0.5em] uppercase" style={{ color: 'var(--text-primary)' }}>ITL Admin v7.0</p>
       </div>
     </div>
   );
