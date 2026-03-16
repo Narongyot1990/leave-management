@@ -15,7 +15,7 @@
 
   /* Accent — Indigo */
   --accent: #4F46E5;
-  --accent-light: #34d399;
+  --accent-light: rgba(79, 70, 229, 0.08);
   
   /* Timeline specific */
   --tm-grid: rgba(0, 0, 0, 0.05);
