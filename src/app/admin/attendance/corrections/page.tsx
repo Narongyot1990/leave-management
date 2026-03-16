@@ -485,7 +485,7 @@ export default function AdminCorrectionPage() {
                                       <span className="text-[8px] font-black uppercase opacity-20">@{rec.branch}</span>
                                    </div>
                                 </div>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-1 ">
                                    <button 
                                      onClick={() => setEditingRecord(JSON.parse(JSON.stringify(rec)))}
                                      className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all"

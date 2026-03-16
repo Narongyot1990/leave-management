@@ -59,14 +59,14 @@ function AttendanceContent() {
   );
 
   return (
-    <div className="h-screen flex flex-col lg:flex-row overflow-hidden bg-[var(--bg-base)]">
+    <div className="min-h-screen lg:h-screen flex flex-col lg:flex-row lg:overflow-hidden bg-[var(--bg-base)]">
       <Sidebar role="leader" />
       
       {/* Main Container */}
       <main className="flex-1 flex flex-col min-w-0 lg:pl-[240px] relative">
         
         {/* MVP Header: Simple & Focused */}
-        <header className="h-14 px-4 border-b border-[var(--border)] bg-[var(--bg-surface)] flex items-center justify-between shrink-0 z-10">
+        <header className="h-14 px-4 border-b border-[var(--border)] bg-[var(--bg-surface)] flex items-center justify-between shrink-0 z-10 sticky top-0">
           <div className="flex items-center gap-3">
              <button 
                onClick={() => router.back()}
@@ -86,7 +86,7 @@ function AttendanceContent() {
         </header>
 
         {/* Content Body: Map + MVP Controls */}
-        <div className="flex-1 relative overflow-hidden bg-[var(--bg-inset)]">
+        <div className="h-[70vh] lg:flex-1 relative overflow-hidden bg-[var(--bg-inset)]">
           {ctrl.branchLocation ? (
             <BranchMap
               ref={mapRef}
@@ -127,7 +127,20 @@ function AttendanceContent() {
           </div>
         </div>
 
-        <div className="lg:hidden">
+        {/* Mobile History Section */}
+        <div className="lg:hidden p-4 space-y-4 bg-[var(--bg-surface)] border-t border-[var(--border)]">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Attendance History</h2>
+          </div>
+          <HistoryTimeline 
+            pairs={ctrl.attendancePairs} 
+            onDeleteRecord={ctrl.handleDeleteRecord} 
+            onRequestCorrection={(type) => { setCorrectionType(type); setIsCorrectionOpen(true); }}
+            isSidebar={false}
+          />
+        </div>
+
+        <div className="lg:hidden h-16 shrink-0">
           <BottomNav role="leader" />
         </div>
       </main>
