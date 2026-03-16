@@ -205,8 +205,7 @@ export function useAttendanceController() {
 
   const formatDistance = (m: number | null) => {
     if (m === null) return '---';
-    if (m >= 1000) return `${(m / 1000).toFixed(1)} km`;
-    return `${Math.round(m)} m`;
+    return `${(m / 1000).toFixed(1)} km`;
   };
 
   const isClockedIn = records.length > 0 && records[0].type === 'in';

@@ -56,6 +56,11 @@ export async function GET(request: NextRequest) {
         query.userId = userId;
       }
       if (branch) query.branch = branch;
+      
+      const userName = searchParams.get('userName');
+      if (userName) {
+        query.userName = { $regex: new RegExp(userName, 'i') };
+      }
     }
 
     const startDate = searchParams.get('startDate');
@@ -248,6 +253,52 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Delete Attendance Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+// PATCH /api/attendance
+export async function PATCH(request: NextRequest) {
+  try {
+    const authResult = requireAuth(request);
+    if ('error' in authResult) return authResult.error;
+
+    const { role } = authResult.payload;
+    if (role !== 'admin') {
+      return NextResponse.json({ error: 'Only admins can edit records' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { id, timestamp, type, branch } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
+
+    await dbConnect();
+
+    const updateData: any = {};
+    if (timestamp) updateData.timestamp = new Date(timestamp);
+    if (type) updateData.type = type;
+    if (branch) updateData.branch = branch;
+
+    const record = await Attendance.findByIdAndUpdate(id, updateData, { new: true });
+    if (!record) {
+      return NextResponse.json({ error: 'Record not found' }, { status: 404 });
+    }
+
+    // Trigger pusher for timeline update
+    await triggerPusher(CHANNELS.USERS, 'leader-attendance', {
+      record: {
+        userId: record.userId,
+        userName: record.userName,
+        type: record.type,
+        timestamp: record.timestamp
+      }
+    });
+
+    return NextResponse.json({ success: true, record });
+  } catch (error) {
+    console.error('Patch Attendance Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

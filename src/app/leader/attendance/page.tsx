@@ -2,6 +2,7 @@
 
 import { useState, useRef, Suspense } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { Briefcase, Building2, LocateFixed } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import BottomNav from '@/components/BottomNav';
@@ -17,6 +18,7 @@ const BranchMap = dynamic(() => import('@/components/BranchMap'), {
 });
 
 function AttendanceContent() {
+  const router = useRouter();
   const ctrl = useAttendanceController();
   const mapRef = useRef<any>(null);
   
@@ -63,42 +65,27 @@ function AttendanceContent() {
       {/* Main Container */}
       <main className="flex-1 flex flex-col min-w-0 lg:pl-[240px] relative">
         
-        {/* Top Header: Stats & Quick Actions */}
-        <header className="h-16 px-6 border-b border-[var(--border)] bg-[var(--bg-surface)] flex items-center justify-between shrink-0 z-10">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-lg font-black tracking-tight leading-none uppercase">Attendance</h1>
-              <p className="text-[10px] font-bold opacity-30 mt-1 uppercase tracking-widest">{ctrl.user?.branch || 'HQ'} · {dateStr}</p>
-            </div>
-            <div className="w-px h-6 bg-[var(--border)] mx-2" />
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col">
-                <span className="text-[8px] font-black uppercase tracking-widest opacity-40 leading-none">Status</span>
-                <span className={`text-[11px] font-black uppercase ${ctrl.isClockedIn ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {ctrl.isClockedIn ? 'Working' : 'Off Duty'}
-                </span>
-              </div>
-              {getWorkingTime() && (
-                <div className="flex flex-col">
-                  <span className="text-[8px] font-black uppercase tracking-widest opacity-40 leading-none">Duration</span>
-                  <span className="text-[11px] font-black">{getWorkingTime()}</span>
-                </div>
-              )}
-            </div>
+        {/* MVP Header: Simple & Focused */}
+        <header className="h-14 px-4 border-b border-[var(--border)] bg-[var(--bg-surface)] flex items-center justify-between shrink-0 z-10">
+          <div className="flex items-center gap-3">
+             <button 
+               onClick={() => router.back()}
+               className="p-2 -ml-2 rounded-xl hover:bg-[var(--bg-inset)] transition-all active:scale-90"
+             >
+               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+               </svg>
+             </button>
+             <h1 className="text-xs font-black uppercase tracking-[0.2em] opacity-40">Time Attendance</h1>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsOffsiteOpen(true)}
-              className="h-9 px-4 rounded-xl bg-violet-600 text-white flex items-center gap-2 hover:bg-violet-700 transition-all active:scale-95 shadow-lg shadow-violet-600/20"
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Off-site</span>
-            </button>
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${ctrl.isClockedIn ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+            <span className="text-[10px] font-black uppercase tracking-widest">{ctrl.isClockedIn ? 'Active' : 'Off'}</span>
           </div>
         </header>
 
-        {/* Content Body: Map + Controls (Full Screen) */}
+        {/* Content Body: Map + MVP Controls */}
         <div className="flex-1 relative overflow-hidden bg-[var(--bg-inset)]">
           {ctrl.branchLocation ? (
             <BranchMap
@@ -116,35 +103,25 @@ function AttendanceContent() {
             </div>
           )}
 
-          {/* Floating Control Panel */}
-          <div className="absolute bottom-6 left-6 right-6 lg:right-auto lg:w-[400px] z-[500] space-y-4">
+          {/* Floating MVP Control Panel */}
+          <div className="absolute bottom-6 left-6 right-6 lg:right-auto lg:w-[350px] z-[500]">
             <ClockCard 
               timeStr={timeStr}
-              dateStr={dateStr}
               displayDistance={ctrl.displayDistance}
               isInRange={ctrl.isInRange}
-              isClockedIn={ctrl.isClockedIn}
-              isClockedOut={ctrl.isClockedOut}
               lastRecordType={ctrl.lastRecordType}
               actionLoading={ctrl.actionLoading}
-              locLoading={ctrl.locLoading}
               onClockAction={ctrl.handleClockAction}
-              onRefreshLocation={ctrl.updateLocation}
               onRequestCorrection={(type) => { setCorrectionType(type); setIsCorrectionOpen(true); }}
-              compact={true}
             />
           </div>
 
-          {/* Map Controls */}
-          <div className="absolute top-6 left-6 flex items-center gap-2 z-[500]">
-            <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 text-white shadow-2xl">
-              <p className="text-[8px] font-black uppercase tracking-widest opacity-50">Precision</p>
-              <p className="text-xs font-black leading-none mt-0.5">{ctrl.distance !== null ? `${Math.round(ctrl.distance)}m` : '---'}</p>
-            </div>
-            <button onClick={() => warpTo('user')} className="w-10 h-10 rounded-2xl bg-white/80 dark:bg-black/60 backdrop-blur-md shadow-lg flex items-center justify-center text-[var(--accent)] border border-white/20 active:scale-90 transition-all">
+          {/* Map Utils */}
+          <div className="absolute top-6 right-6 flex flex-col gap-2 z-[500]">
+            <button onClick={() => warpTo('user')} className="w-10 h-10 rounded-2xl bg-white/90 dark:bg-slate-900 shadow-xl flex items-center justify-center text-[var(--accent)] border border-white/20 active:scale-90 transition-all">
               <LocateFixed className="w-5 h-5" />
             </button>
-            <button onClick={() => warpTo('office')} className="w-10 h-10 rounded-2xl bg-white/80 dark:bg-black/60 backdrop-blur-md shadow-lg flex items-center justify-center text-amber-500 border border-white/20 active:scale-90 transition-all">
+            <button onClick={() => warpTo('office')} className="w-10 h-10 rounded-2xl bg-white/90 dark:bg-slate-900 shadow-xl flex items-center justify-center text-amber-500 border border-white/20 active:scale-90 transition-all">
               <Building2 className="w-5 h-5" />
             </button>
           </div>
@@ -155,8 +132,8 @@ function AttendanceContent() {
         </div>
       </main>
 
-      {/* History Sidebar */}
-      <aside className="hidden lg:flex w-[380px] border-l border-[var(--border)] bg-[var(--bg-surface)] flex-col shrink-0 h-screen">
+      {/* Bird's Eye History Sidebar */}
+      <aside className="hidden lg:flex w-[350px] border-l border-[var(--border)] bg-[var(--bg-surface)] flex-col shrink-0 h-screen">
         <HistoryTimeline 
           pairs={ctrl.attendancePairs} 
           onDeleteRecord={ctrl.handleDeleteRecord} 
