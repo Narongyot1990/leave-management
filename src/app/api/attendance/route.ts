@@ -39,13 +39,21 @@ export async function GET(request: NextRequest) {
     const query: any = {};
     const { role, userId: currentUserId, branch: userBranch } = authResult.payload;
 
+    // Helper to create a robust userId filter (handles string vs ObjectId mismatch in Mixed fields)
+    const getUserIdFilter = (id: string) => {
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        return { $in: [id, new mongoose.Types.ObjectId(id)] };
+      }
+      return id;
+    };
+
     if (role === 'driver') {
       // Drivers can only see their own records
-      query.userId = currentUserId;
+      query.userId = getUserIdFilter(currentUserId);
     } else if (role === 'leader') {
       // Leaders: if specific userId requested, filter; otherwise show branch-scoped
       if (userId) {
-        query.userId = userId;
+        query.userId = getUserIdFilter(userId);
       } else if (userBranch) {
         // Only scope to branch if not viewing a specific user's history
         query.branch = { $regex: new RegExp(`^${userBranch}$`, 'i') };
@@ -53,7 +61,7 @@ export async function GET(request: NextRequest) {
     } else if (role === 'admin') {
       // Admin: optional filters
       if (userId) {
-        query.userId = userId;
+        query.userId = getUserIdFilter(userId);
       }
       if (branch) query.branch = branch;
     }
@@ -118,7 +126,7 @@ export async function GET(request: NextRequest) {
 
     // Higher limit for admin month views
     const limit = (role === 'admin' && range === 'month') ? 2000 : 500;
-    const records = await Attendance.find(query).sort({ timestamp: 1 }).limit(limit);
+    const records = await Attendance.find(query).sort({ timestamp: -1 }).limit(limit);
 
     return NextResponse.json({ success: true, records });
   } catch (error) {
