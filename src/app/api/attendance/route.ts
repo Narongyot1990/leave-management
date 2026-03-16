@@ -119,12 +119,9 @@ export async function GET(request: NextRequest) {
     // Higher limit for admin month views
     const limit = (role === 'admin' && range === 'month') ? 2000 : 500;
     
-    // DEBUG: log the final query
-    console.log('[DEBUG FINAL QUERY] role:', role, 'query:', JSON.stringify(query), 'date:', date);
     
     const records = await Attendance.find(query).sort({ timestamp: -1 }).limit(limit);
     
-    console.log('[DEBUG RESULT] records found:', records.length);
     
     return NextResponse.json({ success: true, records });
   } catch (error) {
