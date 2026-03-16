@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FileText, ClipboardList, CalendarDays, Phone } from 'lucide-react';
+import { FileText, ClipboardList, CalendarDays, Phone, Clock } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -45,6 +45,17 @@ interface LeaveRequest {
   createdAt: string;
 }
 
+interface AttendanceRecord {
+  _id: string;
+  userId: string;
+  userName: string;
+  type: 'in' | 'out';
+  timestamp: string;
+  branch: string;
+  isInside: boolean;
+  distance: number;
+}
+
 interface SubstituteRecord {
   _id: string;
   userId: {
@@ -71,6 +82,7 @@ function LeaderHistoryContent() {
   const [role, setRole] = useState<'leader' | 'admin'>('leader');
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [substitutes, setSubstitutes] = useState<SubstituteRecord[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('leave');
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
@@ -107,7 +119,8 @@ function LeaderHistoryContent() {
     }
   }, [searchParams]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (!user) return;
     try {
       let leaveUrl = '/api/leave';
       let subUrl = '/api/substitute';
@@ -125,13 +138,15 @@ function LeaderHistoryContent() {
         subUrl += `?${queryString}`;
       }
 
-      const [leaveRes, substituteRes] = await Promise.all([
+      const [leaveRes, substituteRes, attendanceRes] = await Promise.all([
         fetch(leaveUrl),
         fetch(subUrl),
+        fetch(`/api/attendance?userId=${user._id}`)
       ]);
 
       const leaveData = await leaveRes.json();
       const substituteData = await substituteRes.json();
+      const attendanceData = await attendanceRes.json();
 
       if (leaveData.success) {
         setLeaves(leaveData.requests);
@@ -139,22 +154,26 @@ function LeaderHistoryContent() {
       if (substituteData.success) {
         setSubstitutes(substituteData.records);
       }
+      if (attendanceData.success) {
+        const sorted = attendanceData.records.sort((a: any, b: any) => 
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        setAttendance(sorted);
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    if (!user) return;
-    fetchData();
   }, [user, role, selectedBranch]);
 
-  // Pusher realtime — leave changes
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   const handleLeaveChanged = useCallback(async () => {
     fetchData();
-  }, [role, selectedBranch]);
+  }, [fetchData]);
 
   usePusher('leave-requests', [
     { event: 'new-leave-request', callback: handleLeaveChanged },
@@ -176,7 +195,6 @@ function LeaderHistoryContent() {
         <div className="px-4 lg:px-8 py-3">
           <div className="max-w-3xl mx-auto flex flex-col gap-4">
 
-            {/* Branch Filter for Admin */}
             {role === 'admin' && (
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex overflow-x-auto pb-2 gap-2 scrollbar-hide">
                 <button
@@ -197,11 +215,11 @@ function LeaderHistoryContent() {
               </motion.div>
             )}
 
-            {/* Tabs */}
             <div className="flex gap-2">
               {[
                 { key: 'leave', label: `การลา (${leaves.length})` },
-                { key: 'substitute', label: `บันทึกแทน (${substitutes.length})` },
+                { key: 'substitute', label: `ลงแทน (${substitutes.length})` },
+                { key: 'attendance', label: `ลงเวลา (${attendance.length})` },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -284,7 +302,6 @@ function LeaderHistoryContent() {
                               <span className="text-fluid-sm font-medium" style={{ color: meta.color }}>{meta.label}</span>
                             </div>
                             
-                            {/* Approved By info */}
                             {request.approvedBy && (
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">
@@ -316,11 +333,11 @@ function LeaderHistoryContent() {
                   })}
                 </div>
               )
-            ) : (
+            ) : activeTab === 'substitute' ? (
               substitutes.length === 0 ? (
                 <div className="card p-12 text-center">
                   <ClipboardList className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
-                  <p className="text-fluid-sm" style={{ color: 'var(--text-muted)' }}>ไม่มีประวัติบันทึกแทน</p>
+                  <p className="text-fluid-sm" style={{ color: 'var(--text-muted)' }}>ไม่มีประวัติลงแทน</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -380,7 +397,50 @@ function LeaderHistoryContent() {
                     </motion.div>
                   ))}
                 </div>
-              ))}
+              )
+            ) : activeTab === 'attendance' ? (
+              attendance.length === 0 ? (
+                <div className="card p-12 text-center">
+                  <Clock className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
+                  <p className="text-fluid-sm" style={{ color: 'var(--text-muted)' }}>ไม่มีประวัติการลงเวลา</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {attendance.map((rec, index) => (
+                    <motion.div
+                      key={rec._id}
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: index * 0.02 }}
+                      className="card bg-[var(--bg-surface)] border border-[var(--border)] overflow-hidden"
+                    >
+                      <div className="p-4 flex items-center justify-between border-b border-[var(--border)]">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-1.5 h-10 rounded-full ${rec.type === 'in' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          <div>
+                            <p className="text-[11px] font-black uppercase tracking-tight">
+                              Clock {rec.type === 'in' ? 'In' : 'Out'}
+                              <span className="ml-2 text-indigo-500">@{rec.branch}</span>
+                            </p>
+                            <p className="text-[9px] font-bold opacity-40 uppercase mt-0.5">
+                              {formatDateThai(rec.timestamp)} • {new Date(rec.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md ${rec.isInside ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                            {rec.isInside ? 'Verified' : 'Out of Bounds'}
+                          </span>
+                          {rec.distance > 0 && (
+                             <p className="text-[8px] font-bold opacity-30 mt-1 uppercase tracking-tighter">Dist: {Math.round(rec.distance)}m</p>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )
+            ) : null}
             </div>
           </div>
         </div>
