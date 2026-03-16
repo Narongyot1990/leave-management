@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IAttendance extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId: string;
   userName: string;
   userImage?: string;
   type: 'in' | 'out';
@@ -17,7 +17,7 @@ export interface IAttendance extends Document {
 
 const AttendanceSchema = new Schema<IAttendance>(
   {
-    userId: { type: Schema.Types.Mixed, required: true },
+    userId: { type: String, required: true },
     userName: { type: String, required: true },
     userImage: { type: String },
     type: { type: String, enum: ['in', 'out'], required: true },

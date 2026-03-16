@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export type CorrectionStatus = 'pending' | 'approved' | 'rejected';
 
 export interface IAttendanceCorrection extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId: string;
   userName: string;
   type: 'in' | 'out';
   requestedTime: Date;
@@ -24,7 +24,7 @@ export interface IAttendanceCorrection extends Document {
 
 const AttendanceCorrectionSchema = new Schema<IAttendanceCorrection>(
   {
-    userId: { type: Schema.Types.Mixed, ref: 'User', required: true },
+    userId: { type: String, required: true },
     userName: { type: String, required: true },
     type: { type: String, enum: ['in', 'out'], required: true },
     requestedTime: { type: Date, required: true },

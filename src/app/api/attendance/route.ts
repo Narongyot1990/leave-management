@@ -39,24 +39,13 @@ export async function GET(request: NextRequest) {
     const query: any = {};
     const { role, userId: currentUserId, branch: userBranch } = authResult.payload;
 
-    // Helper to add robust userId filter to query
-    const addUserIdFilter = (targetQuery: any, id: string) => {
-      const filters: any[] = [{ userId: id }];
-      if (mongoose.Types.ObjectId.isValid(id)) {
-        filters.push({ userId: new mongoose.Types.ObjectId(id) });
-      }
-      targetQuery.$or = filters;
-    };
-
     if (role === 'driver') {
       // Drivers can only see their own records
-      addUserIdFilter(query, currentUserId);
+      query.userId = currentUserId;
     } else if (role === 'leader') {
-      // DEBUG: log leader query
-      console.log('[DEBUG LEADER] userId from query:', userId, 'userBranch:', userBranch, 'currentUserId:', currentUserId);
       // Leaders: if specific userId requested, filter; otherwise show branch-scoped
       if (userId) {
-        addUserIdFilter(query, userId);
+        query.userId = userId;
       } else if (userBranch) {
         // Only scope to branch if not viewing a specific user's history
         query.branch = { $regex: new RegExp(`^${userBranch}$`, 'i') };
@@ -64,7 +53,7 @@ export async function GET(request: NextRequest) {
     } else if (role === 'admin') {
       // Admin: optional filters
       if (userId) {
-        addUserIdFilter(query, userId);
+        query.userId = userId;
       }
       if (branch) query.branch = branch;
     }

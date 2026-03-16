@@ -150,9 +150,6 @@ function LeaderHistoryContent() {
         attendanceRes.json()
       ]);
 
-      console.log('Debug - History user.id:', user.id);
-      console.log('Debug - Attendance Records:', attendanceData.records);
-
       if (leaveData.success) {
         setLeaves(leaveData.requests);
       }
