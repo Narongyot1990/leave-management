@@ -652,15 +652,50 @@ function DriverManagementContent() {
                           </select>
                         </div>
 
-                        <div className="pt-2">
-                           <button 
-                             type="button" 
-                             onClick={() => router.push(`/leave?userId=${selectedPersonnel._id}`)}
-                             className="btn w-full h-12 flex items-center justify-center gap-2 font-black uppercase tracking-widest border-2 border-[var(--accent)] text-[var(--accent)] bg-transparent hover:bg-[var(--accent-light)] transition-all"
-                           >
-                             <CalendarDays className="w-5 h-5" />
-                             ป้อนข้อมูลวันลา
-                           </button>
+                        {/* Leave Days Input */}
+                        <div className="rounded-2xl border border-[var(--border)] overflow-hidden">
+                          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-inset)]">
+                            <CalendarDays className="w-3.5 h-3.5 text-[var(--accent)]" />
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">วันลาคงเหลือ (Leave Quota)</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-0 divide-x divide-[var(--border)]">
+                            <div className="p-3">
+                              <label className="block text-[8px] font-black uppercase tracking-widest text-emerald-500 mb-1.5">พักร้อน</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="365"
+                                value={selectedPersonnel.vacationDays ?? 10}
+                                onChange={(e) => setSelectedPersonnel({ ...selectedPersonnel, vacationDays: Number(e.target.value) })}
+                                className="w-full text-center text-lg font-black bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-lg p-1"
+                              />
+                              <p className="text-[8px] text-center opacity-30 uppercase tracking-widest">วัน</p>
+                            </div>
+                            <div className="p-3">
+                              <label className="block text-[8px] font-black uppercase tracking-widest text-rose-500 mb-1.5">ลาป่วย</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="365"
+                                value={selectedPersonnel.sickDays ?? 10}
+                                onChange={(e) => setSelectedPersonnel({ ...selectedPersonnel, sickDays: Number(e.target.value) })}
+                                className="w-full text-center text-lg font-black bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-rose-500 rounded-lg p-1"
+                              />
+                              <p className="text-[8px] text-center opacity-30 uppercase tracking-widest">วัน</p>
+                            </div>
+                            <div className="p-3">
+                              <label className="block text-[8px] font-black uppercase tracking-widest text-amber-500 mb-1.5">ลากิจ</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="365"
+                                value={selectedPersonnel.personalDays ?? 5}
+                                onChange={(e) => setSelectedPersonnel({ ...selectedPersonnel, personalDays: Number(e.target.value) })}
+                                className="w-full text-center text-lg font-black bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-amber-500 rounded-lg p-1"
+                              />
+                              <p className="text-[8px] text-center opacity-30 uppercase tracking-widest">วัน</p>
+                            </div>
+                          </div>
                         </div>
 
                         <div className="flex gap-3 pt-2">

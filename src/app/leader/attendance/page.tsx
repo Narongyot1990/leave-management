@@ -151,7 +151,7 @@ function AttendanceContent() {
     try {
       const targetBranchCode = user?.branch || 'AYA';
       const currentBranch = branches.find(b => b.code === targetBranchCode);
-      const res = await fetch('https://drivers-tau.vercel.app/api/attendance', {
+      const res = await fetch('/api/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -230,7 +230,7 @@ function AttendanceContent() {
     setActionLoading(true);
     try {
       const targetBranchCode = user?.branch || 'AYA';
-      const res = await fetch('https://drivers-tau.vercel.app/api/attendance/correction', {
+      const res = await fetch('/api/attendance/correction', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -314,35 +314,70 @@ function AttendanceContent() {
 
   const pendingCorrections = myCorrections.filter(c => c.status === 'pending');
 
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = now.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long' });
+
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Sidebar role="leader" />
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
-        
-        {/* Compact Header */}
-        <header className="px-4 pt-6 pb-2 flex items-center justify-between">
-           <div>
-              <h1 className="text-2xl font-black tracking-tighter">ลงเวลาเข้างาน</h1>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-40">GPS Presence Check</p>
-           </div>
-           <div className="flex items-center gap-2">
-              <button 
-                onClick={() => { setOffsiteType('in'); setOffsiteTime(new Date().toISOString().slice(0, 16)); setIsOffsiteModalOpen(true); }}
-                className="h-10 px-3 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center gap-2 text-violet-500 hover:bg-violet-500/20 transition-all active:scale-95"
-              >
-                <Briefcase className="w-4 h-4" />
-                <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">นอกสถานที่</span>
-              </button>
-              <button onClick={() => router.push('/leader/home')} className="w-10 h-10 rounded-xl bg-[var(--bg-inset)] border border-[var(--border)] flex items-center justify-center">
-                <LogOut className="w-5 h-5 opacity-40 group-hover:opacity-100 rotate-180" />
-              </button>
-           </div>
+
+        {/* ── Header ── */}
+        <header className="px-4 pt-5 pb-3 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black tracking-tighter">ลงเวลางาน</h1>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Attendance · {user?.branch || ''}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setOffsiteType('in'); setOffsiteTime(new Date().toISOString().slice(0, 16)); setIsOffsiteModalOpen(true); }}
+              className="h-9 px-3 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center gap-1.5 text-violet-500 hover:bg-violet-500/20 transition-all active:scale-95"
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              <span className="text-[9px] font-black uppercase tracking-wider">นอกสถานที่</span>
+            </button>
+          </div>
         </header>
 
-          {/* Map Area - Integrated Controls */}
-          <div className="relative w-full h-[300px] rounded-[32px] overflow-hidden border border-[var(--border)] shadow-2xl mt-2 bg-[var(--bg-inset)]">
-            {branchLocation && (
-              <BranchMap 
+        {/* ── Status Banner ── */}
+        <div className="px-4 mb-3">
+          <AnimatePresence mode="wait">
+            {isClockedOut ? (
+              <motion.div key="done" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                <div>
+                  <p className="text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Shift Completed</p>
+                  <p className="text-[9px] font-bold opacity-50 uppercase tracking-wider">Work Time: {getWorkingTime()}</p>
+                </div>
+              </motion.div>
+            ) : isClockedIn ? (
+              <motion.div key="active" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 p-3 rounded-2xl bg-emerald-500/8 border border-emerald-500/20">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.7)] shrink-0" />
+                <div>
+                  <p className="text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">กำลังทำงาน</p>
+                  <p className="text-[9px] font-bold opacity-50 uppercase tracking-wider">{getWorkingTime()}</p>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div key="waiting" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 p-3 rounded-2xl bg-[var(--bg-inset)] border border-[var(--border)]">
+                <Clock className="w-4 h-4 opacity-30 shrink-0" />
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-30">ยังไม่ได้ลงเวลาวันนี้</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* ── Main 2-col Grid: Map + Action Card ── */}
+        <div className="px-4 grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+
+          {/* MAP CARD */}
+          <div className="relative rounded-[28px] overflow-hidden border border-[var(--border)] shadow-xl bg-[var(--bg-inset)]" style={{ height: 280 }}>
+            {branchLocation ? (
+              <BranchMap
                 ref={mapRef}
                 center={branchLocation}
                 radius={branchRadius}
@@ -350,80 +385,87 @@ function AttendanceContent() {
                 userProfileImage={user?.lineProfileImage}
                 readOnly={true}
               />
+            ) : (
+              <div className="h-full flex items-center justify-center text-[10px] font-black uppercase opacity-20 tracking-widest">
+                {locLoading ? 'กำลังโหลดแผนที่...' : 'รอตำแหน่ง GPS'}
+              </div>
             )}
-            
-            {/* Warp Controls - iPhone Style */}
-            <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
-               <button onClick={() => warpTo('user')} className="w-9 h-9 rounded-2xl bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-xl flex items-center justify-center text-[var(--accent)] border border-white/20 transition-transform active:scale-90">
-                  <LocateFixed className="w-5 h-5" />
-               </button>
-               <button onClick={() => warpTo('office')} className="w-9 h-9 rounded-2xl bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-xl flex items-center justify-center text-amber-500 border border-white/20 transition-transform active:scale-90">
-                  <Building2 className="w-5 h-5" />
-               </button>
+            {/* Map top-right controls */}
+            <div className="absolute top-3 right-3 flex flex-col gap-2 z-[500]">
+              <button onClick={() => warpTo('user')} className="w-8 h-8 rounded-xl bg-white/70 dark:bg-black/50 backdrop-blur-md shadow-lg flex items-center justify-center text-[var(--accent)] border border-white/20 active:scale-90 transition-transform">
+                <LocateFixed className="w-4 h-4" />
+              </button>
+              <button onClick={() => warpTo('office')} className="w-8 h-8 rounded-xl bg-white/70 dark:bg-black/50 backdrop-blur-md shadow-lg flex items-center justify-center text-amber-500 border border-white/20 active:scale-90 transition-transform">
+                <Building2 className="w-4 h-4" />
+              </button>
             </div>
-
-            {/* Distance Display - Floating Pill */}
-            <div className="absolute top-4 left-4 z-[1000] bg-black/40 dark:bg-white/10 backdrop-blur-xl px-4 py-2.5 rounded-2xl border border-white/10 text-white flex items-center gap-3 shadow-lg">
-               <div>
-                  <p className="text-[7px] font-black opacity-60 tracking-widest uppercase">Distance</p>
-                  <p className="text-[12px] font-black tracking-tight leading-none bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-                     {distance !== null ? `${Math.round(distance)}m` : '---'}
-                  </p>
-                </div>
-             </div>
-
-             {/* Integrated Action Area - Floating Bottom */}
-            <div className="absolute bottom-4 left-4 right-4 z-[1000] space-y-3">
-               <AnimatePresence mode="wait">
-                  {canClockIn || canClockOut ? (
-                    <div className="space-y-3">
-                       {isClockedIn && (
-                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center">
-                            <div className="px-4 py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 flex items-center gap-2 shadow-lg">
-                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                               <span className="text-[10px] font-black uppercase text-emerald-500 tracking-wider">
-                                 Active: {getWorkingTime()}
-                               </span>
-                            </div>
-                         </motion.div>
-                       )}
-                       
-                       {isInRange ? (
-                         <SlideButton 
-                           type={canClockIn ? 'in' : 'out'} 
-                           disabled={actionLoading}
-                           onSuccess={() => handleClockAction(canClockIn ? 'in' : 'out')}
-                           isClockedIn={isClockedIn}
-                         />
-                       ) : (
-                         <motion.button
-                           initial={{ opacity: 0, scale: 0.9 }}
-                           animate={{ opacity: 1, scale: 1 }}
-                           onClick={() => {
-                             setCorrectionType(canClockIn ? 'in' : 'out');
-                             setCorrectionTime(new Date().toISOString().slice(0, 16));
-                             setIsCorrectionModalOpen(true);
-                           }}
-                           className="w-full h-[54px] rounded-[24px] bg-amber-500 text-white text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-amber-500/30 active:scale-95 transition-transform"
-                         >
-                           <MessageSquare className="w-4 h-4" />
-                           ขอแก้ไขเวลา (Out of Range)
-                         </motion.button>
-                       )}
-                    </div>
-                  ) : isClockedOut ? (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 text-center bg-white/10 dark:bg-black/40 backdrop-blur-xl rounded-[28px] border border-white/10 shadow-2xl">
-                       <CheckCircle2 className="w-6 h-6 mx-auto mb-1 text-emerald-400" />
-                       <p className="text-[10px] font-black uppercase text-white tracking-[0.2em]">Shift Completed</p>
-                       <p className="text-[9px] font-bold text-white/60 mt-0.5 uppercase tracking-wide">Work Time: {getWorkingTime()}</p>
-                    </motion.div>
-                  ) : null}
-               </AnimatePresence>
+            {/* Distance pill */}
+            <div className="absolute top-3 left-3 z-[500] bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-white">
+              <p className="text-[7px] font-black uppercase tracking-widest opacity-50">Distance</p>
+              <p className="text-xs font-black leading-none">{distance !== null ? `${Math.round(distance)}m` : '---'}</p>
             </div>
           </div>
 
-          {/* ========== MY SCHEDULE PLAN (Beautiful card matching actual timestamp style) ========== */}
-          <div className="px-4 mt-4">
+          {/* ACTION CARD */}
+          <div className="card p-5 flex flex-col gap-4">
+            {/* Time display */}
+            <div className="text-center">
+              <p className="text-4xl font-black tracking-tight tabular-nums" style={{ fontFeatureSettings: '"tnum"' }}>{timeStr}</p>
+              <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-0.5">{dateStr}</p>
+            </div>
+
+            {/* Distance status */}
+            <div className={`flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+              distance === null ? 'bg-[var(--bg-inset)] border-[var(--border)] opacity-50' :
+              isInRange ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' :
+              'bg-rose-500/10 border-rose-500/20 text-rose-500'
+            }`}>
+              <MapPin className="w-3.5 h-3.5" />
+              {distance === null ? 'กำลังระบุตำแหน่ง...' : isInRange ? `อยู่ในพื้นที่ (${Math.round(distance!)}m)` : `นอกพื้นที่ (${Math.round(distance!)}m)`}
+            </div>
+
+            {/* Clock action */}
+            <AnimatePresence mode="wait">
+              {isClockedOut ? (
+                <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="flex-1 flex flex-col items-center justify-center gap-2 py-4">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+                  <p className="text-xs font-black uppercase tracking-widest text-emerald-500">Shift Done!</p>
+                </motion.div>
+              ) : (canClockIn || canClockOut) ? (
+                <motion.div key="action" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
+                  {isInRange ? (
+                    <SlideButton
+                      type={canClockIn ? 'in' : 'out'}
+                      disabled={actionLoading}
+                      onSuccess={() => handleClockAction(canClockIn ? 'in' : 'out')}
+                      isClockedIn={isClockedIn}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => { setCorrectionType(canClockIn ? 'in' : 'out'); setCorrectionTime(new Date().toISOString().slice(0, 16)); setIsCorrectionModalOpen(true); }}
+                      className="w-full h-12 rounded-2xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      ขอแก้ไขเวลา (นอกพื้นที่)
+                    </button>
+                  )}
+                  <button
+                    onClick={updateLocation}
+                    disabled={locLoading}
+                    className="w-full h-9 rounded-xl bg-[var(--bg-inset)] border border-[var(--border)] text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 opacity-60 active:scale-95 transition-all"
+                  >
+                    <LocateFixed className="w-3.5 h-3.5" />
+                    {locLoading ? 'กำลังระบุตำแหน่ง...' : 'รีเฟรชตำแหน่ง'}
+                  </button>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
+        </div>
+
+          {/* ========== MY SCHEDULE PLAN ========== */}
+          <div className="px-4">
             <div className="card overflow-hidden">
               <button 
                 onClick={() => setShowSchedule(!showSchedule)}
@@ -518,7 +560,7 @@ function AttendanceContent() {
 
           {/* ========== PENDING REQUESTS ========== */}
           {pendingCorrections.length > 0 && (
-            <div className="px-4 mt-4">
+            <div className="px-4 mt-3">
               <div className="card p-3">
                 <div className="flex items-center gap-2 mb-3">
                   <FileEdit className="w-3.5 h-3.5 text-amber-500" />
@@ -545,7 +587,7 @@ function AttendanceContent() {
           )}
 
           {/* ========== ACTUAL TIMELINE (Today) ========== */}
-          <div className="px-4 mt-4">
+          <div className="px-4 mt-3">
             <div className="card p-1">
                <div className="flex items-center justify-between p-3 border-b border-[var(--border)] bg-[var(--bg-inset)] rounded-t-2xl">
                   <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Personal Timeline (Today)</span>
@@ -823,8 +865,8 @@ function SlideButton({ type, disabled, onSuccess, errorMsg, isClockedIn }: any) 
   }, []);
 
   const opacity = useTransform(x, [0, type === 'in' ? maxWidth : -maxWidth], [0.2, 1]);
-  const bgColor = type === 'in' ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)';
-  const label = type === 'in' ? `Slide to Clock In` : `Slide to Clock Out`;
+  const bgColor = type === 'in' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)';
+  const label = type === 'in' ? `Slide to Clock In →` : `← Slide to Clock Out`;
 
   const onDragEnd = () => {
     const currentX = x.get();
@@ -842,28 +884,21 @@ function SlideButton({ type, disabled, onSuccess, errorMsg, isClockedIn }: any) 
   return (
     <div className="w-full" ref={containerRef}>
       <div 
-        className={`relative max-w-[220px] mx-auto h-[54px] rounded-[24px] p-1.5 flex items-center overflow-hidden transition-all duration-300
-          ${isClockedIn 
-            ? 'bg-black/40 border-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_8px_32px_rgba(0,0,0,0.4)]' 
-            : 'bg-white/10 dark:bg-black/30 border-white/10 dark:border-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.3)]'}`}
-        style={{ border: '1px solid', backdropFilter: 'blur(24px)' }}
+        className={`relative w-full h-[54px] rounded-2xl p-1.5 flex items-center overflow-hidden transition-all duration-300 border ${
+          type === 'in' 
+            ? 'bg-emerald-500/10 border-emerald-500/30' 
+            : 'bg-rose-500/10 border-rose-500/30'
+        }`}
       >
-        <motion.div style={{ opacity }} className="absolute inset-0 flex items-center justify-center font-black text-[9px] uppercase tracking-[0.1em] pointer-events-none text-white/90 drop-shadow-md text-center">
+        <motion.div style={{ opacity }} className={`absolute inset-0 flex items-center justify-center font-black text-[10px] uppercase tracking-widest pointer-events-none text-center ${
+          type === 'in' ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'
+        }`}>
            {errorMsg ? (
-             <span className="text-rose-300/90 leading-tight px-4">{errorMsg}</span>
+             <span className="text-rose-500 leading-tight px-4">{errorMsg}</span>
            ) : (
-             <span className="leading-tight pl-6">{label}</span>
+             <span className="leading-tight">{label}</span>
            )}
         </motion.div>
-        
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
-           <div className={`flex gap-2 ${type === 'in' ? 'pl-10' : 'pr-10'}`}>
-              {[1,2,3].map(i => (
-                <ChevronRight key={i} className={`w-3.5 h-3.5 ${type === 'out' ? 'rotate-180' : ''} animate-pulse`} 
-                  style={{ animationDelay: `${type === 'in' ? i*200 : (4-i)*200}ms` }} />
-              ))}
-           </div>
-        </div>
 
         <div className={`flex w-full ${type === 'in' ? 'justify-start' : 'justify-end'}`}>
           <motion.div
@@ -871,10 +906,10 @@ function SlideButton({ type, disabled, onSuccess, errorMsg, isClockedIn }: any) 
             dragConstraints={type === 'in' ? { left: 0, right: maxWidth } : { left: -maxWidth, right: 0 }}
             dragElastic={0.1}
             onDragEnd={onDragEnd}
-            className="w-[42px] h-[42px] rounded-[18px] flex items-center justify-center shadow-xl cursor-grab active:cursor-grabbing z-10 border border-white/30 active:scale-90 transition-transform duration-200"
+            className="w-[42px] h-[42px] rounded-xl flex items-center justify-center shadow-lg cursor-grab active:cursor-grabbing z-10 active:scale-90 transition-transform duration-200"
             style={{ x, background: bgColor, color: 'white' }}
           >
-            {type === 'in' ? <Clock className="w-4 h-4 drop-shadow-md" /> : <LogOut className="w-4 h-4 drop-shadow-md rotate-180" />}
+            {type === 'in' ? <Clock className="w-4 h-4" /> : <LogOut className="w-4 h-4 rotate-180" />}
           </motion.div>
         </div>
       </div>
