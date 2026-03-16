@@ -123,7 +123,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await dbConnect();
+    const authPayload = authResult.payload;
+    const { role: authRole, branch: authBranch, userId: authUserId } = authPayload;
+
+    // Authorization Check:
+    // 1. Admin can submit for anyone.
+    // 2. Leader can submit for users in their same branch.
+    // 3. Driver can ONLY submit for themselves.
+    if (authRole === 'driver') {
+      if (authUserId !== userId) {
+        return NextResponse.json(
+          { error: 'Forbidden: Drivers can only submit leave for themselves' },
+          { status: 403 }
+        );
+      }
+    } else if (authRole === 'leader') {
+      // Find the target user's branch
+      const targetUser = await User.findById(userId).select('branch');
+      if (!targetUser) {
+        return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
+      }
+      
+      // Case-insensitive branch check
+      if (authBranch?.toLowerCase() !== targetUser.branch?.toLowerCase()) {
+        return NextResponse.json(
+          { error: 'Forbidden: Leaders can only submit leave for drivers in their branch' },
+          { status: 403 }
+        );
+      }
+    }
+    // Admin (or other roles) proceed
 
     const user = await User.findById(userId);
     

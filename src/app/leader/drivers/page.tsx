@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Users, Search, Edit3, Trash2, X, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Plus, Phone, PhoneCall, MessageCircle, Shield, ChevronRight, MapPin, User } from 'lucide-react';
+import { Users, Search, Edit3, Trash2, X, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Plus, Phone, PhoneCall, MessageCircle, Shield, ChevronRight, MapPin, User, CalendarDays } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -650,6 +650,17 @@ function DriverManagementContent() {
                               <option key={b.code} value={b.code}>{b.code}</option>
                             ))}
                           </select>
+                        </div>
+
+                        <div className="pt-2">
+                           <button 
+                             type="button" 
+                             onClick={() => router.push(`/leave?userId=${selectedPersonnel._id}`)}
+                             className="btn w-full h-12 flex items-center justify-center gap-2 font-black uppercase tracking-widest border-2 border-[var(--accent)] text-[var(--accent)] bg-transparent hover:bg-[var(--accent-light)] transition-all"
+                           >
+                             <CalendarDays className="w-5 h-5" />
+                             ป้อนข้อมูลวันลา
+                           </button>
                         </div>
 
                         <div className="flex gap-3 pt-2">

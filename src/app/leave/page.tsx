@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import dayjs from 'dayjs';
 import { AlertCircle, CheckCircle2, Send, Check, Calendar } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
@@ -24,7 +24,11 @@ interface DriverUser {
 
 export default function LeavePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetUserId = searchParams.get('userId');
+  
   const [user, setUser] = useState<DriverUser | null>(null);
+  const [authUser, setAuthUser] = useState<any>(null);
   const [leaveType, setLeaveType] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -42,13 +46,33 @@ export default function LeavePage() {
       return;
     }
     const userData = JSON.parse(storedUser);
-    setUser(userData);
+    setAuthUser(userData);
     
     if (userData.status === 'pending') {
       setIsPending(true);
     }
 
-    const fetchUserData = async () => {
+    const fetchTargetUserData = async (id: string) => {
+      try {
+        const response = await fetch(`/api/users?id=${id}`);
+        const data = await response.json();
+        if (data.success && data.user) {
+          const u = data.user;
+          setUser({
+            id: u._id,
+            lineDisplayName: u.name && u.surname ? `${u.name} ${u.surname}` : u.lineDisplayName,
+            status: u.status,
+            vacationDays: u.vacationDays ?? 10,
+            sickDays: u.sickDays ?? 10,
+            personalDays: u.personalDays ?? 5,
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    const fetchMeData = async () => {
       try {
         const response = await fetch(`/api/users?status=active`);
         const data = await response.json();
@@ -69,8 +93,12 @@ export default function LeavePage() {
       }
     };
 
-    fetchUserData();
-  }, [router]);
+    if (targetUserId && (userData.role === 'leader' || userData.role === 'admin')) {
+      fetchTargetUserData(targetUserId);
+    } else {
+      fetchMeData();
+    }
+  }, [router, targetUserId]);
 
   const { showToast } = useToast();
 
