@@ -1,360 +1,144 @@
-import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
-import mongoose from 'mongoose';
-import { requireAuth } from '@/lib/api-auth';
+import { NextResponse } from 'next/server';
+import { apiHandler } from '@/lib/api-utils';
+import { AttendanceService } from '@/services/attendance.service';
 import { Attendance } from '@/models/Attendance';
-import { triggerPusher, CHANNELS, EVENTS } from '@/lib/pusher';
+import { triggerPusher, CHANNELS } from '@/lib/pusher';
+import { 
+  ClockInSchema, 
+  AttendanceQuerySchema, 
+  PatchAttendanceSchema 
+} from '@/lib/validations/attendance.schema';
 
 export const dynamic = 'force-dynamic';
 
-// Helper to calculate distance in meters (Haversine formula)
-function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371e3; // metres
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δφ = (lat2 - lat1) * Math.PI / 180;
-  const Δλ = (lon2 - lon1) * Math.PI / 180;
+/**
+ * GET: Fetch Unified Attendance Records
+ */
+export const GET = apiHandler(async ({ req, payload }) => {
+  const { searchParams } = new URL(req.url);
+  const params = AttendanceQuerySchema.parse(Object.fromEntries(searchParams));
+  
+  const { role, userId: currentUserId, branch: userBranch } = payload;
+  const query: any = {};
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-          Math.cos(φ1) * Math.cos(φ2) *
-          Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  // 1. Role-based Authorization & Scoping
+  if (role === 'driver') {
+    query.userId = currentUserId;
+  } else if (role === 'leader') {
+    if (params.userId) query.userId = params.userId;
+    else if (userBranch) query.branch = { $regex: new RegExp(`^${userBranch}$`, 'i') };
+  } else if (role === 'admin') {
+    if (params.userId) query.userId = params.userId;
+    if (params.branch) query.branch = params.branch;
+    if (params.userName) query.userName = { $regex: new RegExp(params.userName, 'i') };
+  }
 
-  return R * c; // in metres
-}
+  // 2. Date Range Handling
+  if (params.startDate && params.endDate) {
+    query.timestamp = { $gte: new Date(params.startDate), $lte: new Date(params.endDate) };
+  } else if (params.date) {
+    const baseDate = new Date(params.date);
+    let start: Date;
+    let end: Date;
 
-export async function GET(request: NextRequest) {
-  try {
-    const authResult = requireAuth(request);
-    if ('error' in authResult) return authResult.error;
-
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    const branch = searchParams.get('branch');
-    const date = searchParams.get('date'); // YYYY-MM-DD
-    const range = searchParams.get('range'); // 'day' | 'week' | 'month'
-
-    await dbConnect();
-
-    const query: any = {};
-    const { role, userId: currentUserId, branch: userBranch } = authResult.payload;
-
-    if (role === 'driver') {
-      // Drivers can only see their own records
-      query.userId = currentUserId;
-    } else if (role === 'leader') {
-      // Leaders: if specific userId requested, filter; otherwise show branch-scoped
-      if (userId) {
-        query.userId = userId;
-      } else if (userBranch) {
-        // Only scope to branch if not viewing a specific user's history
-        query.branch = { $regex: new RegExp(`^${userBranch}$`, 'i') };
-      }
-    } else if (role === 'admin') {
-      // Admin: optional filters
-      if (userId) {
-        query.userId = userId;
-      }
-      if (branch) query.branch = branch;
+    if (params.range === 'month') {
+      start = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (params.range === 'week') {
+      const dayOfWeek = baseDate.getDay();
+      start = new Date(baseDate);
+      start.setDate(baseDate.getDate() - dayOfWeek);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+    } else {
+      start = new Date(baseDate);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(baseDate);
+      end.setHours(23, 59, 59, 999);
       
-      const userName = searchParams.get('userName');
-      if (userName) {
-        query.userName = { $regex: new RegExp(userName, 'i') };
-      }
-    }
+      // Lookback for ongoing sessions
+      const lastInBefore = await Attendance.findOne({
+        ...query,
+        type: 'in',
+        timestamp: { $lt: start }
+      }).sort({ timestamp: -1 }).lean();
 
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
+      if (lastInBefore) {
+        const matchingOut = await Attendance.findOne({
+          userId: lastInBefore.userId,
+          type: 'out',
+          timestamp: { $gt: lastInBefore.timestamp as any, $lt: start }
+        }).lean();
 
-    // Date range handling
-    if (startDate && endDate) {
-      query.timestamp = { $gte: new Date(startDate), $lte: new Date(endDate) };
-    } else if (date) {
-      const baseDate = new Date(date);
-      let start: Date;
-      let end: Date;
-
-      if (range === 'month') {
-        start = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
-        end.setHours(23, 59, 59, 999);
-      } else if (range === 'week') {
-        const dayOfWeek = baseDate.getDay();
-        start = new Date(baseDate);
-        start.setDate(baseDate.getDate() - dayOfWeek);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(start);
-        end.setDate(start.getDate() + 6);
-        end.setHours(23, 59, 59, 999);
-      } else {
-        // Default: single day
-        start = new Date(baseDate);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(baseDate);
-        end.setHours(23, 59, 59, 999);
-        
-        // For single day view, we also need to fetch the last 'in' record before this day 
-        // to see if it's an ongoing session that crosses into today.
-        const lastInBefore = await Attendance.findOne({
-          ...query,
-          type: 'in',
-          timestamp: { $lt: start }
-        }).sort({ timestamp: -1 });
-
-        if (lastInBefore) {
-          // Check if it has a matching 'out' before 'start'
-          const matchingOut = await Attendance.findOne({
-            userId: lastInBefore.userId,
-            type: 'out',
-            timestamp: { $gt: lastInBefore.timestamp, $lt: start }
-          });
-
-          if (!matchingOut) {
-            // It's an ongoing session from yesterday! 
-            // Include this 'in' record in the results.
-            query.timestamp = { $gte: lastInBefore.timestamp, $lte: end };
-          }
+        if (!matchingOut) {
+          query.timestamp = { $gte: lastInBefore.timestamp, $lte: end };
+        } else {
+          query.timestamp = { $gte: start, $lte: end };
         }
+      } else {
+        query.timestamp = { $gte: start, $lte: end };
       }
-    } else {
-      // No date specified, just return latest
     }
-
-    // Higher limit for admin month views
-    const limit = (role === 'admin' && range === 'month') ? 2000 : 500;
-    
-    // 1. Fetch actual attendance records
-    const attendanceRecords = await Attendance.find(query).sort({ timestamp: -1 }).limit(limit);
-    
-    // 2. Fetch attendance corrections for the same query (if applicable)
-    let corrections: any[] = [];
-    if (query.userId || role === 'admin') {
-       const { AttendanceCorrection } = await import('@/models/AttendanceCorrection');
-       
-       const correctionQuery: any = { status: { $ne: 'approved' } };
-       if (query.userId) correctionQuery.userId = query.userId;
-       if (query.branch && role === 'admin') correctionQuery.branch = query.branch;
-       
-       // Handle timestamp range for corrections too
-       if (query.timestamp) {
-         correctionQuery.requestedTime = query.timestamp;
-       }
-
-       corrections = await AttendanceCorrection.find(correctionQuery).sort({ requestedTime: -1 }).limit(100);
-    }
-
-    // 3. Merge and unify
-    const unifiedRecords = [
-      ...attendanceRecords.map(r => ({ ...r.toObject(), eventType: 'actual' })),
-      ...corrections.map(c => ({
-        ...c.toObject(),
-        timestamp: c.requestedTime, // Use consistent field name
-        eventType: 'correction'
-      }))
-    ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    
-    return NextResponse.json({ success: true, records: unifiedRecords });
-  } catch (error) {
-    console.error('Get Attendance Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (start && end && !query.timestamp) query.timestamp = { $gte: start, $lte: end };
   }
-}
 
-export async function POST(request: NextRequest) {
-  try {
-    const authResult = requireAuth(request);
-    if ('error' in authResult) return authResult.error;
+  const records = await AttendanceService.getUnifiedAttendance(query, role, params.range);
+  return NextResponse.json({ success: true, records });
+});
 
-    const body = await request.json();
-    const { type, location, branchCode, branchLocation, radius } = body;
+/**
+ * POST: Clock In / Clock Out
+ */
+export const POST = apiHandler(async ({ req, payload }) => {
+  const body = await req.json();
+  const validatedBody = ClockInSchema.parse(body);
+  
+  const record = await AttendanceService.clockAction(payload.userId, validatedBody);
+  return NextResponse.json({ success: true, record });
+});
 
-    if (!type || !location || !branchCode) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+/**
+ * DELETE: Remove Attendance or Correction
+ */
+export const DELETE = apiHandler(async ({ req, payload }) => {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get('id');
+  if (!id) throw new Error('ID is required');
+
+  await AttendanceService.deleteRecord(id, payload.userId, payload.role);
+  return NextResponse.json({ success: true });
+});
+
+/**
+ * PATCH: Admin Edit Record
+ */
+export const PATCH = apiHandler(async ({ req, payload }) => {
+  if (payload.role !== 'admin') throw { message: 'Only admins can edit records', status: 403 };
+
+  const body = await req.json();
+  const { id, ...updateData } = PatchAttendanceSchema.parse(body);
+
+  const update: any = {};
+  if (updateData.timestamp) update.timestamp = new Date(updateData.timestamp);
+  if (updateData.type) update.type = updateData.type;
+  if (updateData.branch) update.branch = updateData.branch;
+
+  const record = await Attendance.findByIdAndUpdate(id, update, { new: true });
+  if (!record) throw { message: 'Record not found', status: 404 };
+
+  // Trigger pusher for timeline update
+  await triggerPusher(CHANNELS.USERS, 'leader-attendance', {
+    record: {
+      userId: record.userId,
+      userName: record.userName,
+      type: record.type,
+      timestamp: record.timestamp
     }
+  });
 
-    const { userId } = authResult.payload;
-
-    await dbConnect();
-
-    // Relaxed sequence: Look back 24h for an open 'in' session
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    
-    const lastRecord = await Attendance.findOne({
-      userId,
-      timestamp: { $gte: twentyFourHoursAgo }
-    }).sort({ timestamp: -1 });
-
-    if (type === 'in') {
-      if (lastRecord && lastRecord.type === 'in') {
-        return NextResponse.json({ error: 'คุณอยู่ในระบบแล้ว (Missing Clock Out?)' }, { status: 400 });
-      }
-    } else if (type === 'out') {
-      if (!lastRecord || lastRecord.type === 'out') {
-        return NextResponse.json({ error: 'กรุณาลงเวลาเข้างานก่อน' }, { status: 400 });
-      }
-    }
-
-    const distance = branchLocation 
-      ? getDistance(location.lat, location.lon, branchLocation.lat, branchLocation.lon)
-      : 999999;
-    
-    // Use branch-specific radius with 5m buffer
-    const limit = (radius || 50) + 5;
-    const isInside = distance <= limit;
-    
-    // Fetch user name and image from User/Leader model
-    const { User } = await import('@/models/User');
-    const { Leader } = await import('@/models/Leader');
-    
-    let userName = 'Unknown';
-    let userImage: string | undefined;
-
-    if (mongoose.Types.ObjectId.isValid(userId)) {
-      // Try User first (Driver), then Leader
-      let person = await User.findById(userId);
-      if (!person) person = await Leader.findById(userId);
-      
-      userName = person?.name || person?.lineDisplayName || 'Unknown';
-      userImage = (person as any)?.lineProfileImage;
-    } else if (userId === 'admin_root') {
-      userName = 'ITL Administrator';
-    }
-
-    const record = await Attendance.create({
-      userId,
-      userName,
-      userImage,
-      type,
-      branch: branchCode,
-      location,
-      distance,
-      isInside,
-      timestamp: new Date()
-    });
-
-    // Real-time notification for admin
-    await triggerPusher(CHANNELS.USERS, 'leader-attendance', {
-      record: {
-        ...record.toObject(),
-        userName
-      }
-    });
-
-    return NextResponse.json({ success: true, record });
-  } catch (error) {
-    console.error('Post Attendance Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-// DELETE /api/attendance?id=...
-export async function DELETE(request: NextRequest) {
-  try {
-    const authResult = requireAuth(request);
-    if ('error' in authResult) return authResult.error;
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
-    }
-
-    await dbConnect();
-
-    let record = await Attendance.findById(id);
-    let modelType: 'attendance' | 'correction' = 'attendance';
-
-    if (!record) {
-      const { AttendanceCorrection } = await import('@/models/AttendanceCorrection');
-      record = await AttendanceCorrection.findById(id) as any;
-      modelType = 'correction';
-    }
-
-    if (!record) {
-      return NextResponse.json({ error: 'Record not found' }, { status: 404 });
-    }
-
-    // Permission check: only owner or admin (handling both models)
-    const { userId: currentUserId, role } = authResult.payload;
-    const recordUserId = record.userId.toString();
-    const currentUserIdStr = currentUserId.toString();
-
-    if (role !== 'admin' && recordUserId !== currentUserIdStr) {
-      console.log(`[DELETE Permission Denied] Record Owner: ${recordUserId}, Requester: ${currentUserIdStr}, Role: ${role}`);
-      return NextResponse.json({ error: 'Unauthorized: You can only delete your own records' }, { status: 403 });
-    }
-
-    if (modelType === 'attendance') {
-      await Attendance.findByIdAndDelete(id);
-      
-      // Cascading Delete for associated correction
-      try {
-        const { AttendanceCorrection } = await import('@/models/AttendanceCorrection');
-        const timeBuffer = 1000;
-        const startTime = new Date(record.timestamp.getTime() - timeBuffer);
-        const endTime = new Date(record.timestamp.getTime() + timeBuffer);
-        await AttendanceCorrection.deleteMany({
-          userId: record.userId,
-          type: record.type,
-          requestedTime: { $gte: startTime, $lte: endTime }
-        });
-      } catch (err) { console.error('Cascading Delete Error:', err); }
-    } else {
-      const { AttendanceCorrection } = await import('@/models/AttendanceCorrection');
-      await AttendanceCorrection.findByIdAndDelete(id);
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Delete Attendance Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-// PATCH /api/attendance
-export async function PATCH(request: NextRequest) {
-  try {
-    const authResult = requireAuth(request);
-    if ('error' in authResult) return authResult.error;
-
-    const { role } = authResult.payload;
-    if (role !== 'admin') {
-      return NextResponse.json({ error: 'Only admins can edit records' }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { id, timestamp, type, branch } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
-    }
-
-    await dbConnect();
-
-    const updateData: any = {};
-    if (timestamp) updateData.timestamp = new Date(timestamp);
-    if (type) updateData.type = type;
-    if (branch) updateData.branch = branch;
-
-    const record = await Attendance.findByIdAndUpdate(id, updateData, { new: true });
-    if (!record) {
-      return NextResponse.json({ error: 'Record not found' }, { status: 404 });
-    }
-
-    // Trigger pusher for timeline update
-    await triggerPusher(CHANNELS.USERS, 'leader-attendance', {
-      record: {
-        userId: record.userId,
-        userName: record.userName,
-        type: record.type,
-        timestamp: record.timestamp
-      }
-    });
-
-    return NextResponse.json({ success: true, record });
-  } catch (error) {
-    console.error('Patch Attendance Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
+  return NextResponse.json({ success: true, record });
+});
