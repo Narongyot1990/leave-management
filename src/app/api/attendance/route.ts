@@ -39,23 +39,24 @@ export async function GET(request: NextRequest) {
     const query: any = {};
     const { role, userId: currentUserId, branch: userBranch } = authResult.payload;
 
-    // Helper to create a robust userId filter (handles string vs ObjectId mismatch in Mixed fields)
-    const getUserIdFilter = (id: string) => {
+    // Helper to add robust userId filter to query
+    const addUserIdFilter = (targetQuery: any, id: string) => {
+      const filters: any[] = [{ userId: id }];
       if (mongoose.Types.ObjectId.isValid(id)) {
-        return { $in: [id, new mongoose.Types.ObjectId(id)] };
+        filters.push({ userId: new mongoose.Types.ObjectId(id) });
       }
-      return id;
+      targetQuery.$or = filters;
     };
 
     if (role === 'driver') {
       // Drivers can only see their own records
-      query.userId = getUserIdFilter(currentUserId);
+      addUserIdFilter(query, currentUserId);
     } else if (role === 'leader') {
       // DEBUG: log leader query
       console.log('[DEBUG LEADER] userId from query:', userId, 'userBranch:', userBranch, 'currentUserId:', currentUserId);
       // Leaders: if specific userId requested, filter; otherwise show branch-scoped
       if (userId) {
-        query.userId = getUserIdFilter(userId);
+        addUserIdFilter(query, userId);
       } else if (userBranch) {
         // Only scope to branch if not viewing a specific user's history
         query.branch = { $regex: new RegExp(`^${userBranch}$`, 'i') };
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
     } else if (role === 'admin') {
       // Admin: optional filters
       if (userId) {
-        query.userId = getUserIdFilter(userId);
+        addUserIdFilter(query, userId);
       }
       if (branch) query.branch = branch;
     }

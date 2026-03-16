@@ -144,9 +144,14 @@ function LeaderHistoryContent() {
         fetch(`/api/attendance?userId=${user.id}`)
       ]);
 
-      const leaveData = await leaveRes.json();
-      const substituteData = await substituteRes.json();
-      const attendanceData = await attendanceRes.json();
+      const [leaveData, substituteData, attendanceData] = await Promise.all([
+        leaveRes.json(),
+        substituteRes.json(),
+        attendanceRes.json()
+      ]);
+
+      console.log('Debug - History user.id:', user.id);
+      console.log('Debug - Attendance Records:', attendanceData.records);
 
       if (leaveData.success) {
         setLeaves(leaveData.requests);
