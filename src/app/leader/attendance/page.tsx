@@ -280,26 +280,25 @@ export default function AttendancePage() {
                          </motion.div>
                        )}
                        
-                       <SlideButton 
-                         type={canClockIn ? 'in' : 'out'} 
-                         disabled={!isInRange || actionLoading}
-                         onSuccess={() => handleClockAction(canClockIn ? 'in' : 'out')}
-                         errorMsg={!isInRange ? `Out of Range (${Math.round(distance || 0)}m)` : ''}
-                         isClockedIn={isClockedIn}
-                       />
-                       
-                       {!isInRange && (
+                       {isInRange ? (
+                         <SlideButton 
+                           type={canClockIn ? 'in' : 'out'} 
+                           disabled={actionLoading}
+                           onSuccess={() => handleClockAction(canClockIn ? 'in' : 'out')}
+                           isClockedIn={isClockedIn}
+                         />
+                       ) : (
                          <motion.button
-                           initial={{ opacity: 0 }}
-                           animate={{ opacity: 1 }}
+                           initial={{ opacity: 0, scale: 0.9 }}
+                           animate={{ opacity: 1, scale: 1 }}
                            onClick={() => {
                              setCorrectionType(canClockIn ? 'in' : 'out');
                              setCorrectionTime(new Date().toISOString().slice(0, 16));
                              setIsCorrectionModalOpen(true);
                            }}
-                           className="w-full py-2.5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
+                           className="w-full h-[54px] rounded-[24px] bg-amber-500 text-white text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-xl shadow-amber-500/30 active:scale-95 transition-transform"
                          >
-                           <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
+                           <MessageSquare className="w-4 h-4" />
                            ขอแก้ไขเวลา (Out of Range)
                          </motion.button>
                        )}
@@ -496,34 +495,29 @@ function SlideButton({ type, disabled, onSuccess, errorMsg, isClockedIn }: any) 
       // iPhone Spring back animation
       animate(x, 0, { type: 'spring', stiffness: 450, damping: 25 });
     }
-    
-    // Reset if success or threshold met
-    if (!disabled && ((type === 'in' && currentX > threshold) || (type === 'out' && currentX < -threshold))) {
-      x.set(0);
-    }
   };
 
   return (
     <div className="w-full" ref={containerRef}>
       <div 
-        className={`relative max-w-[280px] mx-auto h-[60px] rounded-[28px] p-1.5 flex items-center overflow-hidden transition-all duration-300
+        className={`relative max-w-[220px] mx-auto h-[54px] rounded-[24px] p-1.5 flex items-center overflow-hidden transition-all duration-300
           ${isClockedIn 
             ? 'bg-black/40 border-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_8px_32px_rgba(0,0,0,0.4)]' 
             : 'bg-white/10 dark:bg-black/30 border-white/10 dark:border-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.3)]'}`}
         style={{ border: '1px solid', backdropFilter: 'blur(24px)' }}
       >
-        <motion.div style={{ opacity }} className="absolute inset-0 flex items-center justify-center font-black text-[10px] uppercase tracking-[0.2em] pointer-events-none text-white/90 drop-shadow-md text-center">
+        <motion.div style={{ opacity }} className="absolute inset-0 flex items-center justify-center font-black text-[9px] uppercase tracking-[0.1em] pointer-events-none text-white/90 drop-shadow-md text-center">
            {errorMsg ? (
              <span className="text-rose-300/90 leading-tight px-4">{errorMsg}</span>
            ) : (
-             <span className="leading-tight pl-2">{label}</span>
+             <span className="leading-tight pl-6">{label}</span>
            )}
         </motion.div>
         
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
            <div className={`flex gap-2 ${type === 'in' ? 'pl-10' : 'pr-10'}`}>
               {[1,2,3].map(i => (
-                <ChevronRight key={i} className={`w-4 h-4 ${type === 'out' ? 'rotate-180' : ''} animate-pulse`} 
+                <ChevronRight key={i} className={`w-3.5 h-3.5 ${type === 'out' ? 'rotate-180' : ''} animate-pulse`} 
                   style={{ animationDelay: `${type === 'in' ? i*200 : (4-i)*200}ms` }} />
               ))}
            </div>
@@ -535,10 +529,10 @@ function SlideButton({ type, disabled, onSuccess, errorMsg, isClockedIn }: any) 
             dragConstraints={type === 'in' ? { left: 0, right: maxWidth } : { left: -maxWidth, right: 0 }}
             dragElastic={0.1}
             onDragEnd={onDragEnd}
-            className="w-[48px] h-[48px] rounded-[22px] flex items-center justify-center shadow-xl cursor-grab active:cursor-grabbing z-10 border border-white/30 active:scale-90 transition-transform duration-200"
+            className="w-[42px] h-[42px] rounded-[18px] flex items-center justify-center shadow-xl cursor-grab active:cursor-grabbing z-10 border border-white/30 active:scale-90 transition-transform duration-200"
             style={{ x, background: bgColor, color: 'white' }}
           >
-            {type === 'in' ? <Clock className="w-5 h-5 drop-shadow-md" /> : <LogOut className="w-5 h-5 drop-shadow-md rotate-180" />}
+            {type === 'in' ? <Clock className="w-4 h-4 drop-shadow-md" /> : <LogOut className="w-4 h-4 drop-shadow-md rotate-180" />}
           </motion.div>
         </div>
       </div>

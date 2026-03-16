@@ -9,6 +9,7 @@ import BottomNav from '@/components/BottomNav';
 import { useToast } from '@/components/Toast';
 import { useBranches } from '@/hooks/useBranches';
 import { formatDateThai } from '@/lib/date-utils';
+import { usePusher } from '@/hooks/usePusher';
 
 interface CorrectionRequest {
   _id: string;
@@ -68,6 +69,9 @@ export default function AdminCorrectionPage() {
       setLoading(false);
     }
   }, [showToast]);
+
+  // Real-time listener for new correction requests
+  usePusher('users', [{ event: 'new-correction-request', callback: fetchRequests }], !!user);
 
   useEffect(() => {
     if (user) fetchRequests();
