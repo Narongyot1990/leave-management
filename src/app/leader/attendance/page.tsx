@@ -338,7 +338,7 @@ function SlideButton({ type, disabled, onSuccess, errorMsg, isClockedIn }: any) 
   }, []);
 
   const opacity = useTransform(x, [0, type === 'in' ? maxWidth : -maxWidth], [0.2, 1]);
-  const bgColor = type === 'in' ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)';
+  const bgColor = type === 'in' ? 'linear-gradient(135deg, #6b7280 0%, #374151 100%)' : 'linear-gradient(135deg, #34d399 0%, #059669 100%)';
   const label = type === 'in' ? `Slide to Clock In` : `Slide to Clock Out`;
 
   const onDragEnd = () => {
@@ -351,7 +351,7 @@ function SlideButton({ type, disabled, onSuccess, errorMsg, isClockedIn }: any) 
       onSuccess();
     } else {
       // iPhone Spring back animation
-      animate(x, 0, { type: 'spring', stiffness: 450, damping: 25 });
+      animate(x, 0, { type: 'spring', stiffness: 300, damping: 20 });
     }
     
     // Reset if success or threshold met
@@ -367,7 +367,7 @@ function SlideButton({ type, disabled, onSuccess, errorMsg, isClockedIn }: any) 
           ${isClockedIn 
             ? 'bg-black/40 border-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_8px_32px_rgba(0,0,0,0.4)]' 
             : 'bg-white/10 dark:bg-black/30 border-white/10 dark:border-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.3)]'}`}
-        style={{ border: '1px solid', backdropFilter: 'blur(24px)' }}
+        style={{ border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.1)', backdropFilter: 'blur(24px)' }}
       >
         <motion.div style={{ opacity }} className="absolute inset-0 flex items-center justify-center font-black text-[10px] uppercase tracking-[0.2em] pointer-events-none text-white/90 drop-shadow-md text-center">
            {errorMsg ? (
