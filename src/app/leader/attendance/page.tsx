@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { MapPin, Clock, CheckCircle2, AlertCircle, History as HistoryIcon, Navigation as NavIcon, LocateFixed, Trash2, Building2, ChevronRight, LogOut, MessageSquare, Send, CalendarDays, MapPinned, Briefcase, FileEdit, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
@@ -18,7 +18,7 @@ const BranchMap = dynamic(() => import('@/components/BranchMap'), {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-export default function AttendancePage() {
+function AttendanceContent() {
   const router = useRouter();
   const { branches } = useBranches();
   const { showToast } = useToast();
@@ -67,7 +67,7 @@ export default function AttendancePage() {
     if (!user?._id) return;
     try {
       const today = new Date().toISOString().split('T')[0];
-      const res = await fetch('https://drivers-tau.vercel.app/api/attendance?date=${today}&userId=${user._id}`);
+      const res = await fetch(`/api/attendance?date=${today}&userId=${user._id}`);
       const data = await res.json();
       if (data.success) {
         const sorted = data.records.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -93,7 +93,7 @@ export default function AttendancePage() {
 
   const fetchMyCorrections = useCallback(async () => {
     try {
-      const res = await fetch('https://drivers-tau.vercel.app/api/attendance/correction');
+      const res = await fetch(`/api/attendance/correction`);
       const data = await res.json();
       if (data.success) {
         setMyCorrections(data.corrections || []);
@@ -179,7 +179,7 @@ export default function AttendancePage() {
   const handleDeleteRecord = async (id: string) => {
     if (!confirm('ยืนยันการลบรายการนี้?')) return;
     try {
-      const res = await fetch('https://drivers-tau.vercel.app/api/attendance?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/attendance?id=${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         showToast('success', 'ลบรายการสำเร็จ');
@@ -195,7 +195,7 @@ export default function AttendancePage() {
     setActionLoading(true);
     try {
       const targetBranchCode = user?.branch || 'AYA';
-      const res = await fetch('https://drivers-tau.vercel.app/api/attendance/correction', {
+      const res = await fetch(`/api/attendance/correction`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -879,5 +879,21 @@ function SlideButton({ type, disabled, onSuccess, errorMsg, isClockedIn }: any) 
         </div>
       </div>
     </div>
+  );
+}
+
+function Loading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+      <div className="w-10 h-10 rounded-full border-[3px] animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+    </div>
+  );
+}
+
+export default function AttendancePage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <AttendanceContent />
+    </Suspense>
   );
 }

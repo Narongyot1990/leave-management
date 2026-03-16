@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Users, Search, Edit3, Trash2, X, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, Plus, Phone, PhoneCall, MessageCircle, Shield, ChevronRight, MapPin, User, CalendarDays } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
