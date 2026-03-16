@@ -2,21 +2,23 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, useMotionValue, useTransform, animate, PanInfo } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Clock, Briefcase, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Clock, Briefcase, CheckCircle2, Loader2 } from 'lucide-react';
 
 interface SlideButtonProps {
-  type: 'in' | 'out';
-  disabled?: boolean;
-  onSuccess: () => void;
-  isClockedIn?: boolean;
+  onSuccess: () => Promise<void>;
+  lastType: 'in' | 'out' | null;
+  isInRange: boolean;
+  isLoading?: boolean;
 }
 
-export default function SlideButton({ type, disabled, onSuccess, isClockedIn }: SlideButtonProps) {
+export default function SlideButton({ onSuccess, lastType, isInRange, isLoading }: SlideButtonProps) {
   const [complete, setComplete] = useState(false);
   const x = useMotionValue(0);
   
-  // Slide right for 'in', Slide left for 'out'
-  const isClockIn = type === 'in';
+  // Decide next action: if last was 'in', next is 'out'. If null or 'out', next is 'in'.
+  const isClockIn = lastType === 'out' || lastType === null;
+  const isOffsite = !isInRange;
+  
   const constraintsRef = useRef(null);
   
   const width = 280; // Total width of container

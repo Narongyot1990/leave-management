@@ -1,7 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { History as HistoryIcon, Trash2, MapPin, ShieldCheck, MapPinned, Briefcase, MessageSquare, ArrowRight, Circle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { History as HistoryIcon, Trash2, MapPin, ShieldCheck, MapPinned, Briefcase, MessageSquare, ArrowRight, Circle, AlertCircle } from 'lucide-react';
 
 interface TimelineEvent {
   _id: string;
@@ -26,9 +26,10 @@ interface HistoryTimelineProps {
   pairs: AttendancePair[];
   onDeleteRecord: (id: string) => void;
   onRequestCorrection: (type: 'in' | 'out') => void;
+  isSidebar?: boolean;
 }
 
-export function HistoryTimeline({ pairs, onDeleteRecord, onRequestCorrection }: HistoryTimelineProps) {
+export function HistoryTimeline({ pairs, onDeleteRecord, onRequestCorrection, isSidebar = false }: HistoryTimelineProps) {
   const formatTime = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
@@ -38,6 +39,140 @@ export function HistoryTimeline({ pairs, onDeleteRecord, onRequestCorrection }: 
     const d = new Date(iso);
     return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
   };
+
+  if (isSidebar) {
+    return (
+      <div className="flex flex-col h-full bg-[var(--bg-surface)]">
+        {/* Sidebar Header */}
+        <div className="p-8 border-b border-[var(--border)] shrink-0 bg-[var(--bg-surface)]/80 backdrop-blur-md z-10 sticky top-0">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
+              <HistoryIcon className="w-6 h-6 text-[var(--accent)]" />
+              History
+            </h2>
+            <div className="px-3 py-1 rounded-full bg-[var(--bg-inset)] border border-[var(--border)]">
+              <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">{pairs.length} Sessions</span>
+            </div>
+          </div>
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex gap-3 shadow-sm">
+            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 leading-relaxed">
+              Sessions are grouped by In/Out. Delete a session to correct mistakes or recalculate working hours.
+            </p>
+          </div>
+        </div>
+
+        {/* Sidebar Scroller */}
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-6 bg-[var(--bg-base)]/30">
+          <AnimatePresence mode="popLayout">
+            {pairs.length === 0 ? (
+              <div className="py-20 text-center flex flex-col items-center gap-4 opacity-20">
+                <HistoryIcon className="w-12 h-12" />
+                <p className="text-xs font-black uppercase tracking-[0.2em]">No history found</p>
+              </div>
+            ) : (
+              pairs.map((pair, idx) => {
+                const workingTime = pair.in && pair.out 
+                  ? `${Math.floor((new Date(pair.out.timestamp).getTime() - new Date(pair.in.timestamp).getTime()) / 3600000)}h ${Math.floor(((new Date(pair.out.timestamp).getTime() - new Date(pair.in.timestamp).getTime()) % 3600000) / 60000)}m`
+                  : null;
+
+                return (
+                  <motion.div
+                    key={pair.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, x: 20 }}
+                    className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-[32px] p-6 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden"
+                  >
+                    {/* Visual Accent */}
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-[var(--accent)]/10" />
+
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-2">
+                         <div className="px-2.5 py-1 rounded-lg bg-[var(--bg-inset)] border border-[var(--border)] text-[10px] font-black tracking-tighter opacity-60">
+                           {pair.in ? formatDate(pair.in.timestamp) : pair.out ? formatDate(pair.out.timestamp) : '---'}
+                         </div>
+                      </div>
+                      
+                      {/* REDESIGNED: High Visibility Delete Button */}
+                      <button 
+                        onClick={() => {
+                          if (pair.in) onDeleteRecord(pair.in._id);
+                          if (pair.out) onDeleteRecord(pair.out._id);
+                        }}
+                        className="h-10 px-4 rounded-xl bg-rose-500 text-white flex items-center gap-2 hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-500/20"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span className="text-[9px] font-black uppercase tracking-widest">Delete</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                      {/* Clock In */}
+                      <div className="flex-1">
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-2 flex items-center gap-1.5 justify-start">
+                          <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                          Clock In
+                        </p>
+                        {pair.in ? (
+                          <div className="space-y-1 text-left">
+                            <p className="text-2xl font-black tabular-nums leading-none">
+                              {formatTime(pair.in.timestamp)}
+                            </p>
+                            <p className="text-[9px] font-bold opacity-30 uppercase tracking-widest truncate">{pair.in.branch || '---'}</p>
+                          </div>
+                        ) : (
+                          <button onClick={() => onRequestCorrection('in')} className="text-rose-500 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/10 px-2.5 py-1.5 rounded-xl border border-rose-500/20 block w-full text-center">
+                            Missing In
+                          </button>
+                        )}
+                      </div>
+
+                      <ArrowRight className="w-4 h-4 opacity-10 shrink-0" />
+
+                      {/* Clock Out */}
+                      <div className="flex-1 text-right">
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-2 flex items-center justify-end gap-1.5">
+                          Clock Out
+                          <div className={`w-1 h-1 rounded-full ${pair.out ? 'bg-rose-500' : 'bg-emerald-500 animate-pulse'}`} />
+                        </p>
+                        {pair.out ? (
+                          <div className="space-y-1 text-right">
+                            <p className="text-2xl font-black tabular-nums leading-none">
+                              {formatTime(pair.out.timestamp)}
+                            </p>
+                            <p className="text-[9px] font-bold opacity-30 uppercase tracking-widest truncate">{pair.out.branch || '---'}</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-end gap-1">
+                            {pair.in ? (
+                              <span className="text-emerald-500 text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/10">Active Now</span>
+                            ) : (
+                              <button onClick={() => onRequestCorrection('out')} className="text-rose-500 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/10 px-2.5 py-1.5 rounded-xl border border-rose-500/20 block w-full text-center">
+                                Missing Out
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {workingTime && (
+                      <div className="mt-6 pt-4 border-t border-[var(--border)] border-dashed flex justify-between items-center">
+                        <span className="text-[9px] font-black uppercase tracking-widest opacity-30">Shift Duration</span>
+                        <span className="text-xs font-black text-[var(--accent)]">{workingTime}</span>
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card overflow-hidden bg-[var(--bg-surface)] border-[var(--border)] rounded-[32px] shadow-lg">
