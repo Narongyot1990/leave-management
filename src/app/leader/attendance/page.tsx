@@ -246,10 +246,10 @@ export default function AttendancePage() {
             
             {/* Warp Controls - iPhone Style */}
             <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
-               <button onClick={() => warpTo('user')} className="w-11 h-11 rounded-2xl bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-xl flex items-center justify-center text-[var(--accent)] border border-white/20 transition-transform active:scale-90">
+               <button onClick={() => warpTo('user')} className="w-9 h-9 rounded-2xl bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-xl flex items-center justify-center text-[var(--accent)] border border-white/20 transition-transform active:scale-90">
                   <LocateFixed className="w-5 h-5" />
                </button>
-               <button onClick={() => warpTo('office')} className="w-11 h-11 rounded-2xl bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-xl flex items-center justify-center text-amber-500 border border-white/20 transition-transform active:scale-90">
+               <button onClick={() => warpTo('office')} className="w-9 h-9 rounded-2xl bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-xl flex items-center justify-center text-amber-500 border border-white/20 transition-transform active:scale-90">
                   <Building2 className="w-5 h-5" />
                </button>
             </div>
@@ -279,6 +279,7 @@ export default function AttendancePage() {
                             </div>
                          </motion.div>
                        )}
+                       
                        <SlideButton 
                          type={canClockIn ? 'in' : 'out'} 
                          disabled={!isInRange || actionLoading}
