@@ -141,7 +141,7 @@ function LeaderHistoryContent() {
       const [leaveRes, substituteRes, attendanceRes] = await Promise.all([
         fetch(leaveUrl),
         fetch(subUrl),
-        fetch(`/api/attendance?userId=${user._id}`)
+        fetch(`/api/attendance?userId=${user.id}`)
       ]);
 
       const leaveData = await leaveRes.json();
