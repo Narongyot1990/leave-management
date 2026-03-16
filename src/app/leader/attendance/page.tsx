@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { MapPin, Clock, CheckCircle2, AlertCircle, History as HistoryIcon, Navigation as NavIcon, LocateFixed, Trash2, Building2, ChevronRight, LogOut } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -195,10 +195,8 @@ export default function AttendancePage() {
            </button>
         </header>
 
-        <main className="px-4 max-w-xl mx-auto space-y-4">
-          
-          {/* Map Area - Top */}
-          <div className="relative w-full h-[180px] rounded-3xl overflow-hidden border border-[var(--border)] shadow-xl mt-2">
+          {/* Map Area - Integrated Controls */}
+          <div className="relative w-full h-[300px] rounded-[32px] overflow-hidden border border-[var(--border)] shadow-2xl mt-2 bg-[var(--bg-inset)]">
             {branchLocation && (
               <BranchMap 
                 ref={mapRef}
@@ -210,64 +208,62 @@ export default function AttendancePage() {
               />
             )}
             
-            {/* Warp Controls */}
-            <div className="absolute top-3 right-3 flex flex-col gap-2 z-[1000]">
-               <button onClick={() => warpTo('user')} className="w-10 h-10 rounded-xl bg-white/80 dark:bg-black/60 shadow-lg backdrop-blur-md flex items-center justify-center text-[var(--accent)] border border-white/20">
+            {/* Warp Controls - iPhone Style */}
+            <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
+               <button onClick={() => warpTo('user')} className="w-11 h-11 rounded-2xl bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-xl flex items-center justify-center text-[var(--accent)] border border-white/20 transition-transform active:scale-90">
                   <LocateFixed className="w-5 h-5" />
                </button>
-               <button onClick={() => warpTo('office')} className="w-10 h-10 rounded-xl bg-white/80 dark:bg-black/60 shadow-lg backdrop-blur-md flex items-center justify-center text-amber-500 border border-white/20">
+               <button onClick={() => warpTo('office')} className="w-11 h-11 rounded-2xl bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-xl flex items-center justify-center text-amber-500 border border-white/20 transition-transform active:scale-90">
                   <Building2 className="w-5 h-5" />
                </button>
             </div>
 
-            {/* Distance Display */}
-            <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 text-white flex items-center gap-3">
+            {/* Distance Display - Floating Pill */}
+            <div className="absolute top-4 left-4 z-[1000] bg-black/40 dark:bg-white/10 backdrop-blur-xl px-4 py-2.5 rounded-2xl border border-white/10 text-white flex items-center gap-3 shadow-lg">
                <div>
-                  <p className="text-[8px] font-black opacity-50 tracking-widest uppercase">Distance</p>
-                  <p className="text-[13px] font-bold tracking-tight leading-none">
-                     {distance !== null ? `${Math.round(distance)} ม.` : '---'}
+                  <p className="text-[7px] font-black opacity-60 tracking-widest uppercase">Distance</p>
+                  <p className="text-[12px] font-black tracking-tight leading-none bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+                     {distance !== null ? `${Math.round(distance)}m` : '---'}
                   </p>
                </div>
-               <div className="w-[1px] h-4 bg-white/20" />
-               <div>
-                  <p className="text-[8px] font-black opacity-50 tracking-widest uppercase">KM</p>
-                  <p className="text-[13px] font-bold tracking-tight leading-none">
-                     {distance !== null ? `${(distance / 1000).toFixed(2)} กม.` : '---'}
-                  </p>
-               </div>
+               <div className="w-[1px] h-3 bg-white/20" />
+               <p className="text-[12px] font-black tracking-tight leading-none opacity-80">
+                  {distance !== null ? `${(distance / 1000).toFixed(2)}km` : '---'}
+               </p>
             </div>
-          </div>
 
-          {/* Action Area (Middle) - Interaction point */}
-          <div className="py-2">
-             <AnimatePresence mode="wait">
-                {canClockIn || canClockOut ? (
-                  <div className="space-y-4">
-                     <SlideButton 
-                       type={canClockIn ? 'in' : 'out'} 
-                       disabled={!isInRange || actionLoading}
-                       onSuccess={() => handleClockAction(canClockIn ? 'in' : 'out')}
-                       errorMsg={!isInRange ? `นอกรัศมี ${Math.round(distance || 0)} ม.` : ''}
-                       isClockedIn={isClockedIn}
-                     />
-                     {isClockedIn && (
-                       <div className="flex items-center justify-center gap-2 py-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                          <span className="text-[10px] font-black uppercase text-emerald-500 tracking-widest">
-                            Shift in Progress: {getWorkingTime()}
-                          </span>
-                       </div>
-                     )}
-                  </div>
-                ) : isClockedOut ? (
-                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="card p-5 text-center bg-emerald-500/5 border-dashed border-emerald-500/20">
-                     <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-500 opacity-60" />
-                     <p className="text-xs font-black uppercase text-emerald-500 tracking-widest">Shift Completed</p>
-                     <p className="text-[10px] font-bold opacity-60 mt-1 uppercase">เวลาทำงานรวม: {getWorkingTime()}</p>
-                     <p className="text-[9px] font-bold opacity-40 mt-1 uppercase">บันทึกเวลาเรียบร้อยสำหรับวันนี้</p>
-                  </motion.div>
-                ) : null}
-             </AnimatePresence>
+            {/* Integrated Action Area - Floating Bottom */}
+            <div className="absolute bottom-4 left-4 right-4 z-[1000] space-y-3">
+               <AnimatePresence mode="wait">
+                  {canClockIn || canClockOut ? (
+                    <div className="space-y-3">
+                       {isClockedIn && (
+                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center">
+                            <div className="px-4 py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 flex items-center gap-2 shadow-lg">
+                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                               <span className="text-[10px] font-black uppercase text-emerald-500 tracking-wider">
+                                 Active: {getWorkingTime()}
+                               </span>
+                            </div>
+                         </motion.div>
+                       )}
+                       <SlideButton 
+                         type={canClockIn ? 'in' : 'out'} 
+                         disabled={!isInRange || actionLoading}
+                         onSuccess={() => handleClockAction(canClockIn ? 'in' : 'out')}
+                         errorMsg={!isInRange ? `Out of Range (${Math.round(distance || 0)}m)` : ''}
+                         isClockedIn={isClockedIn}
+                       />
+                    </div>
+                  ) : isClockedOut ? (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 text-center bg-white/10 dark:bg-black/40 backdrop-blur-xl rounded-[28px] border border-white/10 shadow-2xl">
+                       <CheckCircle2 className="w-6 h-6 mx-auto mb-1 text-emerald-400" />
+                       <p className="text-[10px] font-black uppercase text-white tracking-[0.2em]">Shift Completed</p>
+                       <p className="text-[9px] font-bold text-white/60 mt-0.5 uppercase tracking-wide">Work Time: {getWorkingTime()}</p>
+                    </motion.div>
+                  ) : null}
+               </AnimatePresence>
+            </div>
           </div>
 
           {/* New History List - Bottom (Step Progress) */}
@@ -337,46 +333,55 @@ function SlideButton({ type, disabled, onSuccess, errorMsg, isClockedIn }: any) 
 
   useEffect(() => {
     if (containerRef.current) {
-      setMaxWidth(containerRef.current.clientWidth - 56); // handle - thumb width (48) - padding
+      // Calculate max drag distance based on container width
+      setMaxWidth(containerRef.current.clientWidth - 56); // handle (48) + padding
     }
   }, []);
 
-  const opacity = useTransform(x, [0, type === 'in' ? maxWidth : -maxWidth], [0.3, 1]);
-  const bgColor = type === 'in' ? 'var(--accent)' : '#f43f5e';
-  const label = type === 'in' ? 'Slide Right to Clock In' : 'Slide Left to Clock Out';
+  const opacity = useTransform(x, [0, type === 'in' ? maxWidth : -maxWidth], [0.2, 1]);
+  const bgColor = type === 'in' ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)';
+  const label = type === 'in' ? `Slide to Clock In` : `Slide to Clock Out`;
 
   const onDragEnd = () => {
     const currentX = x.get();
-    if (type === 'in' && currentX > maxWidth * 0.8 && !disabled) {
+    const threshold = maxWidth * 0.82;
+    
+    if (type === 'in' && currentX > threshold && !disabled) {
       onSuccess();
-    } else if (type === 'out' && currentX < -maxWidth * 0.8 && !disabled) {
+    } else if (type === 'out' && currentX < -threshold && !disabled) {
       onSuccess();
+    } else {
+      // iPhone Spring back animation
+      animate(x, 0, { type: 'spring', stiffness: 450, damping: 25 });
     }
-    x.set(0);
+    
+    // Reset if success or threshold met
+    if (!disabled && ((type === 'in' && currentX > threshold) || (type === 'out' && currentX < -threshold))) {
+      x.set(0);
+    }
   };
 
   return (
     <div className="space-y-3" ref={containerRef}>
       <div 
-        className={`relative w-full h-16 rounded-[28px] p-2 flex items-center overflow-hidden transition-all shadow-xl
-          ${isClockedIn ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-[var(--bg-inset)] border-[var(--border)]'}`}
+        className={`relative w-full h-[60px] rounded-[24px] p-1.5 flex items-center overflow-hidden shadow-2xl backdrop-blur-3xl transition-all
+          ${isClockedIn ? 'bg-black/30 border-white/5 shadow-inner' : 'bg-white/10 dark:bg-black/30 border-white/10 dark:border-white/5'}`}
         style={{ border: '1px solid' }}
       >
-        <motion.div style={{ opacity }} className="absolute inset-0 flex items-center justify-center font-black text-[10px] uppercase tracking-[0.2em] pointer-events-none text-center">
+        <motion.div style={{ opacity }} className="absolute inset-0 flex items-center justify-center font-black text-[10px] uppercase tracking-[0.25em] pointer-events-none text-white drop-shadow-md text-center">
            {errorMsg ? (
-             <span className="text-red-500/60 leading-tight">{errorMsg}</span>
+             <span className="text-rose-300 leading-tight px-4">{errorMsg}</span>
            ) : (
-             <span className="leading-tight">{label}</span>
+             <span className="leading-tight pl-2">{label}</span>
            )}
         </motion.div>
         
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
-           <div className="flex gap-2">
-              {type === 'in' ? (
-                [1,2,3,4].map(i => <ChevronRight key={i} className="w-4 h-4 animate-pulse" style={{ animationDelay: `${i*100}ms` }} />)
-              ) : (
-                [4,3,2,1].map(i => <ChevronRight key={i} className="w-4 h-4 rotate-180 animate-pulse" style={{ animationDelay: `${i*100}ms` }} />)
-              )}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+           <div className={`flex gap-1.5 ${type === 'in' ? 'pl-8' : 'pr-8'}`}>
+              {[1,2,3,4].map(i => (
+                <ChevronRight key={i} className={`w-3.5 h-3.5 ${type === 'out' ? 'rotate-180' : ''} animate-pulse`} 
+                  style={{ animationDelay: `${type === 'in' ? i*150 : (5-i)*150}ms` }} />
+              ))}
            </div>
         </div>
 
@@ -384,12 +389,12 @@ function SlideButton({ type, disabled, onSuccess, errorMsg, isClockedIn }: any) 
           <motion.div
             drag="x"
             dragConstraints={type === 'in' ? { left: 0, right: maxWidth } : { left: -maxWidth, right: 0 }}
-            dragElastic={0.1}
+            dragElastic={0.08}
             onDragEnd={onDragEnd}
-            className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg cursor-grab active:cursor-grabbing z-10"
+            className="w-[48px] h-[48px] rounded-[18px] flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.3)] cursor-grab active:cursor-grabbing z-10 border border-white/20 active:scale-95 transition-transform"
             style={{ x, background: bgColor, color: 'white' }}
           >
-            {type === 'in' ? <Clock className="w-5 h-5" /> : <LogOut className="w-5 h-5" />}
+            {type === 'in' ? <Clock className="w-5 h-5 drop-shadow-sm" /> : <LogOut className="w-5 h-5 drop-shadow-sm rotate-180" />}
           </motion.div>
         </div>
       </div>
