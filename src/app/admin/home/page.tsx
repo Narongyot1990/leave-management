@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { CheckSquare, Users, Clock, CalendarDays, ClipboardCheck, MapPin, User, Shield, LogOut, ChevronRight } from 'lucide-react';
+import { CheckSquare, Users, Clock, CalendarDays, ClipboardCheck, MapPin, User, Shield, LogOut, ChevronRight, MessageSquare } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -19,6 +19,7 @@ export default function AdminHomePage() {
     pendingLeaves: 0,
     pendingDrivers: 0,
     totalLeaders: 0,
+    pendingCorrections: 0,
   });
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export default function AdminHomePage() {
     { channel: 'users', bindings: [
       { event: 'new-driver', callback: fetchCounts },
       { event: 'driver-activated', callback: fetchCounts },
+      { event: 'new-correction-request', callback: fetchCounts },
     ]},
   ], !!user);
 
@@ -74,6 +76,7 @@ export default function AdminHomePage() {
     { val: counts.totalLeaders, label: 'Leaders', color: 'var(--success)' },
     { val: counts.pendingLeaves, label: 'ขอลา', color: 'var(--accent)' },
     { val: counts.pendingDrivers, label: 'รออนุมัติ', color: 'var(--warning)' },
+    { val: counts.pendingCorrections || 0, label: 'แก้เวลา', color: 'var(--amber-500)' },
   ];
 
   return (
@@ -116,12 +119,12 @@ export default function AdminHomePage() {
         <main className="flex-1 overflow-y-auto custom-scrollbar px-3 py-3">
           <div className="max-w-2xl mx-auto space-y-4">
 
-            {/* Stats: 4 items in 1 row - Compact */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-4 gap-2">
+            {/* Stats: 5 items in 1 row - Compact */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-5 gap-1.5">
               {stats.map((s) => (
-                <div key={s.label} className="card p-2 text-center border-b-2 bg-[var(--bg-surface)]" style={{ borderBottomColor: s.color }}>
-                  <p className="text-lg font-black leading-none" style={{ color: s.color }}>{s.val}</p>
-                  <p className="text-[8px] uppercase font-bold mt-1 tracking-tighter opacity-40 leading-none">{s.label}</p>
+                <div key={s.label} className="card p-1.5 text-center border-b-2 bg-[var(--bg-surface)]" style={{ borderBottomColor: s.color }}>
+                  <p className="text-base font-black leading-none" style={{ color: s.color }}>{s.val}</p>
+                  <p className="text-[7px] uppercase font-bold mt-1 tracking-tighter opacity-40 leading-none">{s.label}</p>
                 </div>
               ))}
             </motion.div>
@@ -158,8 +161,9 @@ export default function AdminHomePage() {
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   <h3 className="text-[10px] font-black uppercase tracking-widest opacity-30">Operations</h3>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-5 gap-1.5">
                   <MenuCard label="อนุมัติลา" icon={CheckSquare} href="/leader/approve" color="var(--success)" desc="Leaves" />
+                  <MenuCard label="แก้เวลา" icon={MessageSquare} href="/admin/attendance/corrections" color="var(--amber-500)" desc="Correction" badge={counts.pendingCorrections} />
                   <MenuCard label="ประวัติ" icon={Clock} href="/leader/history" color="var(--text-muted)" desc="History" />
                   <MenuCard label="พนักงาน" icon={Users} href="/leader/drivers" color="var(--accent)" desc="Drivers" />
                   <MenuCard label="มอบหมายงาน" icon={ClipboardCheck} href="/leader/tasks" color="var(--info)" desc="Tasks" />
@@ -191,19 +195,24 @@ export default function AdminHomePage() {
   );
 }
 
-function MenuCard({ label, icon: Icon, href, color, desc, horizontal }: any) {
+function MenuCard({ label, icon: Icon, href, color, desc, horizontal, badge }: any) {
   const router = useRouter();
   return (
     <motion.button
       whileTap={{ scale: 0.96 }}
       onClick={() => router.push(href)}
-      className={`card p-2 flex ${horizontal ? 'items-center gap-3' : 'flex-col items-center gap-1.5'} cursor-pointer group transition-all min-h-[70px] justify-center`}
+      className={`card p-2 flex ${horizontal ? 'items-center gap-3' : 'flex-col items-center gap-1.5'} cursor-pointer group transition-all min-h-[72px] justify-center relative`}
     >
+      {badge > 0 && (
+         <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[8px] font-black flex items-center justify-center shadow-lg border-2 border-[var(--bg-surface)]">
+            {badge > 9 ? '9+' : badge}
+         </div>
+      )}
       <div className="w-8 h-8 rounded-lg bg-[var(--bg-inset)] flex items-center justify-center group-hover:bg-[var(--bg-surface)] transition-colors shrink-0">
         <Icon className="w-4 h-4" style={{ color }} strokeWidth={2.5} />
       </div>
       <div className={horizontal ? 'text-left' : 'text-center'}>
-        <p className="text-[10px] font-black tracking-tight leading-none" style={{ color: 'var(--text-primary)' }}>{label}</p>
+        <p className="text-[10px] font-black tracking-tighter leading-none" style={{ color: 'var(--text-primary)' }}>{label}</p>
         <p className="text-[7px] font-bold opacity-30 uppercase tracking-tighter mt-1">{desc}</p>
       </div>
     </motion.button>

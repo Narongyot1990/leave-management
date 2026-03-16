@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import { LeaveRequest } from '@/models/LeaveRequest';
 import { User } from '@/models/User';
+import { AttendanceCorrection } from '@/models/AttendanceCorrection';
 import { requireAuth } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
@@ -52,11 +53,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (!type || type === 'all') {
-      const [pendingLeaves, pendingDrivers, totalLeaders, activeDrivers] = await Promise.all([
+      const [pendingLeaves, pendingDrivers, totalLeaders, activeDrivers, pendingCorrections] = await Promise.all([
         LeaveRequest.countDocuments(leaveFilter),
         User.countDocuments({ role: 'driver', status: 'pending' }),
         User.countDocuments({ role: 'leader' }),
-        User.countDocuments({ role: 'driver', status: 'active' })
+        User.countDocuments({ role: 'driver', status: 'active' }),
+        AttendanceCorrection.countDocuments({ status: 'pending' })
       ]);
       return NextResponse.json({
         success: true,
@@ -65,6 +67,7 @@ export async function GET(request: NextRequest) {
           pendingDrivers,
           totalLeaders,
           activeDrivers,
+          pendingCorrections
         }
       });
     }

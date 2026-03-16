@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { MapPin, Clock, CheckCircle2, AlertCircle, History as HistoryIcon, Navigation as NavIcon, LocateFixed, Trash2, Building2, ChevronRight, LogOut } from 'lucide-react';
+import { MapPin, Clock, CheckCircle2, AlertCircle, History as HistoryIcon, Navigation as NavIcon, LocateFixed, Trash2, Building2, ChevronRight, LogOut, MessageSquare, Send } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -31,6 +31,10 @@ export default function AttendancePage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [branchRadius, setBranchRadius] = useState(50);
   const [branchLocation, setBranchLocation] = useState<any>(null);
+  const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
+  const [correctionReason, setCorrectionReason] = useState('');
+  const [correctionTime, setCorrectionTime] = useState(new Date().toISOString().slice(0, 16));
+  const [correctionType, setCorrectionType] = useState<'in' | 'out'>('in');
 
   useEffect(() => {
     const fetchMe = async () => {
@@ -150,6 +154,38 @@ export default function AttendancePage() {
     } catch { /* ignore */ }
   };
 
+  const handleRequestCorrection = async () => {
+    if (!correctionReason) return showToast('error', 'กรุณาระบุเหตุผล');
+    setActionLoading(true);
+    try {
+      const targetBranchCode = user?.branch || 'AYA';
+      const res = await fetch('/api/attendance/correction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: correctionType,
+          requestedTime: new Date(correctionTime),
+          reason: correctionReason,
+          location,
+          distance,
+          branch: targetBranchCode
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', 'ส่งคำขอแก้ไขเวลาแล้ว รอ Admin อนุมัติ');
+        setIsCorrectionModalOpen(false);
+        setCorrectionReason('');
+      } else {
+        showToast('error', data.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch {
+      showToast('error', 'ไม่สามารถส่งคำขอได้');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const isClockedIn = records.some(r => r.type === 'in');
   const isClockedOut = records.some(r => r.type === 'out');
   const canClockIn = !isClockedIn && !isClockedOut;
@@ -225,14 +261,10 @@ export default function AttendancePage() {
                   <p className="text-[12px] font-black tracking-tight leading-none bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
                      {distance !== null ? `${Math.round(distance)}m` : '---'}
                   </p>
-               </div>
-               <div className="w-[1px] h-3 bg-white/20" />
-               <p className="text-[12px] font-black tracking-tight leading-none opacity-80">
-                  {distance !== null ? `${(distance / 1000).toFixed(2)}km` : '---'}
-               </p>
-            </div>
+                </div>
+             </div>
 
-            {/* Integrated Action Area - Floating Bottom */}
+             {/* Integrated Action Area - Floating Bottom */}
             <div className="absolute bottom-4 left-4 right-4 z-[1000] space-y-3">
                <AnimatePresence mode="wait">
                   {canClockIn || canClockOut ? (
@@ -254,6 +286,22 @@ export default function AttendancePage() {
                          errorMsg={!isInRange ? `Out of Range (${Math.round(distance || 0)}m)` : ''}
                          isClockedIn={isClockedIn}
                        />
+                       
+                       {!isInRange && (
+                         <motion.button
+                           initial={{ opacity: 0 }}
+                           animate={{ opacity: 1 }}
+                           onClick={() => {
+                             setCorrectionType(canClockIn ? 'in' : 'out');
+                             setCorrectionTime(new Date().toISOString().slice(0, 16));
+                             setIsCorrectionModalOpen(true);
+                           }}
+                           className="w-full py-2.5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
+                         >
+                           <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
+                           ขอแก้ไขเวลา (Out of Range)
+                         </motion.button>
+                       )}
                     </div>
                   ) : isClockedOut ? (
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 text-center bg-white/10 dark:bg-black/40 backdrop-blur-xl rounded-[28px] border border-white/10 shadow-2xl">
@@ -315,12 +363,106 @@ export default function AttendancePage() {
           </div>
       </div>
       <BottomNav role="leader" />
-      
-      <style jsx global>{`
+            <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
       `}</style>
+      
+      {/* Correction Modal */}
+      <AnimatePresence>
+        {isCorrectionModalOpen && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCorrectionModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm bg-[var(--bg-surface)] rounded-[32px] overflow-hidden shadow-2xl border border-[var(--border)]"
+            >
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black tracking-tight">ขอแก้ไขเวลา</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Correction Request</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1.5 block">ประเภท</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={() => setCorrectionType('in')}
+                        className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${correctionType === 'in' ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg' : 'bg-[var(--bg-inset)] border-[var(--border)] opacity-60'}`}
+                      >
+                        Clock In
+                      </button>
+                      <button 
+                        onClick={() => setCorrectionType('out')}
+                        className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${correctionType === 'out' ? 'bg-rose-500 text-white border-rose-500 shadow-lg' : 'bg-[var(--bg-inset)] border-[var(--border)] opacity-60'}`}
+                      >
+                        Clock Out
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1.5 block">เวลาที่ต้องการลง</label>
+                    <input 
+                      type="datetime-local" 
+                      value={correctionTime}
+                      onChange={(e) => setCorrectionTime(e.target.value)}
+                      className="w-full p-4 rounded-2xl bg-[var(--bg-inset)] border border-[var(--border)] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1.5 block">เหตุผล / รายละเอียด</label>
+                    <textarea 
+                      value={correctionReason}
+                      onChange={(e) => setCorrectionReason(e.target.value)}
+                      placeholder="เช่น อยู่นอกพื้นที่พิกัดเนื่องจากช่วยเหลือสาขาอื่น..."
+                      rows={3}
+                      className="w-full p-4 rounded-2xl bg-[var(--bg-inset)] border border-[var(--border)] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[var(--accent)] resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mt-8">
+                  <button 
+                    onClick={() => setIsCorrectionModalOpen(false)}
+                    className="py-4 rounded-2xl bg-[var(--bg-inset)] text-[10px] font-black uppercase tracking-widest opacity-60"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button 
+                    disabled={actionLoading}
+                    onClick={handleRequestCorrection}
+                    className="py-4 rounded-2xl bg-[var(--accent)] text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30"
+                  >
+                    {actionLoading ? 'กำลังส่ง...' : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        ส่งคำขอ
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
