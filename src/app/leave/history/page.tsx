@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,7 +45,7 @@ interface DriverUser {
 }
 
 
-export default function LeaveHistoryPage() {
+function LeaveHistoryContent() {
   const router = useRouter();
   const [user, setUser] = useState<DriverUser | null>(null);
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
@@ -287,6 +287,18 @@ export default function LeaveHistoryPage() {
       <ProfileModal user={profileUser} open={showProfile} onClose={() => setShowProfile(false)} />
       <BottomNav role="driver" />
     </div>
+  );
+}
+
+export default function LeaveHistoryPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+        <div className="w-10 h-10 rounded-full border-[3px] animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+      </div>
+    }>
+      <LeaveHistoryContent />
+    </Suspense>
   );
 }
 

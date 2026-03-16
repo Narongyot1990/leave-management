@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Users, ChevronLeft, ChevronRight, History as HistoryIcon, ZoomIn, ZoomOut, RotateCcw, AlertTriangle, CalendarDays, Link, Unlink, LayoutGrid, Calendar } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
@@ -44,7 +44,7 @@ interface TimelineUser {
   sessions: { start: Date; end: Date | null; branch: string; isLate: boolean }[];
 }
 
-export default function AttendanceMonitorPage() {
+function AttendanceMonitorContent() {
   const [users, setUsers] = useState<any[]>([]);
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -729,5 +729,17 @@ export default function AttendanceMonitorPage() {
         .animate-pulse-subtle { animation: pulse-subtle 2s ease-in-out infinite; }
       `}</style>
     </div>
+  );
+}
+
+export default function AttendanceMonitorPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+        <div className="w-10 h-10 rounded-full border-[3px] animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+      </div>
+    }>
+      <AttendanceMonitorContent />
+    </Suspense>
   );
 }
