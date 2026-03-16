@@ -49,8 +49,12 @@ export function useAttendanceController() {
   const fetchRecords = useCallback(async () => {
     if (!user?._id) return;
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const res = await fetch(`/api/attendance?date=${today}&userId=${user._id}`);
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const startDate = thirtyDaysAgo.toISOString().split('T')[0];
+      const endDate = now.toISOString().split('T')[0];
+      
+      const res = await fetch(`/api/attendance?startDate=${startDate}&endDate=${endDate}&userId=${user._id}`);
       const data = await res.json();
       if (data.success) {
         const sorted = data.records.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -215,18 +219,20 @@ export function useAttendanceController() {
 
   const allEvents = useMemo(() => [
     ...records.map(r => ({ ...r, eventType: 'actual' as const })),
-    ...myCorrections.map(c => ({
-      _id: c._id,
-      type: c.type,
-      timestamp: c.requestedTime,
-      branch: c.branch,
-      isInside: c.distance <= (c.radius || 55),
-      distance: c.distance,
-      status: c.status,
-      category: c.category,
-      reason: c.reason,
-      eventType: 'correction' as const
-    }))
+    ...myCorrections
+      .filter(c => c.status !== 'approved') // Approved corrections are now reflected in 'records'
+      .map(c => ({
+        _id: c._id,
+        type: c.type,
+        timestamp: c.requestedTime,
+        branch: c.branch,
+        isInside: (c.distance || 0) <= (c.radius || 55),
+        distance: c.distance,
+        status: c.status,
+        category: c.category,
+        reason: c.reason,
+        eventType: 'correction' as const
+      }))
   ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()), [records, myCorrections]);
 
   const attendancePairs = useMemo(() => {
