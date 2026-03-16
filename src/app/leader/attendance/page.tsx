@@ -210,10 +210,10 @@ export default function AttendancePage() {
             
             {/* Warp Controls - iPhone Style */}
             <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
-               <button onClick={() => warpTo('user')} className="w-11 h-11 rounded-2xl bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-xl flex items-center justify-center text-[var(--accent)] border border-white/20 transition-transform active:scale-90">
+               <button onClick={() => warpTo('user')} className="w-9 h-9 rounded-2xl bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-xl flex items-center justify-center text-[var(--accent)] border border-white/20 transition-transform active:scale-90">
                   <LocateFixed className="w-5 h-5" />
                </button>
-               <button onClick={() => warpTo('office')} className="w-11 h-11 rounded-2xl bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-xl flex items-center justify-center text-amber-500 border border-white/20 transition-transform active:scale-90">
+               <button onClick={() => warpTo('office')} className="w-9 h-9 rounded-2xl bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-xl flex items-center justify-center text-amber-500 border border-white/20 transition-transform active:scale-90">
                   <Building2 className="w-5 h-5" />
                </button>
             </div>
@@ -363,7 +363,7 @@ function SlideButton({ type, disabled, onSuccess, errorMsg, isClockedIn }: any) 
   return (
     <div className="w-full" ref={containerRef}>
       <div 
-        className={`relative max-w-[280px] mx-auto h-[60px] rounded-[28px] p-1.5 flex items-center overflow-hidden transition-all duration-300
+        className={`relative max-w-[220px] mx-auto h-[60px] rounded-[28px] p-1.5 flex items-center overflow-hidden transition-all duration-300
           ${isClockedIn 
             ? 'bg-black/40 border-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_8px_32px_rgba(0,0,0,0.4)]' 
             : 'bg-white/10 dark:bg-black/30 border-white/10 dark:border-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.3)]'}`}
