@@ -67,7 +67,7 @@ export default function AttendancePage() {
     if (!user?._id) return;
     try {
       const today = new Date().toISOString().split('T')[0];
-      const res = await fetch(`/api/attendance?date=${today}&userId=${user._id}`);
+      const res = await fetch('https://drivers-tau.vercel.app/api/attendance?date=${today}&userId=${user._id}`);
       const data = await res.json();
       if (data.success) {
         const sorted = data.records.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -93,7 +93,7 @@ export default function AttendancePage() {
 
   const fetchMyCorrections = useCallback(async () => {
     try {
-      const res = await fetch('/api/attendance/correction');
+      const res = await fetch('https://drivers-tau.vercel.app/api/attendance/correction');
       const data = await res.json();
       if (data.success) {
         setMyCorrections(data.corrections || []);
@@ -151,7 +151,7 @@ export default function AttendancePage() {
     try {
       const targetBranchCode = user?.branch || 'AYA';
       const currentBranch = branches.find(b => b.code === targetBranchCode);
-      const res = await fetch('/api/attendance', {
+      const res = await fetch('https://drivers-tau.vercel.app/api/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -179,7 +179,7 @@ export default function AttendancePage() {
   const handleDeleteRecord = async (id: string) => {
     if (!confirm('ยืนยันการลบรายการนี้?')) return;
     try {
-      const res = await fetch(`/api/attendance?id=${id}`, { method: 'DELETE' });
+      const res = await fetch('https://drivers-tau.vercel.app/api/attendance?id=${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
         showToast('success', 'ลบรายการสำเร็จ');
@@ -195,7 +195,7 @@ export default function AttendancePage() {
     setActionLoading(true);
     try {
       const targetBranchCode = user?.branch || 'AYA';
-      const res = await fetch('/api/attendance/correction', {
+      const res = await fetch('https://drivers-tau.vercel.app/api/attendance/correction', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -230,7 +230,7 @@ export default function AttendancePage() {
     setActionLoading(true);
     try {
       const targetBranchCode = user?.branch || 'AYA';
-      const res = await fetch('/api/attendance/correction', {
+      const res = await fetch('https://drivers-tau.vercel.app/api/attendance/correction', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
