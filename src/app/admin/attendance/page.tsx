@@ -230,7 +230,7 @@ export default function AttendanceMonitorPage() {
   // ---------- Dynamic Column Markers ----------
   const columnHeaders = useMemo(() => {
     const markers: { label: string; subLabel?: string; left: number; key: string; isDayStart?: boolean; isToday?: boolean }[] = [];
-    const intervalMinutes = zoomLevel === 'month' ? 1440 : 60; // Day markers or Hour markers
+    const intervalMinutes = (zoomLevel === 'month' || zoomLevel === 'week') ? 1440 : 60; // Day markers or Hour markers
     
     for (let i = 0; i < totalDays * 24 * 60; i += intervalMinutes) {
       const d = new Date(refDate.getTime() + i * 60000);
@@ -238,7 +238,7 @@ export default function AttendanceMonitorPage() {
       const isToday = d.toDateString() === new Date().toDateString();
       
       let label = "";
-      if (zoomLevel === 'month') {
+      if (zoomLevel === 'month' || zoomLevel === 'week') {
         label = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
       } else {
         label = d.getHours().toString().padStart(2, '0') + ":00";
@@ -246,7 +246,7 @@ export default function AttendanceMonitorPage() {
 
       markers.push({
         label,
-        subLabel: isDayStart && zoomLevel !== 'month' ? d.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric' }) : undefined,
+        subLabel: (isDayStart && zoomLevel !== 'month') ? d.toLocaleDateString('th-TH', { weekday: 'short' }) : undefined,
         left: i * pxPerMinute,
         key: `m-${i}`,
         isDayStart,
@@ -255,6 +255,14 @@ export default function AttendanceMonitorPage() {
     }
     return markers;
   }, [zoomLevel, pxPerMinute, refDate, totalDays]);
+
+  const getInitials = (name: string) => {
+    if (!name) return '';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 0) return '';
+    if (parts.length === 1) return parts[0].substring(0, 2);
+    return parts[0].charAt(0) + parts[parts.length - 1].charAt(0);
+  };
 
   // ---------- Date Display ----------
   // ---------- Display Utils ----------
@@ -268,7 +276,7 @@ export default function AttendanceMonitorPage() {
   const isZoomMax = zoomValue === TIMELINE_CONFIG.ZOOM.MAX;
 
   // Column sizing: hour view = wider columns for detail
-  const colMinWidth = zoomLevel === 'month' ? 32 : zoomLevel === 'hour' ? 60 : 40;
+  const colMinWidth = zoomLevel === 'month' ? 32 : zoomLevel === 'week' ? 38 : zoomLevel === 'hour' ? 60 : 40;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--bg-base)' }}>
@@ -302,7 +310,8 @@ export default function AttendanceMonitorPage() {
                 <button key={lbl} onClick={() => handleZoomChange(idx)}
                   className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${zoomValue === idx
                     ? 'bg-[var(--accent)] text-white shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}>
-                  {lbl}
+                  <span className="md:hidden">{lbl.charAt(0)}</span>
+                  <span className="hidden md:inline">{lbl}</span>
                 </button>
               ))}
               <button onClick={() => handleZoomChange(zoomValue + 1)} disabled={isZoomMax}
@@ -429,8 +438,11 @@ export default function AttendanceMonitorPage() {
           {/* Column Headers */}
           <div className="flex shrink-0 border-b border-[var(--border)] bg-[var(--bg-surface)]">
             {/* Staff column header */}
-            <div className="w-[140px] md:w-[180px] shrink-0 border-r border-[var(--border)] bg-slate-50 dark:bg-slate-900/50 flex items-center px-3 py-2 sticky left-0 z-20">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Staff ({filteredTimelineData.length})</span>
+            <div className="w-[50px] md:w-[180px] shrink-0 border-r border-[var(--border)] bg-slate-50 dark:bg-slate-900/50 flex items-center justify-center md:justify-start md:px-3 py-2 sticky left-0 z-20">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                <span className="md:hidden">STF</span>
+                <span className="hidden md:inline">Staff ({filteredTimelineData.length})</span>
+              </span>
             </div>
             {/* Timeline column headers */}
             <div className="flex-1 overflow-x-auto custom-scrollbar no-scrollbar-ui" ref={scrollContainerRef}
@@ -498,9 +510,9 @@ export default function AttendanceMonitorPage() {
                     onClick={() => setSelectedUser(isSelected ? null : user.id)}>
 
                     {/* Staff Info (sticky left) */}
-                    <div className="w-[140px] md:w-[180px] shrink-0 px-2 py-1.5 border-r border-[var(--border)]/30 bg-[var(--bg-surface)] sticky left-0 z-10 flex items-center gap-2">
+                    <div className="w-[50px] md:w-[180px] shrink-0 px-1 md:px-2 py-1.5 border-r border-[var(--border)]/30 bg-[var(--bg-surface)] sticky left-0 z-10 flex flex-col md:flex-row items-center gap-1 md:gap-2">
                       <div className="relative shrink-0">
-                        <div className="w-7 h-7 rounded-full overflow-hidden bg-[var(--bg-inset)]">
+                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full overflow-hidden bg-[var(--bg-inset)] border border-[var(--border)] shadow-sm">
                           {user.image ? (
                             <img src={user.image} className="w-full h-full object-cover" alt="" />
                           ) : (
@@ -509,13 +521,19 @@ export default function AttendanceMonitorPage() {
                             </div>
                           )}
                         </div>
-                        {isActive && <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-[var(--accent)] rounded-full border-[1.5px] border-[var(--bg-surface)]" />}
+                        {isActive && <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border-[1.5px] border-[var(--bg-surface)] shadow-sm" />}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[10px] md:text-[11px] font-bold truncate text-[var(--text-primary)]">{user.name}</p>
-                        <div className="flex items-center gap-1 mt-0.5">
+                      
+                      <div className="min-w-0 flex-1 text-center md:text-left">
+                        {/* Mobile Initials */}
+                        <p className="text-[9px] font-black text-[var(--accent)] md:hidden tracking-tighter uppercase">{getInitials(user.name)}</p>
+                        
+                        {/* Desktop Full Name */}
+                        <p className="text-[11px] font-bold truncate text-[var(--text-primary)] hidden md:block">{user.name}</p>
+                        
+                        <div className="hidden md:flex items-center gap-1 mt-0.5">
                           {hasLate && <AlertTriangle className="w-2.5 h-2.5 text-amber-500 shrink-0" />}
-                          <span className={`text-[7px] md:text-[8px] font-medium uppercase truncate ${isActive ? 'text-[var(--accent)]' : hasLate ? 'text-amber-500' : 'opacity-30'}`}>
+                          <span className={`text-[8px] font-medium uppercase truncate ${isActive ? 'text-[var(--accent)]' : hasLate ? 'text-amber-500' : 'opacity-30'}`}>
                             {isActive ? 'Active' : noActivity ? 'Absent' : hasLate ? 'Late' : 'Off duty'}
                           </span>
                         </div>

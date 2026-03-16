@@ -7,10 +7,10 @@ export const TIMELINE_CONFIG = {
   /** Zoom level settings */
   ZOOM: {
     MIN: 0,
-    MAX: 2,
-    DEFAULT: 1,
-    LEVELS: ['month', 'day', 'hour'] as const,
-    LABELS: ['Month', 'Day', 'Hour'],
+    MAX: 3,
+    DEFAULT: 2,
+    LEVELS: ['month', 'week', 'day', 'hour'] as const,
+    LABELS: ['Month', 'Week', 'Day', 'Hour'],
   },
 
   /** Column count for each zoom level */
@@ -51,6 +51,7 @@ export const TIMELINE_CONFIG = {
   /** Scale for continuous timeline (pixels per minute) */
   SCALE: {
     MONTH: 0.05, // 1h = 3px, 1d = 72px
+    WEEK: 0.15,  // 1h = 9px, 1d = 216px
     DAY: 1.0,    // 1h = 60px, 1d = 1440px
     HOUR: 4.0,   // 1h = 240px
   },
