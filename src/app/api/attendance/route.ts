@@ -41,21 +41,18 @@ export async function GET(request: NextRequest) {
 
     if (role === 'driver') {
       // Drivers can only see their own records
-      if (mongoose.Types.ObjectId.isValid(currentUserId)) {
-        query.userId = currentUserId;
-      }
+      query.userId = currentUserId;
     } else if (role === 'leader') {
-      // Leaders: if specific userId requested, filter; otherwise show all (branch-scoped below)
-      if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      // Leaders: if specific userId requested, filter; otherwise show branch-scoped
+      if (userId) {
         query.userId = userId;
-      }
-      // Leaders see their own branch's records
-      if (userBranch) {
+      } else if (userBranch) {
+        // Only scope to branch if not viewing a specific user's history
         query.branch = { $regex: new RegExp(`^${userBranch}$`, 'i') };
       }
     } else if (role === 'admin') {
       // Admin: optional filters
-      if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+      if (userId) {
         query.userId = userId;
       }
       if (branch) query.branch = branch;

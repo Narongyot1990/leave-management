@@ -55,6 +55,26 @@ export async function POST(request: NextRequest) {
 
     await dbConnect();
 
+    // 1. Prevent duplicate pending requests of the same type
+    const existingPending = await AttendanceCorrection.findOne({
+      userId,
+      type,
+      status: 'pending'
+    });
+    if (existingPending) {
+      return NextResponse.json({ error: `มีคำขอ ${type === 'in' ? 'เข้างาน' : 'ออกงาน'} รอดำเนินการอยู่แล้ว` }, { status: 400 });
+    }
+
+    // 2. Validate against current attendance state
+    // If last record is 'in', can only request 'out' correction, and vice versa.
+    const lastRecord = await Attendance.findOne({ userId }).sort({ timestamp: -1 });
+    if (type === 'in' && lastRecord && lastRecord.type === 'in') {
+      return NextResponse.json({ error: 'คุณอยู่ในระบบแล้ว (Clock In อยู่) ไม่สามารถขอเข้างานซ้ำได้' }, { status: 400 });
+    }
+    if (type === 'out' && (!lastRecord || lastRecord.type === 'out')) {
+      return NextResponse.json({ error: 'คุณยังไม่ได้เข้างาน หรือออกงานไปแล้ว ไม่สามารถขอออกงานได้' }, { status: 400 });
+    }
+
     // Fetch user name
     const { User } = await import('@/models/User');
     const { Leader } = await import('@/models/Leader');
@@ -65,6 +85,11 @@ export async function POST(request: NextRequest) {
       userName = person?.name || person?.lineDisplayName || 'Unknown';
     } else if (userId === 'admin_root') {
       userName = 'ITL Administrator';
+    } else {
+      // It's a LINE ID string
+      let person = await User.findOne({ userId: userId });
+      if (!person) person = await Leader.findOne({ userId: userId });
+      userName = person?.name || person?.lineDisplayName || 'Unknown';
     }
 
     const correction = await AttendanceCorrection.create({
