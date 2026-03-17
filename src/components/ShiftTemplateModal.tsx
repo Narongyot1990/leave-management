@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Pencil, Trash2, Save, Clock } from 'lucide-react';
+import { useToast } from '@/components/Toast';
 
 export interface ShiftTemplate {
   _id: string;
@@ -36,6 +37,7 @@ export default function ShiftTemplateModal({ open, onClose, onChanged }: Props) 
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm());
   const [showForm, setShowForm] = useState(false);
+  const { showToast } = useToast();
 
   const fetchShifts = useCallback(async () => {
     setLoading(true);
@@ -75,12 +77,18 @@ export default function ShiftTemplateModal({ open, onClose, onChanged }: Props) 
       });
       const data = await res.json();
       if (data.success) {
+        showToast('success', editId ? 'อัปเดต Template สำเร็จ' : 'สร้าง Template สำเร็จ');
         await fetchShifts();
         onChanged();
         setShowForm(false);
         setEditId(null);
         setForm(emptyForm());
+      } else {
+        showToast('error', data.error || 'ไม่สามารถบันทึกได้');
       }
+    } catch (err) {
+      console.error(err);
+      showToast('error', 'ระบบขัดข้อง');
     } finally {
       setSaving(false);
     }
@@ -88,9 +96,20 @@ export default function ShiftTemplateModal({ open, onClose, onChanged }: Props) 
 
   const handleDelete = async (id: string) => {
     if (!confirm('ลบ Shift Template นี้?')) return;
-    await fetch(`/api/shifts/${id}`, { method: 'DELETE' });
-    await fetchShifts();
-    onChanged();
+    try {
+      const res = await fetch(`/api/shifts/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        showToast('success', 'ลบ Template เรียบร้อยแล้ว');
+        await fetchShifts();
+        onChanged();
+      } else {
+        showToast('error', data.error || 'ไม่สามารถลบได้');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('error', 'ระบบขัดข้อง');
+    }
   };
 
   const fmtTime = (h: number, m: number) => `${pad(h)}:${pad(m)}`;

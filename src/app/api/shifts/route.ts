@@ -27,8 +27,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     const body = await request.json();
+    console.log('POST Shift Template Body:', body);
     const { name, startHour, startMinute, endHour, endMinute, color } = body;
     if (!name || startHour === undefined || endHour === undefined) {
+      console.warn('POST Shift Template: Missing required fields');
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     await dbConnect();

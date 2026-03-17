@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, ChevronLeft, ChevronRight, CalendarDays, Users } from 'lucide-react';
 import { ShiftTemplate } from './ShiftTemplateModal';
+import { useToast } from '@/components/Toast';
 
 interface WorkEntry {
   date: string; // YYYY-MM-DD
@@ -51,6 +52,7 @@ export default function AssignShiftModal({ open, onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
+  const { showToast } = useToast();
 
   const fetchShifts = useCallback(async () => {
     const res = await fetch('/api/shifts');
@@ -137,8 +139,14 @@ export default function AssignShiftModal({ open, onClose }: Props) {
       const data = await res.json();
       if (data.success) {
         setSaved(true);
+        showToast('success', 'บันทึกตารางงานเรียบร้อยแล้ว');
         setTimeout(() => setSaved(false), 2000);
+      } else {
+        showToast('error', data.error || 'ไม่สามารถบันทึกได้');
       }
+    } catch (err) {
+      console.error(err);
+      showToast('error', 'ระบบขัดข้อง');
     } finally {
       setSaving(false);
     }

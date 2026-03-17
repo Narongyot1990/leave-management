@@ -15,6 +15,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     const body = await request.json();
+    console.log(`PUT Shift Template [${id}] Body:`, body);
     const { name, startHour, startMinute, endHour, endMinute, color } = body;
     await dbConnect();
     const shift = await ShiftTemplate.findByIdAndUpdate(
