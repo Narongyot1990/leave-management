@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -80,13 +80,13 @@ interface SubstituteRecord {
   description?: string;
 }
 
-
 const BRANCHES = ['AYA', 'CBI', 'RA2', 'KSN', 'BBT'];
 
 function AdminHistoryContent() {
   const searchParams = useSearchParams();
   const { user } = useAdminSession();
   const role = 'admin' as const;
+  
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [substitutes, setSubstitutes] = useState<SubstituteRecord[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -106,6 +106,7 @@ function AdminHistoryContent() {
   const fetchData = useCallback(async () => {
     if (!user) return;
     try {
+      setLoading(true);
       let leaveUrl = '/api/leave';
       let subUrl = '/api/substitute';
 
@@ -170,7 +171,7 @@ function AdminHistoryContent() {
       <Sidebar role={role} />
 
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
-        <PageHeader title="เธเธฃเธฐเธงเธฑเธ•เธดเธ—เธฑเนเธเธซเธกเธ”" backHref="/admin/home" />
+        <PageHeader title="ประวัติทั้งหมด" backHref="/admin/home" />
 
         <div className="px-4 lg:px-8 py-3">
           <div className="max-w-3xl mx-auto flex flex-col gap-4">
@@ -187,9 +188,9 @@ function AdminHistoryContent() {
               activeKey={activeTab}
               onChange={setActiveTab}
               options={[
-                { key: 'leave', label: `เธเธฒเธฃเธฅเธฒ (${leaves.length})` },
-                { key: 'substitute', label: `เธฅเธเนเธ—เธ (${substitutes.length})` },
-                { key: 'attendance', label: `เธฅเธเน€เธงเธฅเธฒ (${attendance.length})` },
+                { key: 'leave', label: `การลา (${leaves.length})` },
+                { key: 'substitute', label: `ลงแทน (${substitutes.length})` },
+                { key: 'attendance', label: `ลงเวลา (${attendance.length})` },
               ]}
             />
 
@@ -270,7 +271,7 @@ function AdminHistoryContent() {
                           </div>
                           <div className="flex items-center gap-2 text-fluid-xs" style={{ color: 'var(--text-secondary)' }}>
                             <CalendarDays className="w-3.5 h-3.5" strokeWidth={1.5} />
-                            <span>{formatDateThai(request.startDate)} - {formatDateThai(request.endDate)} ({getLeaveDays(request.startDate, request.endDate)} เธงเธฑเธ)</span>
+                            <span>{formatDateThai(request.startDate)} - {formatDateThai(request.endDate)} ({getLeaveDays(request.startDate, request.endDate)} วัน)</span>
                           </div>
                           <p className="text-fluid-xs mt-2" style={{ color: 'var(--text-secondary)' }}>{request.reason}</p>
                           {request.status === 'rejected' && request.rejectedReason && (
@@ -315,7 +316,7 @@ function AdminHistoryContent() {
                                 <span className="text-fluid-xs font-normal" style={{ color: 'var(--text-muted)' }}>({record.userId.employeeId})</span>
                               )}
                             </h3>
-                            <span className="badge badge-warning shrink-0">เธเธฑเธเธ—เธถเธเนเธ—เธ</span>
+                             <span className="badge badge-warning shrink-0">บันทึกแทน</span>
                           </div>
                           <div className="flex items-center justify-between gap-2 mt-0.5">
                             <p className="text-fluid-xs truncate" style={{ color: 'var(--text-muted)' }}>
@@ -368,7 +369,7 @@ function AdminHistoryContent() {
                               <span className="ml-2 text-indigo-500">@{rec.branch}</span>
                             </p>
                             <p className="text-[9px] font-bold opacity-40 uppercase mt-0.5">
-                              {formatDateThai(rec.timestamp)} โ€ข {new Date(rec.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} เธ.
+                              {formatDateThai(rec.timestamp)} • {new Date(rec.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.
                             </p>
                           </div>
                         </div>
@@ -412,4 +413,3 @@ export default function AdminHistoryPage() {
     </Suspense>
   );
 }
-

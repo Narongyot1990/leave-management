@@ -73,7 +73,7 @@ export default function AdminApproveRequestCard({
                 <span className="text-fluid-xs font-normal" style={{ color: 'var(--text-muted)' }}>({request.userId.employeeId})</span>
               )}
             </h3>
-            <span className="badge badge-warning shrink-0">เธฃเธญเธญเธเธธเธกเธฑเธ•เธด</span>
+            <span className="badge badge-warning shrink-0">รออนุมัติ</span>
           </div>
           <div className="flex items-center justify-between gap-2 mt-0.5">
             <p className="text-fluid-xs truncate" style={{ color: 'var(--text-muted)' }}>
@@ -95,7 +95,7 @@ export default function AdminApproveRequestCard({
         </div>
         <div className="flex items-center gap-2 text-fluid-xs" style={{ color: 'var(--text-secondary)' }}>
           <CalendarDays className="w-3.5 h-3.5" strokeWidth={1.5} />
-          <span>{formatDateThai(request.startDate)} - {formatDateThai(request.endDate)} ({getLeaveDays(request.startDate, request.endDate)} เธงเธฑเธ)</span>
+          <span>{formatDateThai(request.startDate)} - {formatDateThai(request.endDate)} ({getLeaveDays(request.startDate, request.endDate)} วัน)</span>
         </div>
         <p className="text-fluid-xs mt-2" style={{ color: 'var(--text-secondary)' }}>{request.reason}</p>
       </div>
@@ -112,7 +112,7 @@ export default function AdminApproveRequestCard({
           ) : (
             <>
               <CheckCircle2 className="w-4 h-4" />
-              เธญเธเธธเธกเธฑเธ•เธด
+              อนุมัติ
             </>
           )}
         </button>
@@ -122,7 +122,7 @@ export default function AdminApproveRequestCard({
           className="btn btn-danger flex-1 text-fluid-sm font-semibold disabled:opacity-50"
         >
           <XCircle className="w-4 h-4" />
-          เนเธกเนเธญเธเธธเธกเธฑเธ•เธด
+          ไม่อนุมัติ
         </button>
       </div>
     </AdminCardShell>

@@ -147,14 +147,14 @@ function DriverManagementContent() {
 
   const { showToast } = useToast();
 
-  // Pusher realtime โ€” driver list auto-refresh
+  // Pusher realtime — driver list auto-refresh
   const handleDriverChanged = useCallback(() => {
     fetchDrivers();
   }, [fetchDrivers]);
 
   const handleNewDriver = useCallback((data: { displayName?: string }) => {
     fetchDrivers();
-    showToast('notification', `เธเธเธฑเธเธเธฒเธเนเธซเธกเนเธฅเธเธ—เธฐเน€เธเธตเธขเธ: ${data?.displayName || 'เธเธเธฑเธเธเธฒเธ'}`);
+    showToast('notification', `พนักงานใหม่ลงทะเบียน: ${data?.displayName || 'พนักงาน'}`);
   }, [fetchDrivers, showToast]);
 
   usePusher('users', [
@@ -269,7 +269,7 @@ function DriverManagementContent() {
       <Sidebar role={role} />
 
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
-        <PageHeader title="เธเธฑเธ”เธเธฒเธฃเธเธเธฑเธเธเธฒเธ" subtitle="เน€เธเธดเนเธก/เนเธเนเนเธ/เน€เธเธดเธ”เนเธเนเธเธฒเธเธเธเธฑเธเธเธฒเธ" backHref="/admin/home" />
+        <PageHeader title="จัดการพนักงาน" subtitle="เพิ่ม/แก้ไข/เปิดใช้งานพนักงาน" backHref="/admin/home" />
 
         <div className="px-4 lg:px-8 py-3">
           <div className="max-w-3xl mx-auto flex flex-col gap-4">
@@ -294,7 +294,7 @@ function DriverManagementContent() {
             }}
           >
             <p className="text-fluid-lg font-extrabold" style={{ color: activeTab === 'all' ? 'white' : 'var(--accent)' }}>{allPersonnel.length}</p>
-            <p className="text-fluid-xs" style={{ color: activeTab === 'all' ? 'white' : 'var(--text-muted)' }}>เธ—เธฑเนเธเธซเธกเธ”</p>
+            <p className="text-fluid-xs" style={{ color: activeTab === 'all' ? 'white' : 'var(--text-muted)' }}>ทั้งหมด</p>
           </button>
           <button
             onClick={() => setActiveTab('pending')}
@@ -307,7 +307,7 @@ function DriverManagementContent() {
             <p className="text-fluid-lg font-extrabold" style={{ color: activeTab === 'pending' ? 'white' : 'var(--warning)' }}>
               {personnelList.filter(d => d.status === 'pending').length}
             </p>
-            <p className="text-fluid-xs" style={{ color: activeTab === 'pending' ? 'white' : 'var(--text-muted)' }}>เธฃเธญเธขเธทเธเธขเธฑเธ</p>
+            <p className="text-fluid-xs" style={{ color: activeTab === 'pending' ? 'white' : 'var(--text-muted)' }}>รอยืนยัน</p>
           </button>
           <button
             onClick={() => setActiveTab('active')}
@@ -320,7 +320,7 @@ function DriverManagementContent() {
             <p className="text-fluid-lg font-extrabold" style={{ color: activeTab === 'active' ? 'white' : 'var(--success)' }}>
               {personnelList.filter(d => d.status === 'active').length}
             </p>
-            <p className="text-fluid-xs" style={{ color: activeTab === 'active' ? 'white' : 'var(--text-muted)' }}>เธเธฃเนเธญเธกเนเธเน</p>
+            <p className="text-fluid-xs" style={{ color: activeTab === 'active' ? 'white' : 'var(--text-muted)' }}>พร้อมใช้</p>
           </button>
         </div>
 
@@ -374,7 +374,7 @@ function DriverManagementContent() {
                       {driver.name && driver.surname ? `${driver.name} ${driver.surname}` : driver.lineDisplayName}
                     </h3>
                     <p className="text-[10px] font-medium" style={{ color: isUserOnline(driver.lastSeen) ? 'var(--success)' : 'var(--text-muted)' }}>
-                      {isUserOnline(driver.lastSeen) ? 'เธญเธญเธเนเธฅเธเน' : formatRelativeTime(driver.lastSeen)}
+                      {isUserOnline(driver.lastSeen) ? 'ออนไลน์' : formatRelativeTime(driver.lastSeen)}
                     </p>
                   </div>
 
@@ -439,8 +439,8 @@ function DriverManagementContent() {
                   </div>
                   <div>
                     <h2 className="text-fluid-lg font-black uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                      {selectedPersonnel.status === 'pending' ? 'Step 1: เธญเธเธธเธกเธฑเธ•เธดเธเธเธฑเธเธเธฒเธ' : 
-                       !selectedPersonnel.branch ? 'Step 2: เธฃเธฐเธเธธเธชเธฒเธเธฒ' : 'Step 3: เธเนเธญเธกเธนเธฅเธเธเธฑเธเธเธฒเธ'}
+                      {selectedPersonnel.status === 'pending' ? 'Step 1: อนุมัติพนักงาน' : 
+                       !selectedPersonnel.branch ? 'Step 2: ระบุสาขา' : 'Step 3: ข้อมูลพนักงาน'}
                     </h2>
                     <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">
                       {selectedPersonnel.status === 'pending' ? 'Activate New Employee' : 
@@ -471,7 +471,7 @@ function DriverManagementContent() {
                   <div className="space-y-4">
                     <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-center">
                       <p className="text-xs font-bold text-amber-500 leading-relaxed">
-                        เธเธเธฑเธเธเธฒเธเนเธซเธกเนเธฃเธญเธเธฒเธฃเธขเธทเธเธขเธฑเธเธ•เธฑเธงเธ•เธเน€เธเนเธฒเธฃเธฐเธเธ ITL <br/> เธเธฃเธธเธ“เธฒเธ•เธฃเธงเธเธชเธญเธเนเธฅเธฐเธเธ”เธขเธทเธเธขเธฑเธเธ”เนเธฒเธเธฅเนเธฒเธ
+                        พนักงานใหม่รอการยืนยันตัวตนเข้าระบบ ITL <br/> กรุณาตรวจสอบและกดยืนยันด้านล่าง
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -489,7 +489,7 @@ function DriverManagementContent() {
                         className="btn flex-1 h-14 text-sm font-black uppercase tracking-widest disabled:opacity-50 shadow-xl shadow-emerald-500/10"
                         style={{ background: 'var(--success)', color: 'white' }}
                       >
-                        {actionLoading === selectedPersonnel._id ? 'เธเธณเธฅเธฑเธ...' : '1. เธขเธทเธเธขเธฑเธเธเธเธฑเธเธเธฒเธ'}
+                        {actionLoading === selectedPersonnel._id ? 'กำลัง...' : '1. ยืนยันพนักงาน'}
                       </button>
                       <button
                         type="button"
@@ -510,7 +510,7 @@ function DriverManagementContent() {
                         <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 space-y-3">
                           {role === 'admin' ? (
                             <div>
-                              <label className="block text-fluid-xs font-black uppercase tracking-widest mb-1 text-blue-500">2. เน€เธฅเธทเธญเธเธ•เนเธฒเนเธซเธเนเธเธเธฒเธ (Role)</label>
+                              <label className="block text-fluid-xs font-black uppercase tracking-widest mb-1 text-blue-500">2. เลือกตำแหน่งงาน (Role)</label>
                               <div className="grid grid-cols-2 gap-2">
                                 <button
                                   type="button"
@@ -530,12 +530,12 @@ function DriverManagementContent() {
                             </div>
                           ) : (
                             <div className="bg-blue-500/10 p-3 rounded-lg border border-blue-500/20">
-                              <p className="text-[10px] font-black text-blue-500 uppercase">เธ•เธณเนเธซเธเนเธเธเธฒเธ: DRIVER (เธเธเธฑเธเธเธฒเธเธเธฑเธเธฃเธ–)</p>
-                              <p className="text-[9px] text-blue-500/70">เธชเธดเธ—เธเธดเน Leader เธเธฐเน€เธเธดเธ”เนเธเนเธเธฒเธ Driver เนเธ”เนเน€เธ—เนเธฒเธเธฑเนเธ</p>
+                              <p className="text-[10px] font-black text-blue-500 uppercase">ตำแหน่งงาน: DRIVER (พนักงานขับรถ)</p>
+                              <p className="text-[9px] text-blue-500/70">สิทธิ์ Leader จะเปิดใช้งาน Driver ได้เท่านั้น</p>
                             </div>
                           )}
                           <div>
-                            <label className="block text-fluid-xs font-black uppercase tracking-widest mb-1 text-blue-500">3. เน€เธฅเธทเธญเธเธชเธฒเธเธฒเธ—เธตเนเธชเธฑเธเธเธฑเธ”</label>
+                            <label className="block text-fluid-xs font-black uppercase tracking-widest mb-1 text-blue-500">3. เลือกสาขาที่สังกัด</label>
                             {role === 'admin' ? (
                               <select
                                 value={selectedPersonnel.branch || ''}
@@ -543,14 +543,14 @@ function DriverManagementContent() {
                                 className="input border-blue-500/30 bg-blue-500/5 focus:border-blue-500"
                                 required
                               >
-                                <option value="">-- เธฃเธฐเธเธธเธชเธฒเธเธฒ --</option>
+                                <option value="">-- ระบุสาขา --</option>
                                 {(branchesLoading ? [] : branches).map(b => (
                                   <option key={b.code} value={b.code}>{b.code} - {b.name}</option>
                                 ))}
                               </select>
                             ) : (
                               <div className="input border-blue-500/30 bg-blue-500/20 flex items-center px-3 text-sm font-bold text-blue-600">
-                                เธชเธฒเธเธฒ {user?.branch} (เธ•เธฒเธกเธชเธดเธ—เธเธดเนเธเธนเนเธ”เธนเนเธฅ)
+                                สาขา {user?.branch} (ตามสิทธิ์ผู้ดูแล)
                               </div>
                             )}
                           </div>
@@ -560,14 +560,14 @@ function DriverManagementContent() {
                           disabled={!selectedPersonnel.branch || actionLoading === selectedPersonnel._id} 
                           className="btn btn-primary w-full h-14 text-sm font-black uppercase tracking-widest shadow-xl shadow-blue-500/10"
                         >
-                          {actionLoading === selectedPersonnel._id ? 'เธเธณเธฅเธฑเธ...' : 'เธเธฑเธเธ—เธถเธเนเธฅเธฐเน€เธเธดเธ”เนเธเนเธเธฒเธ'}
+                          {actionLoading === selectedPersonnel._id ? 'กำลัง...' : 'บันทึกและเปิดใช้งาน'}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeactivate(selectedPersonnel._id)}
                           className="btn btn-ghost w-full text-[10px] uppercase font-black tracking-widest opacity-50"
                         >
-                          เธขเนเธญเธเธเธฅเธฑเธเนเธเธฃเธญเธญเธเธธเธกเธฑเธ•เธด (Deactivate)
+                          ย้อนกลับไปรออนุมัติ (Deactivate)
                         </button>
                       </div>
                     ) : (
@@ -575,7 +575,7 @@ function DriverManagementContent() {
                         {role === 'admin' && (
                           <div className="pt-1">
                             <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-                              เธ•เนเธฒเนเธซเธเนเธเธเธฒเธ (Role)
+                              ตำแหน่งงาน (Role)
                             </label>
                             <div className="grid grid-cols-2 gap-2">
                               <button
@@ -634,27 +634,27 @@ function DriverManagementContent() {
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>เธเธทเนเธญ</label>
-                            <input type="text" value={selectedPersonnel.name || ''} onChange={(e) => setSelectedTextField('name', e.target.value)} className="input" placeholder="เธเธฃเธญเธเธเธทเนเธญ" required />
+                            <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>ชื่อ</label>
+                            <input type="text" value={selectedPersonnel.name || ''} onChange={(e) => setSelectedTextField('name', e.target.value)} className="input" placeholder="กรอกชื่อ" required />
                           </div>
                           <div>
-                            <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>เธเธฒเธกเธชเธเธธเธฅ</label>
-                            <input type="text" value={selectedPersonnel.surname || ''} onChange={(e) => setSelectedTextField('surname', e.target.value)} className="input" placeholder="เธเธฃเธญเธเธเธฒเธกเธชเธเธธเธฅ" required />
+                            <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>นามสกุล</label>
+                            <input type="text" value={selectedPersonnel.surname || ''} onChange={(e) => setSelectedTextField('surname', e.target.value)} className="input" placeholder="กรอกนามสกุล" required />
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>เธฃเธซเธฑเธชเธเธเธฑเธเธเธฒเธ</label>
-                            <input type="text" value={selectedPersonnel.employeeId || ''} onChange={(e) => setSelectedTextField('employeeId', e.target.value)} className="input" placeholder="เธเธฃเธญเธเธฃเธซเธฑเธช" />
+                            <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>รหัสพนักงาน</label>
+                            <input type="text" value={selectedPersonnel.employeeId || ''} onChange={(e) => setSelectedTextField('employeeId', e.target.value)} className="input" placeholder="กรอกรหัส" />
                           </div>
                           <div>
-                            <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>เน€เธเธญเธฃเนเนเธ—เธฃ</label>
+                            <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>เบอร์โทรศัพท์</label>
                             <input type="tel" value={selectedPersonnel.phone || ''} onChange={(e) => setSelectedTextField('phone', e.target.value)} className="input" placeholder="08x-xxxxxxx" />
                           </div>
                         </div>
                         
                         <div>
-                          <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>เธเธฃเธฑเธเน€เธเธฅเธตเนเธขเธเธชเธฒเธเธฒ</label>
+                          <label className="block text-fluid-xs mb-1" style={{ color: 'var(--text-muted)' }}>ปรับเปลี่ยนสาขา</label>
                           <select
                             value={selectedPersonnel.branch || ''}
                             onChange={(e) => setSelectedBranchValue(e.target.value)}
@@ -671,11 +671,11 @@ function DriverManagementContent() {
                         <div className="rounded-2xl border border-[var(--border)] overflow-hidden">
                           <div className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-inset)]">
                             <CalendarDays className="w-3.5 h-3.5 text-[var(--accent)]" />
-                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">เธงเธฑเธเธฅเธฒเธเธเน€เธซเธฅเธทเธญ (Leave Quota)</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">วันลาคงเหลือ (Leave Quota)</span>
                           </div>
                           <div className="grid grid-cols-3 gap-0 divide-x divide-[var(--border)]">
                             <div className="p-3">
-                              <label className="block text-[8px] font-black uppercase tracking-widest text-emerald-500 mb-1.5">เธเธฑเธเธฃเนเธญเธ</label>
+                              <label className="block text-[8px] font-black uppercase tracking-widest text-emerald-500 mb-1.5">พักร้อน</label>
                               <input
                                 type="number"
                                 min="0"
@@ -684,10 +684,10 @@ function DriverManagementContent() {
                                 onChange={(e) => setSelectedQuotaField('vacationDays', Number(e.target.value))}
                                 className="w-full text-center text-lg font-black bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded-lg p-1"
                               />
-                              <p className="text-[8px] text-center opacity-30 uppercase tracking-widest">เธงเธฑเธ</p>
+                              <p className="text-[8px] text-center opacity-30 uppercase tracking-widest">วัน</p>
                             </div>
                             <div className="p-3">
-                              <label className="block text-[8px] font-black uppercase tracking-widest text-rose-500 mb-1.5">เธฅเธฒเธเนเธงเธข</label>
+                              <label className="block text-[8px] font-black uppercase tracking-widest text-rose-500 mb-1.5">ลาป่วย</label>
                               <input
                                 type="number"
                                 min="0"
@@ -696,10 +696,10 @@ function DriverManagementContent() {
                                 onChange={(e) => setSelectedQuotaField('sickDays', Number(e.target.value))}
                                 className="w-full text-center text-lg font-black bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-rose-500 rounded-lg p-1"
                               />
-                              <p className="text-[8px] text-center opacity-30 uppercase tracking-widest">เธงเธฑเธ</p>
+                              <p className="text-[8px] text-center opacity-30 uppercase tracking-widest">วัน</p>
                             </div>
                             <div className="p-3">
-                              <label className="block text-[8px] font-black uppercase tracking-widest text-amber-500 mb-1.5">เธฅเธฒเธเธดเธ</label>
+                              <label className="block text-[8px] font-black uppercase tracking-widest text-amber-500 mb-1.5">ลากิจ</label>
                               <input
                                 type="number"
                                 min="0"
@@ -708,15 +708,15 @@ function DriverManagementContent() {
                                 onChange={(e) => setSelectedQuotaField('personalDays', Number(e.target.value))}
                                 className="w-full text-center text-lg font-black bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-amber-500 rounded-lg p-1"
                               />
-                              <p className="text-[8px] text-center opacity-30 uppercase tracking-widest">เธงเธฑเธ</p>
+                              <p className="text-[8px] text-center opacity-30 uppercase tracking-widest">วัน</p>
                             </div>
                           </div>
                         </div>
 
                         <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={closePersonnelDetails} className="btn btn-secondary flex-1">เธขเธเน€เธฅเธดเธ</button>
+                        <button type="button" onClick={closePersonnelDetails} className="btn btn-secondary flex-1">ยกเลิก</button>
                           <button type="submit" disabled={actionLoading === selectedPersonnel._id} className="btn btn-primary flex-1 h-12 shadow-lg shadow-[var(--accent)]/10">
-                            {actionLoading === selectedPersonnel._id ? 'เธเธณเธฅเธฑเธ...' : '3. เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅ'}
+                            {actionLoading === selectedPersonnel._id ? 'กำลัง...' : '3. บันทึกข้อมูล'}
                           </button>
                         </div>
 
@@ -728,7 +728,7 @@ function DriverManagementContent() {
                           style={{ color: 'var(--warning)' }}
                         >
                           <AlertCircle className="w-3.5 h-3.5" />
-                          เธฃเธฐเธเธฑเธเธเธฒเธฃเนเธเนเธเธฒเธเธเธเธฑเธเธเธฒเธ (Deactivate)
+                          ระงับการใช้งานพนักงาน (Deactivate)
                         </button>
                       </div>
                     )}
@@ -751,17 +751,17 @@ function DriverManagementContent() {
                 <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(239,68,68,0.1)' }}>
                   <Trash2 className="w-7 h-7" style={{ color: 'var(--danger)' }} />
                 </div>
-                <h3 className="text-fluid-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>เธฅเธเธเธเธฑเธเธเธฒเธ</h3>
+                <h3 className="text-fluid-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>ลบพนักงาน</h3>
                 <p className="text-fluid-sm mb-3" style={{ color: 'var(--text-muted)' }}>
-                  เธ•เนเธญเธเธเธฒเธฃเธฅเธเธเธเธฑเธเธเธฒเธเธเธเธเธตเนเนเธเนเธซเธฃเธทเธญเนเธกเน?<br/>
-                  เธเธฒเธฃเธฅเธเธเธฐเธ—เธณเนเธซเนเธเนเธญเธกเธนเธฅเธเธฒเธฃเธฅเธฒเนเธฅเธฐเธเธฑเธเธ—เธถเธเนเธ—เธเธซเธฒเธขเนเธเธ”เนเธงเธข
+                  ต้องการลบพนักงานคนนี้ใช่หรือไม่?<br/>
+                  การลบจะทำให้ข้อมูลการลาและบันทึกแทนหายไปด้วย
                 </p>
                 <div className="flex gap-3">
                   <button 
                     onClick={closeDeleteModal} 
                     className="btn btn-secondary flex-1"
                   >
-                    เธขเธเน€เธฅเธดเธ
+                    ยกเลิก
                   </button>
                   <button 
                     onClick={handleDeleteDriver} 
@@ -769,7 +769,7 @@ function DriverManagementContent() {
                     className="btn flex-1"
                     style={{ background: 'var(--danger)', color: 'white' }}
                   >
-                    {actionLoading ? 'เธเธณเธฅเธฑเธเธฅเธ...' : 'เธฅเธ'}
+                    {actionLoading ? 'กำลังลบ...' : 'ลบ'}
                   </button>
                 </div>
               </div>

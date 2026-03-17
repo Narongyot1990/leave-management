@@ -261,18 +261,12 @@ export function useAdminTasksController({
     setError("");
 
     if (!title.trim()) {
-      setError("เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเธทเนเธญ Task");
+      setError("กรุณากรอกชื่อ Task");
       return;
     }
 
-    if (
-      questions.some(
-        (question) =>
-          !question.question.trim() ||
-          question.options.some((option) => !option.trim()),
-      )
-    ) {
-      setError("เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธเธณเธ–เธฒเธกเนเธฅเธฐเธ•เธฑเธงเน€เธฅเธทเธญเธเนเธซเนเธเธฃเธ");
+    if (questions.some(q => !q.question.trim() || q.options.some(o => !o.trim()) || q.correctIndex === -1)) {
+      setError("กรุณากรอกคำถามและตัวเลือกให้ครบ");
       return;
     }
 
@@ -292,15 +286,16 @@ export function useAdminTasksController({
       });
 
       const data = (await response.json()) as TaskResponse;
-      if (data.success) {
-        setShowCreate(false);
-        resetCreateForm();
-        fetchTasks();
+      if (data.success && data.tasks && data.tasks.length > 0) {
+        setTasks(prev => [data.tasks![0], ...prev]);
+        return true;
       } else {
-        setError(data.error || "เน€เธเธดเธ”เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”");
+        setError(data.error || "เกิดข้อผิดพลาด");
+        return false;
       }
     } catch {
-      setError("เน€เธเธดเธ”เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”");
+      setError("เกิดข้อผิดพลาด");
+      return false;
     } finally {
       setCreating(false);
     }

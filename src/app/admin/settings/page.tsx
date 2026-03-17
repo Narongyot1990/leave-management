@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -65,10 +65,10 @@ function SettingsContent() {
         setUser({ ...user, name, surname, phone, employeeId });
         setTimeout(() => setSaved(false), 2000);
       } else {
-        setError(data.error || 'เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅเนเธกเนเธชเธณเน€เธฃเนเธ');
+        setError(data.error || 'บันทึกข้อมูลไม่สำเร็จ');
       }
     } catch {
-      setError('เน€เธเธดเธ”เธเนเธญเธเธดเธ”เธเธฅเธฒเธ”เนเธเธเธฒเธฃเน€เธเธทเนเธญเธกเธ•เนเธญ');
+      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
     } finally {
       setSaving(false);
     }
@@ -111,7 +111,7 @@ function SettingsContent() {
         <header className="px-6 pt-8 pb-4">
            <div className="max-w-xl mx-auto flex items-center justify-between">
               <div>
-                 <h1 className="text-2xl font-black tracking-tighter">เธ•เธฑเนเธเธเนเธฒเธเนเธญเธกเธนเธฅ</h1>
+                 <h1 className="text-2xl font-black tracking-tighter">ตั้งค่าข้อมูล</h1>
                  <p className="text-[9px] font-black uppercase tracking-widest opacity-30">Personal Settings</p>
               </div>
               <button 
@@ -128,7 +128,7 @@ function SettingsContent() {
             {saved && (
               <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-4 flex items-center gap-3">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅเน€เธฃเธตเธขเธเธฃเนเธญเธข</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">บันทึกข้อมูลเรียบร้อย</span>
               </motion.div>
             )}
             {error && (
@@ -149,7 +149,7 @@ function SettingsContent() {
                <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                       <label className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">เธเธทเนเธญ</label>
+                       <label className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">ชื่อ</label>
                        <input 
                          type="text" 
                          value={name} 
@@ -159,7 +159,7 @@ function SettingsContent() {
                        />
                     </div>
                     <div className="space-y-1">
-                       <label className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">เธเธฒเธกเธชเธเธธเธฅ</label>
+                       <label className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">นามสกุล</label>
                        <input 
                          type="text" 
                          value={surname} 
@@ -171,7 +171,7 @@ function SettingsContent() {
                   </div>
 
                   <div className="space-y-1">
-                     <label className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">เธฃเธซเธฑเธชเธเธเธฑเธเธเธฒเธ (Employee ID)</label>
+                     <label className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">รหัสพนักงาน (Employee ID)</label>
                      <div className="relative">
                         <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] opacity-30" />
                         <input 
@@ -185,7 +185,7 @@ function SettingsContent() {
                   </div>
 
                   <div className="space-y-1">
-                     <label className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">เน€เธเธญเธฃเนเนเธ—เธฃเธจเธฑเธเธ—เน</label>
+                     <label className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">เบอร์โทรศัพท์</label>
                      <div className="relative">
                         <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] opacity-30" />
                         <input 
@@ -220,7 +220,7 @@ function SettingsContent() {
               className="w-full h-14 rounded-2xl bg-[var(--accent)] text-white font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 transition-all disabled:opacity-50 mt-2"
             >
               {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              {saving ? 'เธเธณเธฅเธฑเธเธเธฑเธเธ—เธถเธ...' : 'เธเธฑเธเธ—เธถเธเธเนเธญเธกเธนเธฅ'}
+              {saving ? 'กำลังบันทึก...' : 'บันทึกข้อมูล'}
             </motion.button>
           </form>
         </main>

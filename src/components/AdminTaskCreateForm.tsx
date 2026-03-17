@@ -67,7 +67,7 @@ export default function AdminTaskCreateForm({
       className="contents"
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-fluid-base font-bold" style={{ color: 'var(--text-primary)' }}>เธชเธฃเนเธฒเธ Task เนเธซเธกเน</h3>
+        <h3 className="text-fluid-base font-bold" style={{ color: 'var(--text-primary)' }}>สร้าง Task ใหม่</h3>
         <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full" style={{ color: 'var(--text-muted)' }}>
           <X className="w-4 h-4" />
         </button>
@@ -81,22 +81,22 @@ export default function AdminTaskCreateForm({
 
       <div className="space-y-4">
         <div>
-          <label className="block text-fluid-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>เธเธทเนเธญ Task</label>
-          <input type="text" value={title} onChange={(event) => onTitleChange(event.target.value)} className="input" placeholder="เน€เธเนเธ เนเธเธเธ—เธ”เธชเธญเธเธ”เนเธฒเธเธเธงเธฒเธกเธเธฅเธญเธ”เธ เธฑเธข" />
+          <label className="block text-fluid-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>ชื่อ Task</label>
+          <input type="text" value={title} onChange={(event) => onTitleChange(event.target.value)} className="input" placeholder="เช่น แบบทดสอบด้านความปลอดภัย" />
         </div>
         <div>
-          <label className="block text-fluid-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>เธเธณเธญเธเธดเธเธฒเธข</label>
-          <textarea value={description} onChange={(event) => onDescriptionChange(event.target.value)} className="input resize-none" rows={2} placeholder="เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ” (เนเธกเนเธเธฑเธเธเธฑเธ)" />
+          <label className="block text-fluid-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>คำอธิบาย</label>
+          <textarea value={description} onChange={(event) => onDescriptionChange(event.target.value)} className="input resize-none" rows={2} placeholder="รายละเอียด (ไม่บังคับ)" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-fluid-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>เธซเธกเธงเธ”เธซเธกเธนเน</label>
+            <label className="block text-fluid-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>หมวดหมู่</label>
             <select value={category} onChange={(event) => onCategoryChange(event.target.value)} className="input">
-              {TASK_CATEGORIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              {TASK_CATEGORIES.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-fluid-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>เธชเธฒเธเธฒ</label>
+            <label className="block text-fluid-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>สาขา</label>
             <div className="flex flex-wrap gap-1.5">
               {availableBranchCodes.map((code) => (
                 <button
@@ -117,14 +117,14 @@ export default function AdminTaskCreateForm({
         </div>
 
         <div>
-          <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>เธเธณเธ–เธฒเธก</label>
+          <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>คำถาม</label>
           <div className="space-y-4">
             {questions.map((question, questionIndex) => (
               <div key={questionIndex} className="p-3 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-fluid-xs font-bold" style={{ color: 'var(--text-primary)' }}>เธเนเธญ {questionIndex + 1}</span>
+                  <span className="text-fluid-xs font-bold" style={{ color: 'var(--text-primary)' }}>ข้อ {questionIndex + 1}</span>
                   {questions.length > 1 && (
-                    <button onClick={() => onRemoveQuestion(questionIndex)} className="text-[10px]" style={{ color: 'var(--danger)' }}>เธฅเธ</button>
+                    <button onClick={() => onRemoveQuestion(questionIndex)} className="text-[10px]" style={{ color: 'var(--danger)' }}>ลบ</button>
                   )}
                 </div>
                 <input
@@ -132,7 +132,7 @@ export default function AdminTaskCreateForm({
                   value={question.question}
                   onChange={(event) => onUpdateQuestion(questionIndex, 'question', event.target.value)}
                   className="input mb-2"
-                  placeholder="เธเธณเธ–เธฒเธก..."
+                  placeholder="คำถาม..."
                 />
                 <div className="space-y-1.5">
                   {question.options.map((option, optionIndex) => (
@@ -153,7 +153,7 @@ export default function AdminTaskCreateForm({
                         value={option}
                         onChange={(event) => onUpdateOption(questionIndex, optionIndex, event.target.value)}
                         className="input flex-1 py-1.5 text-fluid-xs"
-                        placeholder={`เธ•เธฑเธงเน€เธฅเธทเธญเธ ${String.fromCharCode(65 + optionIndex)}`}
+                        placeholder={`ตัวเลือก ${String.fromCharCode(65 + optionIndex)}`}
                       />
                       {question.options.length > 2 && (
                         <button onClick={() => onRemoveOption(questionIndex, optionIndex)} style={{ color: 'var(--danger)' }}>
@@ -164,7 +164,7 @@ export default function AdminTaskCreateForm({
                   ))}
                 </div>
                 <button onClick={() => onAddOption(questionIndex)} className="text-[10px] font-medium mt-1.5" style={{ color: 'var(--accent)' }}>
-                  + เน€เธเธดเนเธกเธ•เธฑเธงเน€เธฅเธทเธญเธ
+                  + เพิ่มตัวเลือก
                 </button>
 
                 <div className="mt-2 pt-2" style={{ borderTop: '1px dashed var(--border)' }}>
@@ -175,7 +175,7 @@ export default function AdminTaskCreateForm({
                     style={{ color: 'var(--warning)' }}
                   >
                     <Lightbulb className="w-3 h-3" />
-                    {expandedHint === questionIndex ? 'เธเนเธญเธเธเธณเนเธเธฐเธเธณ' : 'เน€เธเธดเนเธกเธเธณเนเธเธฐเธเธณ (เนเธกเนเธเธฑเธเธเธฑเธ)'}
+                    {expandedHint === questionIndex ? 'ซ่อนคำแนะนำ' : 'เพิ่มคำแนะนำ (ไม่บังคับ)'}
                     {expandedHint === questionIndex ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   </button>
                   {expandedHint === questionIndex && (
@@ -184,7 +184,7 @@ export default function AdminTaskCreateForm({
                       onChange={(event) => onUpdateQuestion(questionIndex, 'hint', event.target.value)}
                       className="input mt-1.5 resize-none text-fluid-xs"
                       rows={2}
-                      placeholder="เธเธณเนเธเธฐเธเธณ/เธเธงเธฒเธกเธฃเธนเนเน€เธเธดเนเธกเน€เธ•เธดเธกเธชเธณเธซเธฃเธฑเธเธเนเธญเธเธตเน... เน€เธเนเธ เธเธเธซเธกเธฒเธขเธเธณเธซเธเธ”เนเธซเนเธชเธงเธกเธซเธกเธงเธเธเธดเธฃเธ เธฑเธขเธ—เธธเธเธเธฃเธฑเนเธเธเนเธญเธเธญเธญเธเธฃเธ–"
+                      placeholder="คำแนะนำ/ความรู้เพิ่มเติมสำหรับข้อนี้... เช่น กฎหมายกำหนดให้สวมหมวกนิรภัยทุกครั้งก่อนออกรถ"
                     />
                   )}
                 </div>
@@ -192,12 +192,12 @@ export default function AdminTaskCreateForm({
             ))}
           </div>
           <button onClick={onAddQuestion} className="btn btn-secondary w-full mt-2 text-fluid-xs">
-            <Plus className="w-3.5 h-3.5" /> เน€เธเธดเนเธกเธเธณเธ–เธฒเธก
+            <Plus className="w-3.5 h-3.5" /> เพิ่มคำถาม
           </button>
         </div>
 
         <button onClick={onCreate} disabled={creating} className="btn btn-primary w-full">
-          {creating ? 'เธเธณเธฅเธฑเธเธชเธฃเนเธฒเธ...' : 'เธชเธฃเนเธฒเธ Task'}
+          {creating ? 'กำลังสร้าง...' : 'สร้าง Task'}
         </button>
       </div>
     </motion.div>

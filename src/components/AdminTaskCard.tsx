@@ -62,17 +62,17 @@ export default function AdminTaskCard({
             <h3 className="text-fluid-sm font-bold" style={{ color: 'var(--text-primary)' }}>{task.title}</h3>
             {task.description && <p className="text-fluid-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{task.description}</p>}
             <div className="flex items-center gap-3 mt-2 text-fluid-xs" style={{ color: 'var(--text-muted)' }}>
-              <span>{task.questions.length} เธเนเธญ</span>
+              <span>{task.questions.length} ข้อ</span>
               <span className="flex items-center gap-1">
                 <Users className="w-3 h-3" />
-                {task.submissions.length} เธชเนเธเนเธฅเนเธง
+                {task.submissions.length} ส่งแล้ว
               </span>
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {task.status === 'active' && (
               <button onClick={() => onCloseTask(task._id)} className="btn btn-ghost p-2 text-[10px]" style={{ color: 'var(--warning)' }}>
-                เธเธดเธ”
+                ปิด
               </button>
             )}
             <button onClick={() => onDeleteTask(task._id)} className="btn btn-ghost p-2" style={{ color: 'var(--danger)' }}>
@@ -89,7 +89,7 @@ export default function AdminTaskCard({
               style={{ color: 'var(--accent)' }}
             >
               {expandedTask === task._id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              เธ”เธนเธเธฅเธเธฐเนเธเธ ({task.submissions.length})
+              ดูผลคะแนน ({task.submissions.length})
             </button>
           )}
           {task.status === 'active' && pendingCount > 0 && (
@@ -99,7 +99,7 @@ export default function AdminTaskCard({
               style={{ color: 'var(--danger)' }}
             >
               <UserCircle className="w-3.5 h-3.5" />
-              เธขเธฑเธเนเธกเนเธชเนเธ ({pendingCount})
+              ยังไม่ส่ง ({pendingCount})
             </button>
           )}
         </div>
@@ -117,12 +117,12 @@ export default function AdminTaskCard({
               <div className="space-y-3">
                 <h4 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[var(--success)] ml-1">
                   <CheckCircle2 className="w-3 h-3" />
-                  เธ•เธดเธ•เธ•เธฒเธกเธเธฒเธฃเธชเนเธเธเธฒเธ ({task.submissions.length})
+                  ติตตามการส่งงาน ({task.submissions.length})
                 </h4>
                 <div className="space-y-2">
                   {task.submissions.length === 0 ? (
                     <div className="p-4 rounded-[var(--radius-md)] border border-dashed border-[var(--border)] text-center">
-                      <p className="text-[10px] text-[var(--text-muted)]">เธขเธฑเธเนเธกเนเธกเธตเธเธนเนเธชเนเธเธเธฒเธ</p>
+                      <p className="text-[10px] text-[var(--text-muted)]">ยังไม่มีผู้ส่งงาน</p>
                     </div>
                   ) : (
                     task.submissions.map((submission) => (
@@ -132,7 +132,7 @@ export default function AdminTaskCard({
                           <p className="text-fluid-xs font-bold text-[var(--text-primary)] truncate">
                             {submission.userId?.name && submission.userId?.surname ? `${submission.userId.name} ${submission.userId.surname}` : submission.userId?.lineDisplayName}
                           </p>
-                          <p className="text-[9px] text-[var(--text-muted)]">เธชเนเธเน€เธกเธทเนเธญ {new Date(submission.submittedAt).toLocaleDateString('th-TH')}</p>
+                          <p className="text-[9px] text-[var(--text-muted)]">ส่งเมื่อ {new Date(submission.submittedAt).toLocaleDateString('th-TH')}</p>
                         </div>
                         <div className="flex flex-col items-end">
                           <div className="flex items-center gap-1">
@@ -153,12 +153,12 @@ export default function AdminTaskCard({
               <div className="space-y-3">
                 <h4 className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[var(--danger)] ml-1">
                   <Users className="w-3 h-3" />
-                  เธขเธฑเธเนเธกเนเธชเนเธ ({pendingDrivers.length})
+                  ยังไม่ส่ง ({pendingDrivers.length})
                 </h4>
                 <div className="space-y-2">
                   {pendingDrivers.length === 0 ? (
                     <div className="p-4 rounded-[var(--radius-md)] border border-dashed border-[var(--border)] text-center">
-                      <p className="text-[10px] text-[var(--success)]">เธเธฃเธเธ—เธธเธเธเธเนเธฅเนเธง!</p>
+                      <p className="text-[10px] text-[var(--success)]">ครบทุกคนแล้ว!</p>
                     </div>
                   ) : (
                     pendingDrivers.map((driver) => (

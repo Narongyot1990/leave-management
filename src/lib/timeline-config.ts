@@ -38,22 +38,28 @@ export const TIMELINE_CONFIG = {
     },
   },
 
-  /** Color scheme */
+  /** Color scheme (VIP/Premium) */
   COLORS: {
     ACTIVE: '#10b981',
     ACTIVE_LIGHT: '#34d399',
     COMPLETED: '#6366f1',
     COMPLETED_LIGHT: '#818cf8',
     WEEKEND: '#fce7f3',
-    WEEKEND_DARK: '#fce7f3',
+    WEEKEND_DARK: '#f1f5f9', // Modern subtle grid
+    GRADIENT: {
+      EMERALD: ['#10b981', '#34d399', '#059669'],
+      AMBER: ['#f59e0b', '#fbbf24', '#d97706'],
+      INDIGO: ['#6366f1', '#818cf8', '#4f46e5'],
+      SLATE: ['#94a3b8', '#cbd5e1', '#64748b'],
+    }
   },
 
   /** Scale for continuous timeline (pixels per minute) */
   SCALE: {
-    MONTH: 0.04, // 1h = 2.4px, 1d = 57.6px -> Month fits well
-    WEEK: 0.12,  // 1h = 7.2px, 1d = 172.8px
-    DAY: 0.8,    // 1h = 48px, 1d = 1152px
-    HOUR: 2.5,   // 1h = 150px
+    MONTH: 0.03, // ~43px per day -> Month fits ~1339px
+    WEEK: 0.1,  // ~144px per day -> Week fits ~1008px
+    DAY: 0.7,    // ~1008px per day -> Focused view
+    HOUR: 1.6,   // ~96px per hour -> Detailed view
   },
 
   /** Animation durations (ms) */

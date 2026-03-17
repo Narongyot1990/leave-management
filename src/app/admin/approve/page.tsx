@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Inbox } from 'lucide-react';
@@ -70,13 +70,14 @@ export default function AdminApprovePage() {
     fetchPending();
   }, [user, fetchPending]);
 
+
   const { showToast } = useToast();
 
-  // Pusher realtime โ€” new leave requests auto-refresh
+  // Pusher realtime — new leave requests auto-refresh
   const handleNewLeave = useCallback((data: { userName?: string }) => {
     setNewRequestAlert(true);
     fetchPending();
-    showToast('notification', `เธเธณเธเธญเธฅเธฒเนเธซเธกเนเธเธฒเธ ${data?.userName || 'เธเธเธฑเธเธเธฒเธ'}`);
+    showToast('notification', `คำขอลาใหม่จาก ${data?.userName || 'พนักงาน'}`);
     const audio = new Audio('/notification.mp3');
     audio.play().catch(() => {});
     setTimeout(() => setNewRequestAlert(false), 5000);
@@ -186,17 +187,17 @@ export default function AdminApprovePage() {
             style={{ background: 'var(--success)', color: 'white' }}
           >
             <Bell className="w-4 h-4" />
-            <span className="text-fluid-sm font-semibold">เธกเธตเธเธณเธเธญเธฅเธฒเนเธซเธกเน!</span>
+            <span className="text-fluid-sm font-semibold">มีคำขอลาใหม่!</span>
           </motion.div>
         )}
       </AnimatePresence>
 
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader
-          title="เธญเธเธธเธกเธฑเธ•เธดเธเธฒเธฃเธฅเธฒ"
+          title="อนุมัติการลา"
           backHref="/admin/home"
           rightContent={
-            <span className="badge badge-accent">{requests.length} เธฃเธฒเธขเธเธฒเธฃ</span>
+            <span className="badge badge-accent">{requests.length} รายการ</span>
           }
         />
 

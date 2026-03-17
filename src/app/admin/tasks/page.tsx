@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ClipboardCheck } from 'lucide-react';
@@ -70,13 +70,18 @@ export default function AdminTasksPage() {
       <Sidebar role={role} />
 
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
-        <PageHeader
-          title="เธเธฑเธ”เธเธฒเธฃ Tasks"
+        <PageHeader 
+          title="จัดการ Tasks" 
+          subtitle="สร้างและติดตามแบบทดสอบสำหรับพนักงาน" 
           backHref="/admin/home"
           rightContent={
-            <button onClick={openCreateModal} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-fluid-xs font-medium" style={{ background: 'var(--accent)', color: '#fff' }}>
+            <button
+              onClick={openCreateModal}
+              className="px-3 py-1.5 rounded-full text-fluid-xs font-medium flex items-center gap-1.5"
+              style={{ background: 'var(--accent)', color: '#fff' }}
+            >
               <Plus className="w-3.5 h-3.5" />
-              เธชเธฃเนเธฒเธ Task
+              สร้าง Task
             </button>
           }
         />

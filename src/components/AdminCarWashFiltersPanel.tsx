@@ -47,10 +47,10 @@ export default function AdminCarWashFiltersPanel({
           <div>
             <label className="block text-fluid-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
               <Users className="w-3.5 h-3.5 inline mr-1" />
-              เน€เธฅเธทเธญเธเธเธเธฑเธเธเธฒเธ
+              เลือกพนักงาน
             </label>
             <select value={selectedDriver} onChange={(event) => onSelectedDriverChange(event.target.value)} className="input">
-              <option value="">เธ—เธฑเนเธเธซเธกเธ”</option>
+              <option value="">ทั้งหมด</option>
               {drivers.map((driver) => (
                 <option key={driver._id} value={driver._id}>
                   {driver.name && driver.surname ? `${driver.name} ${driver.surname}` : driver.lineDisplayName}
@@ -62,20 +62,20 @@ export default function AdminCarWashFiltersPanel({
             <div>
               <label className="block text-fluid-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
                 <CalendarDays className="w-3.5 h-3.5 inline mr-1" />
-                เธ•เธฑเนเธเนเธ•เน
+                ตั้งแต่
               </label>
               <input type="date" value={startDate} onChange={(event) => onStartDateChange(event.target.value)} className="input" />
             </div>
             <div>
               <label className="block text-fluid-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
                 <CalendarDays className="w-3.5 h-3.5 inline mr-1" />
-                เธ–เธถเธ
+                ถึง
               </label>
               <input type="date" value={endDate} onChange={(event) => onEndDateChange(event.target.value)} className="input" />
             </div>
           </div>
           {hasFilters && (
-            <button onClick={onClearFilters} className="btn btn-secondary w-full text-fluid-xs">เธฅเนเธฒเธเธ•เธฑเธงเธเธฃเธญเธ</button>
+            <button onClick={onClearFilters} className="btn btn-secondary w-full text-fluid-xs">ล้างตัวกรอง</button>
           )}
         </motion.div>
       )}

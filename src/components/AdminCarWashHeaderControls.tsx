@@ -3,8 +3,8 @@
 import { Filter } from 'lucide-react';
 
 const ACTIVITY_TYPE_OPTIONS = [
-  { key: '', label: 'เธ—เธฑเนเธเธซเธกเธ”' },
-  { key: 'car-wash', label: 'เธฅเนเธฒเธเธฃเธ–' },
+  { key: '', label: 'ทั้งหมด' },
+  { key: 'car-wash', label: 'ล้างรถ' },
 ];
 
 interface AdminCarWashFilterToggleButtonProps {
@@ -25,7 +25,7 @@ export function AdminCarWashFilterToggleButton({
       style={hasFilters || open ? { background: 'var(--accent-light)', color: 'var(--accent)', borderColor: 'var(--accent)' } : {}}
     >
       <Filter className="w-3.5 h-3.5" />
-      เธ•เธฑเธงเธเธฃเธญเธ
+      ตัวกรอง
       {hasFilters && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }} />}
     </button>
   );

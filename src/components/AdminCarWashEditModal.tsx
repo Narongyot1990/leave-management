@@ -39,7 +39,7 @@ export default function AdminCarWashEditModal({
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-fluid-base font-bold" style={{ color: 'var(--text-primary)' }}>เนเธเนเนเธเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”</h3>
+              <h3 className="text-fluid-base font-bold" style={{ color: 'var(--text-primary)' }}>แก้ไขรายละเอียด</h3>
               <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full" style={{ color: 'var(--text-muted)' }}>
                 <X className="w-4 h-4" />
               </button>
@@ -49,12 +49,12 @@ export default function AdminCarWashEditModal({
               onChange={(event) => onCaptionChange(event.target.value)}
               rows={4}
               className="input resize-none w-full mb-4"
-              placeholder="เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”..."
+              placeholder="รายละเอียด..."
             />
             <div className="flex gap-2">
-              <button onClick={onClose} className="btn btn-secondary flex-1 text-fluid-sm">เธขเธเน€เธฅเธดเธ</button>
+              <button onClick={onClose} className="btn btn-secondary flex-1 text-fluid-sm">ยกเลิก</button>
               <button onClick={onSave} disabled={saving} className="btn btn-primary flex-1 text-fluid-sm">
-                {saving ? 'เธเธณเธฅเธฑเธเธเธฑเธเธ—เธถเธ...' : 'เธเธฑเธเธ—เธถเธ'}
+                {saving ? 'กำลังบันทึก...' : 'บันทึก'}
               </button>
             </div>
           </motion.div>

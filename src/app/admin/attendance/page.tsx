@@ -433,14 +433,13 @@ function AttendanceMonitorContent() {
 
         {/* ========== TIMELINE GANTT ========== */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-
-          {/* Column Headers */}
-          <div className="flex shrink-0 border-b border-[var(--border)] bg-[var(--bg-surface)]">
+          {/* 2-Tier Header & Column Headers */}
+          <div className="flex shrink-0 border-b border-[var(--border)] bg-[var(--bg-surface)] backdrop-blur-md">
             {/* Staff column header */}
-            <div className="w-[50px] md:w-[180px] shrink-0 border-r border-[var(--border)] bg-slate-50 dark:bg-slate-900/50 flex items-center justify-center md:justify-start md:px-3 py-2 sticky left-0 z-20">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+            <div className="w-[50px] md:w-[180px] shrink-0 border-r border-[var(--border)] bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-center md:justify-start md:px-4 py-3 sticky left-0 z-20">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                 <span className="md:hidden">STF</span>
-                <span className="hidden md:inline">Staff ({filteredTimelineData.length})</span>
+                <span className="hidden md:inline">Team ({filteredTimelineData.length})</span>
               </span>
             </div>
             {/* Timeline column headers */}
@@ -452,19 +451,19 @@ function AttendanceMonitorContent() {
                 rowScrollRefs.current.forEach(el => { el.scrollLeft = sl; });
                 isSyncingRef.current = false;
               }}>
-              <div className="relative h-10" style={{ width: totalWidth }}>
+              <div className="relative h-12" style={{ width: totalWidth }}>
                 {columnHeaders.map(col => (
                   <div key={col.key}
-                    className={`absolute top-0 bottom-0 border-l border-[var(--border)]/15 transition-colors pl-1 flex flex-col justify-center
-                      ${col.isDayStart ? 'border-l-2 border-[var(--border)]/40' : ''}
-                      ${col.isToday ? 'bg-[var(--accent)]/5' : ''}`}
+                    className={`absolute top-0 bottom-0 border-l border-[var(--border)]/20 transition-all px-2 flex flex-col justify-center
+                      ${col.isDayStart ? 'border-l-2 border-[var(--border)]/50 bg-slate-500/[0.02]' : ''}
+                      ${col.isToday ? 'bg-[var(--accent)]/[0.03]' : ''}`}
                     style={{ left: col.left }}>
-                    <span className={`text-[8px] font-black uppercase tracking-tighter leading-none
-                      ${col.isToday ? 'text-[var(--accent)]' : col.isDayStart ? 'text-slate-500' : 'text-slate-400'}`}>
+                    <span className={`text-[9px] font-black uppercase tracking-tighter leading-none whitespace-nowrap
+                      ${col.isToday ? 'text-[var(--accent)] font-black' : col.isDayStart ? 'text-slate-500' : 'text-slate-400'}`}>
                       {col.label}
                     </span>
                     {col.subLabel && (
-                      <span className="text-[7px] font-bold opacity-40 uppercase mt-0.5">{col.subLabel}</span>
+                      <span className="text-[7.5px] font-black opacity-30 uppercase mt-1 tracking-widest">{col.subLabel}</span>
                     )}
                   </div>
                 ))}
@@ -472,7 +471,7 @@ function AttendanceMonitorContent() {
                 {/* Now Indicator Header Marker */}
                 <div className="absolute top-0 bottom-0 w-px bg-red-500 z-30 pointer-events-none"
                   style={{ left: ((currentTime.getTime() - refDate.getTime()) / 60000) * pxPerMinute }}>
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-red-500" />
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
                 </div>
               </div>
             </div>
@@ -509,7 +508,7 @@ function AttendanceMonitorContent() {
                 onClick={() => setSelectedUser(isSelected ? null : user.id)}>
 
                 {/* Staff Info (sticky left) */}
-                <div className="w-[50px] md:w-[180px] shrink-0 px-1 md:px-2 py-2 border-r border-[var(--border)]/30 bg-[var(--bg-surface)] sticky left-0 z-10 flex flex-col md:flex-row items-center gap-1 md:gap-2">
+                <div className="w-[50px] md:w-[180px] shrink-0 px-1 md:px-2 py-2 border-r border-[var(--border)]/30 bg-[var(--bg-surface)] sticky left-0 z-10 flex flex-col md:flex-row items-center gap-1 md:gap-2 shadow-[2px_0_8px_rgba(0,0,0,0.02)] dark:shadow-[2px_0_12px_rgba(0,0,0,0.2)]">
                       <div className="relative shrink-0">
                         <div className="w-7 h-7 md:w-8 md:h-8 rounded-full overflow-hidden bg-[var(--bg-inset)] border border-[var(--border)] shadow-sm">
                           {user.image ? (
@@ -532,7 +531,7 @@ function AttendanceMonitorContent() {
                         
                         <div className="hidden md:flex items-center gap-1 mt-0.5">
                           {hasLate && <AlertTriangle className="w-2.5 h-2.5 text-amber-500 shrink-0" />}
-                          <span className={`text-[8px] font-medium uppercase truncate ${isActive ? 'text-[var(--accent)]' : hasLate ? 'text-amber-500' : 'opacity-30'}`}>
+                          <span className={`text-[8px] font-medium uppercase truncate ${isActive ? 'text-[var(--accent)]' : noActivity ? 'Absent' : hasLate ? 'Late' : 'Off duty'}`}>
                             {isActive ? 'Active' : noActivity ? 'Absent' : hasLate ? 'Late' : 'Off duty'}
                           </span>
                         </div>
@@ -562,7 +561,7 @@ function AttendanceMonitorContent() {
                       <div className="relative h-full min-h-[48px]" style={{ width: totalWidth }}>
                         {/* Dynamic Grid Lines */}
                         {columnHeaders.filter(c => c.isDayStart || (zoomLevel !== 'month' && !c.isDayStart)).map(c => (
-                          <div key={`grid-${c.key}`} className={`absolute top-0 bottom-0 border-l ${c.isDayStart ? 'border-[var(--tm-grid)]/60 w-px' : 'border-[var(--tm-grid)] w-px'}`}
+                          <div key={`grid-${c.key}`} className={`absolute top-0 bottom-0 border-l ${c.isDayStart ? 'border-[var(--border)]/40 w-[1.5px]' : 'border-[var(--tm-grid)] w-px'}`}
                             style={{ left: c.left }} />
                         ))}
                         
@@ -577,46 +576,46 @@ function AttendanceMonitorContent() {
 
                           const left = ((start.getTime() - refDate.getTime()) / 60000) * pxPerMinute;
                           const width = dur * pxPerMinute;
-
                           return (
                             <div key={entry.date} className="absolute top-1 bottom-1 pointer-events-none group/shift"
                               style={{ left: `${left}px`, width: `${Math.max(4, width)}px` }}>
-                              {/* Bracket background */}
-                              <div className="absolute inset-0 rounded-sm opacity-[0.08] dark:opacity-[0.12] backdrop-blur-[1px]" style={{ background: entry.color }} />
-                              {/* Left bracket */}
-                              <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-full shadow-sm" style={{ background: entry.color }} />
-                              {/* Right bracket */}
-                              <div className="absolute right-0 top-0 bottom-0 w-1 rounded-r-full shadow-sm" style={{ background: entry.color }} />
-                              {/* Top/Bottom accents */}
-                              <div className="absolute top-0 left-0 right-0 h-[1.5px] opacity-40" style={{ background: entry.color }} />
-                              <div className="absolute bottom-0 left-0 right-0 h-[1.5px] opacity-40" style={{ background: entry.color }} />
+                              {/* Glassmorphism background */}
+                              <div className="absolute inset-0 rounded-md opacity-[0.06] dark:opacity-[0.15] backdrop-blur-[2px] transition-opacity group-hover/shift:opacity-[0.2]" 
+                                style={{ background: entry.color, border: `1px solid ${entry.color}44` }} />
+                              {/* Left & Right Accents (Glass Pill effect) */}
+                              <div className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full shadow-sm opacity-60" style={{ background: entry.color }} />
+                              <div className="absolute right-0 top-1 bottom-1 w-[3px] rounded-full shadow-sm opacity-60" style={{ background: entry.color }} />
                             </div>
                           );
                         })}
-                        {/* Step Progress session bars */}
+                        {/* High-Fidelity Step Progress bars */}
                         {user.sessions.map((session, idx) => {
                           const { left, width } = getBarPosition(session.start, session.end, refDate, pxPerMinute, currentTime);
                           if (width <= 0) return null;
                           const isLive = !session.end;
-                          const colorClass = session.isLate ? 'amber' : isLive ? 'emerald' : 'indigo';
-                          const gradient = session.isLate
-                            ? 'from-amber-400 via-amber-500 to-amber-600'
-                            : isLive
-                              ? 'from-emerald-400 via-emerald-500 to-emerald-600'
-                              : 'from-indigo-400 via-indigo-500 to-indigo-600';
+                          
+                          // Gradient Selection
+                          const gradientColors = session.isLate 
+                            ? TIMELINE_CONFIG.COLORS.GRADIENT.AMBER 
+                            : isLive 
+                              ? TIMELINE_CONFIG.COLORS.GRADIENT.EMERALD 
+                              : TIMELINE_CONFIG.COLORS.GRADIENT.INDIGO;
+                          
+                          const colorMain = gradientColors[0];
+                          const gradientStr = `linear-gradient(90deg, ${gradientColors[0]} 0%, ${gradientColors[1]} 50%, ${gradientColors[2]} 100%)`;
 
                           return (
                             <motion.div key={idx}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: idx * 0.02 }}
-                              className="absolute top-1/2 -translate-y-1/2 flex items-center group/session h-8"
-                              style={{ left: `${left}px`, width: `${Math.max(12, width)}px` }}
+                              initial={{ opacity: 0, scaleY: 0.8 }}
+                              animate={{ opacity: 1, scaleY: 1 }}
+                              transition={{ duration: 0.4, delay: idx * 0.03 }}
+                              className="absolute top-1/2 -translate-y-1/2 flex items-center group/session h-7"
+                              style={{ left: `${left}px`, width: `${Math.max(16, width)}px` }}
                               onMouseEnter={(e) => {
                                 const rect = e.currentTarget.getBoundingClientRect();
                                 setTooltip({
                                   x: rect.left + rect.width / 2,
-                                  y: rect.top - 8,
+                                  y: rect.top - 12,
                                   userName: user.name,
                                   startTime: session.start.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
                                   endTime: session.end ? session.end.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : null,
@@ -629,30 +628,38 @@ function AttendanceMonitorContent() {
                               }}
                               onMouseLeave={() => setTooltip(null)}>
                               
-                              {/* The connecting track */}
-                              <div className={`absolute left-0 right-0 h-[3.5px] rounded-full opacity-10 bg-${colorClass}-500 blur-[0.5px]`} />
+                              {/* The track (Subtle glow) */}
+                              <div className="absolute left-[6px] right-[6px] h-1.5 rounded-full blur-[2px] opacity-20 pointer-events-none" 
+                                style={{ background: colorMain }} />
                               
-                              {/* Higher Fidelity Gradient Progress Line */}
-                              <div className={`absolute left-0 h-[3.5px] rounded-full bg-gradient-to-r ${gradient} shadow-[0_1px_3px_rgba(0,0,0,0.2)] z-10 transition-all group-hover/session:h-[4.5px]`}
-                                style={{ width: '100%' }} />
+                              {/* The Main Gradient Bar (Capsule) */}
+                              <div className="absolute left-[3px] right-[3px] h-[7px] rounded-full z-10 transition-all group-hover/session:h-[9px] group-hover/session:shadow-[0_0_15px_rgba(0,0,0,0.1)]"
+                                style={{ background: gradientStr, boxShadow: isLive ? `0 0 10px ${colorMain}44` : 'none' }}>
+                                {/* Shiny Overlay */}
+                                <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent rounded-full pointer-events-none" />
+                              </div>
 
-                              {/* Start Node */}
-                              <div className={`absolute left-0 w-3 h-3 rounded-full border-2 border-[var(--bg-surface)] z-20 shadow-md ${session.isLate ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                              {/* Start Node (Pill End) */}
+                              <div className="absolute left-0 w-[14px] h-[14px] rounded-full border-[2.5px] border-[var(--bg-surface)] z-20 shadow-lg"
+                                style={{ background: colorMain }} />
 
                               {/* End Node or Pulse Indicator */}
                               {isLive ? (
                                 <div className="absolute right-0 flex items-center justify-center z-20">
-                                  <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-[var(--bg-surface)] shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                                  <div className="absolute w-5 h-5 rounded-full bg-emerald-500 animate-ping opacity-30" />
+                                  <div className="w-[14px] h-[14px] rounded-full border-[2.5px] border-[var(--bg-surface)] shadow-lg" 
+                                    style={{ background: colorMain }} />
+                                  <div className="absolute w-[22px] h-[22px] rounded-full animate-ping opacity-20" 
+                                    style={{ background: colorMain }} />
                                 </div>
                               ) : (
-                                <div className={`absolute right-0 w-3 h-3 rounded-full border-2 border-[var(--bg-surface)] z-20 shadow-md ${gradient.split(' ')[2].replace('to-', 'bg-')}`} />
+                                <div className="absolute right-0 w-[14px] h-[14px] rounded-full border-[2.5px] border-[var(--bg-surface)] z-20 shadow-lg"
+                                  style={{ background: gradientColors[2] }} />
                               )}
 
                               {/* Time Label (Visible on hover or if wide enough) */}
                               {width > 40 && (
-                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 opacity-0 group-hover/session:opacity-100 transition-opacity bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border)] shadow-sm pointer-events-none z-30">
-                                  <span className="text-[7px] font-black whitespace-nowrap opacity-60">
+                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover/session:opacity-100 transition-all bg-[var(--bg-surface)] px-2 py-1 rounded-lg border border-[var(--border)] shadow-xl pointer-events-none z-30">
+                                  <span className="text-[8px] font-black whitespace-nowrap text-[var(--accent)] tracking-tighter">
                                     {session.start.getHours()}:{session.start.getMinutes().toString().padStart(2, '0')}
                                     {session.end && ` - ${session.end.getHours()}:${session.end.getMinutes().toString().padStart(2, '0')}`}
                                   </span>
