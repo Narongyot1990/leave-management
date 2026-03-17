@@ -23,10 +23,10 @@ dayjs.extend(relativeTime);
 dayjs.locale('th');
 
 const activityTypeLabels: Record<string, string> = {
-  'car-wash': 'เธฅเนเธฒเธเธฃเธ–',
-  'maintenance': 'เธเนเธญเธกเธเธณเธฃเธธเธ',
-  'inspection': 'เธ•เธฃเธงเธเธชเธ เธฒเธ',
-  'refuel': 'เน€เธ•เธดเธกเธเนเธณเธกเธฑเธ',
+  'car-wash': 'ล้างรถ',
+  'maintenance': 'ซ่อมบำรุง',
+  'inspection': 'ตรวจสภาพ',
+  'refuel': 'เติมน้ำมัน',
 };
 
 function getImageUrl(url: string) {
@@ -197,10 +197,10 @@ export default function AdminCarWashActivityCard({
             {getDisplayName(activity.userId)}
           </p>
           <p className="text-fluid-xs" style={{ color: 'var(--text-secondary)' }}>
-            {formatDateThai(activity.activityDate)} ยท {activity.activityTime} เธ.
+            {formatDateThai(activity.activityDate)} | {activity.activityTime} น.
           </p>
           <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-            เนเธเธชเธ•เนเน€เธกเธทเนเธญ {dayjs(activity.createdAt).fromNow()}
+            โพสต์เมื่อ {dayjs(activity.createdAt).fromNow()}
           </p>
         </div>
 
@@ -241,7 +241,7 @@ export default function AdminCarWashActivityCard({
                   style={{ color: activity.marked ? 'var(--warning)' : 'var(--success)' }}
                 >
                   <Flag className="w-3.5 h-3.5" />
-                  {activity.marked ? 'เธขเธเน€เธฅเธดเธ Approve' : 'Approve (Flag)'}
+                  {activity.marked ? 'ยกเลิก Approve' : 'Approve (Flag)'}
                 </button>
                 <button
                   onClick={() => onOpenEdit(activity)}
@@ -249,7 +249,7 @@ export default function AdminCarWashActivityCard({
                   style={{ color: 'var(--text-secondary)' }}
                 >
                   <Pencil className="w-3.5 h-3.5" />
-                  เนเธเนเนเธ
+                  แก้ไข
                 </button>
                 <button
                   onClick={() => onDelete(activity._id)}
@@ -257,7 +257,7 @@ export default function AdminCarWashActivityCard({
                   style={{ color: 'var(--danger)' }}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  เธฅเธ
+                  ลบ
                 </button>
               </motion.div>
             )}
@@ -286,7 +286,7 @@ export default function AdminCarWashActivityCard({
               </button>
             )}
           </span>
-          <span>{activity.comments.length > 0 && `${activity.comments.length} เธเธงเธฒเธกเธเธดเธ”เน€เธซเนเธ`}</span>
+          <span>{activity.comments.length > 0 && `${activity.comments.length} ความคิดเห็น`}</span>
         </div>
       )}
 
@@ -297,7 +297,7 @@ export default function AdminCarWashActivityCard({
           style={{ color: isLiked ? 'var(--danger)' : 'var(--text-muted)' }}
         >
           <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-          เธ–เธนเธเนเธ
+          ถูกใจ
         </button>
         <button
           onClick={() => onToggleComments(activity._id)}
@@ -305,7 +305,7 @@ export default function AdminCarWashActivityCard({
           style={{ color: isCommentOpen ? 'var(--accent)' : 'var(--text-muted)' }}
         >
           <MessageCircle className="w-4 h-4" />
-          เนเธชเธ”เธเธเธงเธฒเธกเธเธดเธ”เน€เธซเนเธ
+          แสดงความคิดเห็น
         </button>
         <button
           onClick={() => onMark(activity._id)}
@@ -347,7 +347,7 @@ export default function AdminCarWashActivityCard({
                           className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
                           style={{ color: 'var(--danger)' }}
                         >
-                          เธฅเธ
+                          ลบ
                         </button>
                       </div>
                     </div>
@@ -365,7 +365,7 @@ export default function AdminCarWashActivityCard({
                   value={commentText}
                   onChange={(event) => onCommentTextChange(event.target.value)}
                   onKeyDown={(event) => { if (event.key === 'Enter') onCommentSubmit(activity._id); }}
-                  placeholder="เน€เธเธตเธขเธเธเธงเธฒเธกเธเธดเธ”เน€เธซเนเธ..."
+                  placeholder="เขียนความคิดเห็น..."
                   className="input flex-1 py-2 text-fluid-xs"
                 />
                 <button

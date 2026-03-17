@@ -18,15 +18,15 @@ export default function AdminCarWashStats({
       <div className="grid grid-cols-4 gap-2">
         <div className="text-center p-2.5 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
           <p className="text-fluid-xl font-extrabold" style={{ color: 'var(--accent)' }}>{todayCount}</p>
-          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>เธงเธฑเธเธเธตเน</p>
+          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>วันนี้</p>
         </div>
         <div className="text-center p-2.5 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
           <p className="text-fluid-xl font-extrabold" style={{ color: 'var(--success)' }}>{weekCount}</p>
-          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>เธชเธฑเธเธ”เธฒเธซเน</p>
+          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>สัปดาห์</p>
         </div>
         <div className="text-center p-2.5 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
           <p className="text-fluid-xl font-extrabold" style={{ color: 'var(--warning)' }}>{monthCount}</p>
-          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>เน€เธ”เธทเธญเธ</p>
+          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>เดือน</p>
         </div>
         <div className="text-center p-2.5 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
           <p className="text-fluid-xl font-extrabold" style={{ color: 'var(--success)' }}>{approvedCount}</p>

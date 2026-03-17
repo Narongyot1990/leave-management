@@ -8,6 +8,7 @@ import {
 import { Leader } from "@/models/Leader";
 import { User } from "@/models/User";
 import { CHANNELS, triggerPusher } from "@/lib/pusher";
+import { getBangkokTime } from "@/lib/date-utils";
 import { badRequest, conflict, forbidden, notFound } from "@/lib/api-errors";
 import type { TokenPayload } from "@/lib/jwt-auth";
 import type {
@@ -217,6 +218,7 @@ class AttendanceCorrectionRepository {
     timestamp: Date;
   }) {
     const timeBufferMs = 1000;
+    const now = getBangkokTime();
     await AttendanceCorrection.deleteMany({
       userId: input.userId,
       type: input.type,
@@ -271,9 +273,10 @@ export class AttendanceService {
   }
 
   static async clockAction(userId: string, input: ClockInInput) {
+    const now = getBangkokTime();
     const lastRecord = await attendanceRepository.findLatestWithin(
       userId,
-      new Date(Date.now() - 24 * 60 * 60 * 1000),
+      new Date(now.getTime() - 24 * 60 * 60 * 1000),
     );
 
     enforceClockSequence(input.type, lastRecord);
@@ -297,7 +300,7 @@ export class AttendanceService {
       location: input.location,
       distance,
       isInside: distance <= (input.radius ?? 50) + 5,
-      timestamp: new Date(),
+      timestamp: now,
     });
 
     await publishAttendanceEvent(record);
@@ -411,7 +414,7 @@ export class AttendanceService {
     const correction = await correctionRepository.updateReview(input.id, {
       status: input.status,
       approvedBy: actor.userId,
-      approvedAt: new Date(),
+      approvedAt: getBangkokTime(),
       rejectedReason: input.rejectedReason,
     });
 

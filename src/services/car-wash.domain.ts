@@ -1,4 +1,5 @@
 import mongoose, { type QueryFilter } from "mongoose";
+import { getBangkokTime } from "@/lib/date-utils";
 import { del, put } from "@vercel/blob";
 import { badRequest, forbidden, notFound } from "@/lib/api-errors";
 import { CHANNELS, EVENTS, triggerPusher } from "@/lib/pusher";
@@ -150,7 +151,7 @@ export class CarWashService {
     activity.comments.push({
       userId: toMixedUserId(input.visitorId),
       text: input.text,
-      createdAt: new Date(),
+      createdAt: getBangkokTime(),
     } as IComment);
 
     await activity.save();
@@ -191,7 +192,7 @@ export class CarWashService {
 
     activity.marked = !activity.marked;
     activity.markedBy = activity.marked ? toMixedUserId(input.leaderId) : undefined;
-    activity.markedAt = activity.marked ? new Date() : undefined;
+    activity.markedAt = activity.marked ? getBangkokTime() : undefined;
 
     await activity.save();
     return this.refreshAndPublish(id);

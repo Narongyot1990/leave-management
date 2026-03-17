@@ -1,10 +1,10 @@
-/* ==========================================
-   DATE & TIME UTILITIES
-   Single source of truth for all date formatting,
-   relative time, and online status logic.
-   ========================================== */
+import { dayjs } from './dayjs';
 
 export const ONLINE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+export function getBangkokTime(): Date {
+  return dayjs().tz('Asia/Bangkok').toDate();
+}
 
 export function formatDateThai(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('th-TH', {
@@ -30,7 +30,7 @@ export function getLeaveDays(startDate: string, endDate: string): number {
 export function formatRelativeTime(dateStr?: string): string {
   if (!dateStr) return 'ไม่เคยออนไลน์';
   const date = new Date(dateStr);
-  const now = new Date();
+  const now = getBangkokTime();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMins / 60);
@@ -50,6 +50,6 @@ export function formatRelativeTime(dateStr?: string): string {
 export function isUserOnline(lastSeen?: string): boolean {
   if (!lastSeen) return false;
   const date = new Date(lastSeen);
-  const now = new Date();
+  const now = getBangkokTime();
   return now.getTime() - date.getTime() < ONLINE_TIMEOUT_MS;
 }

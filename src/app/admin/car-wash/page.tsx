@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Car } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
@@ -91,7 +91,7 @@ export default function AdminCarWashPage() {
 
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader
-          title="Moments เธเธดเธเธเธฃเธฃเธก"
+          title="Moments กิจกรรม"
           backHref="/admin/home"
           rightContent={
             <AdminCarWashFilterToggleButton
@@ -136,7 +136,7 @@ export default function AdminCarWashPage() {
             ) : activities.length === 0 ? (
               <div className="card p-12 text-center">
                 <Car className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
-                <p className="text-fluid-sm font-medium" style={{ color: 'var(--text-muted)' }}>เนเธกเนเธกเธตเธเธดเธเธเธฃเธฃเธก</p>
+                <p className="text-fluid-sm font-medium" style={{ color: 'var(--text-muted)' }}>ไม่มีกิจกรรม</p>
               </div>
             ) : (
               <div className="space-y-4">
