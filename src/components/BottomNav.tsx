@@ -1,7 +1,7 @@
-﻿'use client';
+'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, CalendarDays, Rss, UserCircle } from 'lucide-react';
+import { Home, CalendarDays, Rss, UserCircle, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface NavItem {
@@ -13,6 +13,7 @@ interface NavItem {
 const driverNav: NavItem[] = [
   { icon: Home, label: 'Home', href: '/home' },
   { icon: CalendarDays, label: 'Calendar', href: '/dashboard' },
+  { icon: Users, label: 'Contacts', href: '/contacts' },
   { icon: Rss, label: 'Activity', href: '/car-wash/feed' },
   { icon: UserCircle, label: 'Profile', href: '/profile' },
 ];

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -38,7 +38,7 @@ export default function Sidebar({ role }: { role: 'driver' | 'leader' | 'admin' 
     { icon: Clock, label: 'Leave History', href: '/leave/history' },
     { icon: Navigation, label: 'Attendance', href: '/attendance' },
     { icon: Car, label: 'Company Activity', href: '/car-wash' },
-    { icon: Contact2, label: 'Contacts', href: '/contacts' },
+    { icon: Users, label: 'Contacts', href: '/contacts' },
     { icon: CalendarDays, label: 'Dashboard', href: '/dashboard' },
   ];
 
