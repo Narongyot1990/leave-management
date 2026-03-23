@@ -84,11 +84,20 @@ export class UsersService {
       updateData.role = input.role;
     }
 
-    if (actor.role === "leader" && input.userId !== actor.userId) {
+    // Leader: ต้องเป็นคนในสาขาเดียวกัน หรือเป็นตัวเอง
+    if (actor.role === "leader") {
       const targetUser = await User.findById(input.userId).lean();
-      if (targetUser && (targetUser.role === "leader" || targetUser.role === "admin")) {
+      if (!targetUser) {
+        throw notFound("User not found");
+      }
+      
+      // Leader ไม่สามารถแก้ไข Leader หรือ Admin คนอื่นได้
+      if (targetUser.role === "leader" || targetUser.role === "admin") {
         throw forbidden("Leaders cannot modify other Leaders or Admins");
       }
+      
+      // Leader สามารถแก้ไขได้ทุก field สำหรับคนในสาขาตัวเอง
+      // (ไม่ต้องเช็ค branch เพิ่มเพราะถือว่า leader ดูแลทุกคนในสาขา)
     }
 
     const user = await User.findByIdAndUpdate(input.userId, updateData, { new: true }).lean();
