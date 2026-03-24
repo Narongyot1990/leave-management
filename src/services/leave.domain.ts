@@ -509,7 +509,8 @@ function getAdminRootProfile(): UserSummary {
     _id: "admin_root",
     name: "ITL",
     surname: "Administrator",
-    lineDisplayName: "ITL Administrator",
+    lineDisplayName: "ITL",
+    lineProfileImage: null, // No avatar for admin
     role: "admin",
     status: "active",
   };
