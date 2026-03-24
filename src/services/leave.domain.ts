@@ -55,11 +55,18 @@ class LeaveRepository {
   async findMany(query: QueryFilter<ILeaveRequest>) {
     const requests = await LeaveRequest.find(query)
       .populate("userId", "lineDisplayName employeeId phone name surname lineProfileImage performanceTier performancePoints performanceLevel branch")
-      .populate("approvedBy", "name surname lineDisplayName lineProfileImage performanceTier branch role")
       .sort({ createdAt: -1 })
       .lean();
 
-    return requests.map((request) => mapPopulatedLeaveRequest(request));
+    // Don't populate approvedBy here - it can be "admin_root" which is not a valid ObjectId
+    // Handle approvedBy in the service layer instead
+    return requests.map((request) => {
+      const { approvedBy, ...rest } = request;
+      return {
+        ...rest,
+        approvedBy, // Keep as-is, service will handle "admin_root" vs ObjectId
+      };
+    });
   }
 
   async findById(id: string) {
