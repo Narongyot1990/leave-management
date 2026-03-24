@@ -134,13 +134,23 @@ export class UsersService {
     };
   }
 
-  static async remove(_actor: UserActor, input: DeleteUserInput) {
+  static async remove(actor: UserActor, input: DeleteUserInput) {
     const user = await User.findById(input.id).lean();
     if (!user) {
       throw notFound("User not found");
     }
     if (user.status !== "pending") {
       throw badRequest("Can only delete pending users");
+    }
+    
+    // Check permissions
+    if (actor.role === "leader") {
+      // Leader can only delete users in their branch
+      if (!actor.branch || actor.branch.toLowerCase() !== (user.branch ?? "").toLowerCase()) {
+        throw forbidden("Leaders can only delete users in their branch");
+      }
+    } else if (actor.role !== "admin") {
+      throw forbidden("Only admins and leaders can delete users");
     }
 
     await SubstituteRecord.deleteMany({ userId: input.id });
