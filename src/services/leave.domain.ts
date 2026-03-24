@@ -60,11 +60,11 @@ class LeaveRepository {
       .lean();
 
     return requests.map((request) => {
-      // Handle "admin_root" special case - replace with admin profile object
-      if (request.approvedBy === "admin_root") {
-        const { approvedBy, ...rest } = request;
+      // Handle "admin_root" special case AFTER populate - replace with admin profile object
+      const approvedBy = request.approvedBy;
+      if (approvedBy && typeof approvedBy === 'object' && (approvedBy as any)._id === "admin_root") {
         return {
-          ...rest,
+          ...request,
           approvedBy: getAdminRootProfile(),
         };
       }
