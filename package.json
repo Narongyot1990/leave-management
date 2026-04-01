@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "audit:leave-userids": "node scripts/migrate-leave-userids.mjs --dry-run",
+    "migrate:leave-userids": "node scripts/migrate-leave-userids.mjs --write"
   },
   "dependencies": {
     "@types/leaflet": "^1.9.21",

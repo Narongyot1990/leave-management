@@ -9,6 +9,7 @@ import type {
 } from "@/lib/validations/leave.schema";
 import { LeaveRequest, type ILeaveRequest, type LeaveStatus, type LeaveType } from "@/models/LeaveRequest";
 import { User, type IUser } from "@/models/User";
+import { Leader } from "@/models/Leader";
 import { CHANNELS, EVENTS, triggerPusher } from "@/lib/pusher";
 
 type LeaveActor = Pick<TokenPayload, "userId" | "role" | "branch">;
@@ -53,12 +54,9 @@ type QuotaSummary = Pick<IUser, "vacationDays" | "sickDays" | "personalDays">;
 
 class LeaveRepository {
   async findMany(query: QueryFilter<ILeaveRequest>) {
-    // Handle userId filter - convert all IDs to strings for comparison
-    const finalQuery: any = { ...query };
-    if (query.userId && query.userId.$in && query.userId.$in.length > 0) {
-      // Convert ALL IDs to strings to match stored string userIds
-      const stringIds = query.userId.$in.map(id => String(id));
-      finalQuery.userId = { $in: stringIds };
+    const finalQuery: QueryFilter<ILeaveRequest> & { userId?: unknown } = { ...query };
+    if (hasInOperator(query.userId) && query.userId.$in.length > 0) {
+      finalQuery.userId = { $in: normalizeMixedIds(query.userId.$in) };
     }
     
     const requests = await LeaveRequest.find(finalQuery)
@@ -70,7 +68,7 @@ class LeaveRepository {
     return requests.map((request) => {
       // Handle "admin_root" special case AFTER populate - replace with admin profile object
       const approvedBy = request.approvedBy;
-      if (approvedBy && typeof approvedBy === 'object' && (approvedBy as any)._id === "admin_root") {
+      if (isAdminRootReference(approvedBy)) {
         return {
           ...request,
           approvedBy: getAdminRootProfile(),
@@ -252,7 +250,8 @@ export class LeaveService {
     }
 
     const driverBranch = extractBranch(leaveRequest.userId);
-    if (actor.role === "leader" && actor.branch && driverBranch?.toLowerCase() !== actor.branch.toLowerCase()) {
+    const actorBranch = actor.role === "leader" ? await resolveActorBranch(actor) : actor.branch;
+    if (actor.role === "leader" && actorBranch && driverBranch?.toLowerCase() !== actorBranch.toLowerCase()) {
       throw forbidden("Cannot approve leave requests outside your branch");
     }
 
@@ -293,10 +292,6 @@ export class LeaveService {
 }
 
 async function buildLeaveScope(actor: LeaveActor, query: LeaveQueryInput) {
-  // DEBUG
-  console.log("[buildLeaveScope] actor:", JSON.stringify(actor));
-  console.log("[buildLeaveScope] query:", JSON.stringify(query));
-
   const filter: QueryFilter<ILeaveRequest> = {};
 
   if (actor.role === "driver") {
@@ -307,15 +302,13 @@ async function buildLeaveScope(actor: LeaveActor, query: LeaveQueryInput) {
     }
   } else if (actor.role === "leader") {
     // Leader: ดู pending ของสาขาตัวเอง
-    console.log("[buildLeaveScope] leader role, branch:", actor.branch);
-    if (actor.branch) {
-      const branchUserIds = await getBranchUserIds(actor.branch);
-      console.log("[buildLeaveScope] branchUserIds:", branchUserIds.length, "users");
+    const actorBranch = await resolveActorBranch(actor);
+    if (actorBranch) {
+      const branchUserIds = await getBranchUserIds(actorBranch);
       filter.userId = { $in: branchUserIds };
-      // Leader should see pending by default, unless status is specified
       filter.status = query.status || "pending";
-    } else {
-      console.log("[buildLeaveScope] NO BRANCH - leader cannot see anything!");
+    } else if (query.status) {
+      filter.status = query.status;
     }
   } else if (actor.role === "admin") {
     // Admin: ดูตาม branch filter หรือทุกสาขา
@@ -326,8 +319,6 @@ async function buildLeaveScope(actor: LeaveActor, query: LeaveQueryInput) {
       filter.status = query.status;
     }
   }
-
-  console.log("[buildLeaveScope] final filter:", JSON.stringify(filter));
   return filter;
 }
 
@@ -337,12 +328,13 @@ async function assertCanSubmitLeave(actor: LeaveActor, targetUserId: string) {
   }
 
   if (actor.role === "leader") {
+    const actorBranch = await resolveActorBranch(actor);
     const targetUser = await User.findById(targetUserId).select("branch").lean();
     if (!targetUser) {
       throw notFound("Target user not found");
     }
 
-    if (!actor.branch || actor.branch.toLowerCase() !== (targetUser.branch ?? "").toLowerCase()) {
+    if (!actorBranch || actorBranch.toLowerCase() !== (targetUser.branch ?? "").toLowerCase()) {
       throw forbidden("Leaders can only submit leave for drivers in their branch");
     }
   }
@@ -369,6 +361,58 @@ function dedupeObjectIds(ids: mongoose.Types.ObjectId[]) {
     unique.set(id.toString(), id);
   }
   return Array.from(unique.values());
+}
+
+function hasInOperator(value: unknown): value is { $in: unknown[] } {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "$in" in (value as Record<string, unknown>) &&
+      Array.isArray((value as { $in?: unknown[] }).$in),
+  );
+}
+
+function normalizeMixedIds(ids: unknown[]) {
+  const normalized: Array<string | mongoose.Types.ObjectId> = [];
+  const seen = new Set<string>();
+
+  for (const id of ids) {
+    const stringId = String(id);
+    if (!stringId) {
+      continue;
+    }
+
+    const stringKey = `string:${stringId}`;
+    if (!seen.has(stringKey)) {
+      normalized.push(stringId);
+      seen.add(stringKey);
+    }
+
+    if (mongoose.Types.ObjectId.isValid(stringId)) {
+      const objectId = new mongoose.Types.ObjectId(stringId);
+      const objectKey = `object:${objectId.toString()}`;
+      if (!seen.has(objectKey)) {
+        normalized.push(objectId);
+        seen.add(objectKey);
+      }
+    }
+  }
+
+  return normalized;
+}
+
+async function resolveActorBranch(actor: LeaveActor) {
+  if (!mongoose.Types.ObjectId.isValid(actor.userId)) {
+    return actor.branch;
+  }
+
+  const user = await User.findById(actor.userId).select("branch").lean();
+  if (user?.branch) {
+    return user.branch;
+  }
+
+  const leader = await Leader.findById(actor.userId).select("branch").lean();
+  return leader?.branch ?? actor.branch;
 }
 
 function parseLocalDate(value: string) {
@@ -523,6 +567,14 @@ function mapOptionalReference(value: unknown): string | UserSummary | undefined 
 
 function asOptionalString(value: unknown) {
   return typeof value === "string" ? value : undefined;
+}
+
+function isAdminRootReference(value: unknown): value is { _id: string } {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  return String((value as { _id?: unknown })._id) === "admin_root";
 }
 
 function getAdminRootProfile(): UserSummary {
