@@ -295,9 +295,17 @@ async function buildLeaveScope(actor: LeaveActor, query: LeaveQueryInput) {
       filter.userId = actor.userId;
     }
   } else if (actor.role === "leader") {
-    // Leader: ดู pending requests ทั้งหมด (ทุกสาขา)
-    // ใช้ query.status ถ้ามี ถ้าไม่มีใช้ "pending" เป็น default
-    filter.status = query.status || "pending";
+    // Leader: ดูเฉพาะสาขาตัวเอง
+    if (actor.branch) {
+      filter.userId = { $in: await getBranchUserIds(actor.branch, actor.userId) };
+      // Default to pending, but allow override
+      if (query.status) {
+        filter.status = query.status;
+      } else {
+        filter.status = "pending";
+      }
+    }
+    // ถ้าไม่มี branch → ไม่เห็นอะไรเลย (ต้องมี branch ตั้งค่า)
   } else if (actor.role === "admin" && query.branch && query.branch !== "all") {
     filter.userId = { $in: await getBranchUserIds(query.branch) };
   }
