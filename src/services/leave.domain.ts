@@ -53,15 +53,12 @@ type QuotaSummary = Pick<IUser, "vacationDays" | "sickDays" | "personalDays">;
 
 class LeaveRepository {
   async findMany(query: QueryFilter<ILeaveRequest>) {
-    // Handle userId filter specially - check both string and ObjectId formats
+    // Handle userId filter - convert all IDs to strings for comparison
     const finalQuery: any = { ...query };
-    if (query.userId && query.userId.$in) {
-      // For $in queries, also match string versions of the IDs
-      const objectIdArray = query.userId.$in.filter(id => mongoose.Types.ObjectId.isValid(id));
-      const stringArray = query.userId.$in.map(id => String(id));
-      finalQuery.userId = {
-        $in: [...objectIdArray, ...stringArray]
-      };
+    if (query.userId && query.userId.$in && query.userId.$in.length > 0) {
+      // Convert ALL IDs to strings to match stored string userIds
+      const stringIds = query.userId.$in.map(id => String(id));
+      finalQuery.userId = { $in: stringIds };
     }
     
     const requests = await LeaveRequest.find(finalQuery)
