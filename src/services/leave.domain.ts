@@ -296,7 +296,8 @@ async function buildLeaveScope(actor: LeaveActor, query: LeaveQueryInput) {
     }
   } else if (actor.role === "leader") {
     // Leader: ดู pending requests ทั้งหมด (ทุกสาขา)
-    filter.status = "pending";
+    // ใช้ query.status ถ้ามี ถ้าไม่มีใช้ "pending" เป็น default
+    filter.status = query.status || "pending";
   } else if (actor.role === "admin" && query.branch && query.branch !== "all") {
     filter.userId = { $in: await getBranchUserIds(query.branch) };
   }
@@ -305,9 +306,6 @@ async function buildLeaveScope(actor: LeaveActor, query: LeaveQueryInput) {
     filter.userId = query.userId;
   }
 
-  if (query.status) {
-    filter.status = query.status;
-  }
   // Leaders and Admins should see ALL statuses when not filtering by specific user
   // Don't default to "approved" - they need to see pending requests to approve them
 
