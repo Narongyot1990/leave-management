@@ -305,7 +305,9 @@ async function buildLeaveScope(actor: LeaveActor, query: LeaveQueryInput) {
     if (actorBranch) {
       const branchUserIds = await getBranchUserIds(actorBranch);
       filter.userId = { $in: branchUserIds };
-      filter.status = query.status || "pending";
+      if (query.status) {
+        filter.status = query.status;
+      }
     } else if (query.status) {
       filter.status = query.status;
     }
