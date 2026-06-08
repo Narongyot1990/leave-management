@@ -59,19 +59,36 @@ const USER_SUMMARY_SELECT =
   "lineDisplayName employeeId phone name surname lineProfileImage performanceTier performancePoints performanceLevel branch role status";
 
 class LeaveRepository {
-  async findMany(query: QueryFilter<ILeaveRequest>) {
+  async findMany(query: QueryFilter<ILeaveRequest>, options: { skip?: number; limit?: number } = {}) {
     const finalQuery: QueryFilter<ILeaveRequest> & { userId?: unknown } = { ...query };
     if (hasInOperator(query.userId) && query.userId.$in.length > 0) {
       finalQuery.userId = { $in: normalizeMixedIds(query.userId.$in) };
     }
     
-    const requests = await LeaveRequest.find(finalQuery)
+    let requestQuery = LeaveRequest.find(finalQuery)
       .populate("userId", USER_SUMMARY_SELECT)
-      .sort({ createdAt: -1 })
-      .lean();
+      .sort({ createdAt: -1 });
+
+    if (options.skip !== undefined) {
+      requestQuery = requestQuery.skip(options.skip);
+    }
+    if (options.limit !== undefined) {
+      requestQuery = requestQuery.limit(options.limit);
+    }
+
+    const requests = await requestQuery.lean();
 
     const requestsWithApprovedBy = await attachApprovedBySummaries(requests);
     return requestsWithApprovedBy.map((request) => mapPopulatedLeaveRequest(request));
+  }
+
+  async count(query: QueryFilter<ILeaveRequest>) {
+    const finalQuery: QueryFilter<ILeaveRequest> & { userId?: unknown } = { ...query };
+    if (hasInOperator(query.userId) && query.userId.$in.length > 0) {
+      finalQuery.userId = { $in: normalizeMixedIds(query.userId.$in) };
+    }
+
+    return LeaveRequest.countDocuments(finalQuery);
   }
 
   async findById(id: string) {
@@ -149,6 +166,29 @@ export class LeaveService {
     const resolvedActor = await resolveActorAccess(actor);
     const filter = await buildLeaveScope(resolvedActor, query);
     return leaveRepository.findMany(filter);
+  }
+
+  static async listPaginated(actor: LeaveActor, query: LeaveQueryInput) {
+    const resolvedActor = await resolveActorAccess(actor);
+    const filter = await buildLeaveScope(resolvedActor, query);
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 25;
+    const skip = (page - 1) * limit;
+
+    const [requests, total] = await Promise.all([
+      leaveRepository.findMany(filter, { skip, limit }),
+      leaveRepository.count(filter),
+    ]);
+
+    return {
+      requests,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: skip + requests.length < total,
+      },
+    };
   }
 
   static async create(actor: LeaveActor, input: CreateLeaveInput) {
@@ -295,7 +335,7 @@ async function buildLeaveScope(actor: LeaveActor, query: LeaveQueryInput) {
 
   if (actor.role === "driver") {
     // Driver: ดูได้แค่ตัวเอง
-    filter.userId = actor.userId;
+    filter.userId = buildUserIdFilter(actor.userId);
     if (query.status) {
       filter.status = query.status;
     }
@@ -304,16 +344,31 @@ async function buildLeaveScope(actor: LeaveActor, query: LeaveQueryInput) {
     const actorBranch = await resolveActorBranch(actor);
     if (actorBranch) {
       const branchUserIds = await getBranchUserIds(actorBranch);
-      filter.userId = { $in: branchUserIds };
+      const branchUserIdKeys = new Set(branchUserIds.map((id) => id.toString()));
+      if (query.userId) {
+        if (!branchUserIdKeys.has(query.userId)) {
+          throw forbidden("Cannot view leave history outside your branch");
+        }
+        filter.userId = buildUserIdFilter(query.userId);
+      } else {
+        filter.userId = { $in: branchUserIds };
+      }
       if (query.status) {
         filter.status = query.status;
       }
     } else if (query.status) {
       filter.status = query.status;
+      if (query.userId) {
+        filter.userId = buildUserIdFilter(query.userId);
+      }
+    } else if (query.userId) {
+      filter.userId = buildUserIdFilter(query.userId);
     }
   } else if (actor.role === "admin") {
     // Admin: ดูตาม branch filter หรือทุกสาขา
-    if (query.branch && query.branch !== "all") {
+    if (query.userId) {
+      filter.userId = buildUserIdFilter(query.userId);
+    } else if (query.branch && query.branch !== "all") {
       filter.userId = { $in: await getBranchUserIds(query.branch) };
     }
     if (query.status) {
@@ -400,6 +455,10 @@ function normalizeMixedIds(ids: unknown[]) {
   }
 
   return normalized;
+}
+
+function buildUserIdFilter(userId: string) {
+  return { $in: normalizeMixedIds([userId]) };
 }
 
 async function attachApprovedBySummaries<T extends { approvedBy?: unknown }>(records: T[]) {

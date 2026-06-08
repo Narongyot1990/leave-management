@@ -49,7 +49,34 @@ interface SubstituteRecord {
   description?: string;
 }
 
+interface EmployeeOption {
+  _id: string;
+  lineDisplayName?: string;
+  name?: string;
+  surname?: string;
+  employeeId?: string;
+  branch?: string;
+  role?: string;
+}
+
+interface LeavePagination {
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+}
+
 const BRANCHES = ['AYA', 'CBI', 'RA2', 'KSN', 'BBT'];
+const LEAVE_PAGE_SIZE = 25;
+
+function getEmployeeLabel(employee: EmployeeOption) {
+  const fullName = employee.name && employee.surname
+    ? `${employee.name} ${employee.surname}`
+    : employee.lineDisplayName || 'Unknown';
+  const employeeId = employee.employeeId ? ` (${employee.employeeId})` : '';
+  const branch = employee.branch ? ` - ${employee.branch}` : '';
+  return `${fullName}${employeeId}${branch}`;
+}
 
 function AdminHistoryContent() {
   const searchParams = useSearchParams();
@@ -59,11 +86,20 @@ function AdminHistoryContent() {
   const [leaves, setLeaves] = useState<LeaveRequestRecord[]>([]);
   const [substitutes, setSubstitutes] = useState<SubstituteRecord[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
+  const [leavePagination, setLeavePagination] = useState<LeavePagination | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMoreLeaves, setLoadingMoreLeaves] = useState(false);
   const [activeTab, setActiveTab] = useState('leave');
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const { selectedBranch, setSelectedBranch, appendBranchToParams } = useAdminBranchScope();
+
+  const handleBranchSelect = useCallback((branch: string) => {
+    setSelectedBranch(branch);
+    setSelectedEmployeeId('all');
+  }, [setSelectedBranch]);
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -72,35 +108,65 @@ function AdminHistoryContent() {
     }
   }, [searchParams]);
 
+  const buildScopedParams = useCallback(() => {
+    const params = appendBranchToParams(new URLSearchParams());
+    if (selectedEmployeeId !== 'all') {
+      params.set('userId', selectedEmployeeId);
+    }
+    return params;
+  }, [appendBranchToParams, selectedEmployeeId]);
+
+  const fetchEmployees = useCallback(async () => {
+    if (!user) return;
+
+    const params = appendBranchToParams(new URLSearchParams({ activeOnly: 'true' }));
+    const queryString = params.toString();
+    const response = await fetch(`/api/users${queryString ? `?${queryString}` : ''}`);
+    const data = await response.json();
+    if (data.success) {
+      const scopedUsers = selectedBranch === 'all'
+        ? data.users
+        : data.users.filter((employee: EmployeeOption) => employee.branch?.toLowerCase() === selectedBranch.toLowerCase());
+      setEmployees(scopedUsers);
+    }
+  }, [appendBranchToParams, selectedBranch, user]);
+
+  const fetchLeaves = useCallback(async (page = 1, append = false) => {
+    const params = buildScopedParams();
+    params.set('page', String(page));
+    params.set('limit', String(LEAVE_PAGE_SIZE));
+
+    const response = await fetch(`/api/leave?${params.toString()}`);
+    const data = await response.json();
+    if (data.success) {
+      setLeaves((current) => append ? [...current, ...data.requests] : data.requests);
+      setLeavePagination(data.pagination);
+    }
+  }, [buildScopedParams]);
+
   const fetchData = useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
-      let leaveUrl = '/api/leave';
       let subUrl = '/api/substitute';
 
-      const queryParams = appendBranchToParams(new URLSearchParams());
+      const queryParams = buildScopedParams();
       const queryString = queryParams.toString();
       if (queryString) {
-        leaveUrl += `?${queryString}`;
         subUrl += `?${queryString}`;
       }
 
-      const [leaveRes, substituteRes, attendanceRes] = await Promise.all([
-        fetch(leaveUrl),
+      const [substituteRes, attendanceRes] = await Promise.all([
         fetch(subUrl),
         fetch(`/api/attendance?userId=${user.id}`)
       ]);
 
-      const [leaveData, substituteData, attendanceData] = await Promise.all([
-        leaveRes.json(),
+      const [substituteData, attendanceData] = await Promise.all([
         substituteRes.json(),
         attendanceRes.json()
       ]);
 
-      if (leaveData.success) {
-        setLeaves(leaveData.requests);
-      }
+      await fetchLeaves(1, false);
       if (substituteData.success) {
         setSubstitutes(substituteData.records);
       }
@@ -115,11 +181,25 @@ function AdminHistoryContent() {
     } finally {
       setLoading(false);
     }
-  }, [appendBranchToParams, user]);
+  }, [buildScopedParams, fetchLeaves, user]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
+
+  const handleLoadMoreLeaves = useCallback(async () => {
+    if (!leavePagination?.hasMore) return;
+    setLoadingMoreLeaves(true);
+    try {
+      await fetchLeaves(leavePagination.page + 1, true);
+    } finally {
+      setLoadingMoreLeaves(false);
+    }
+  }, [fetchLeaves, leavePagination]);
 
   const handleLeaveChanged = useCallback(async () => {
     fetchData();
@@ -148,16 +228,36 @@ function AdminHistoryContent() {
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
               <AdminBranchFilter
                 selectedBranch={selectedBranch}
-                onSelectBranch={setSelectedBranch}
+                onSelectBranch={handleBranchSelect}
                 branchCodes={BRANCHES}
               />
             </motion.div>
+
+            {activeTab === 'leave' && (
+              <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-3">
+                <label className="block text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
+                  เลือกพนักงาน
+                </label>
+                <select
+                  value={selectedEmployeeId}
+                  onChange={(event) => setSelectedEmployeeId(event.target.value)}
+                  className="input w-full"
+                >
+                  <option value="all">ทุกคน{selectedBranch !== 'all' ? `ในสาขา ${selectedBranch}` : ''}</option>
+                  {employees.map((employee) => (
+                    <option key={employee._id} value={employee._id}>
+                      {getEmployeeLabel(employee)}
+                    </option>
+                  ))}
+                </select>
+              </motion.div>
+            )}
 
             <AdminTabChips
               activeKey={activeTab}
               onChange={setActiveTab}
               options={[
-                { key: 'leave', label: `การลา (${leaves.length})` },
+                { key: 'leave', label: `การลา (${leavePagination?.total ?? leaves.length})` },
                 { key: 'substitute', label: `ลงแทน (${substitutes.length})` },
                 { key: 'attendance', label: `ลงเวลา (${attendance.length})` },
               ]}
@@ -252,6 +352,16 @@ function AdminHistoryContent() {
                       </AdminCardShell>
                     );
                   })}
+                  {leavePagination?.hasMore && (
+                    <button
+                      type="button"
+                      onClick={handleLoadMoreLeaves}
+                      disabled={loadingMoreLeaves}
+                      className="btn btn-ghost w-full"
+                    >
+                      {loadingMoreLeaves ? 'กำลังโหลด...' : `โหลดเพิ่ม (${leaves.length}/${leavePagination.total})`}
+                    </button>
+                  )}
                 </div>
               )
             ) : activeTab === 'substitute' ? (

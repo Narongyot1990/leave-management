@@ -12,6 +12,30 @@ Open these files first:
 4. `src/services/auth.domain.ts`
 5. `src/middleware.ts`
 
+## Current Session Baseline
+
+Updated on 2026-06-08 before starting new project work.
+
+- Repo path: `D:\projects\ITL\drivers`
+- Project name in `package.json`: `drivers`
+- Git remote: `https://github.com/Narongyot1990/fls-driver.git`
+- Current branch: `master`, aligned with `origin/master`
+- Latest `git pull --ff-only origin master`: `Already up to date`
+- Vercel CLI is installed and logged in as `narongyot1990`
+- Local tracked files were clean before documentation updates
+- Existing untracked temporary logs: `.tmp-next-dev.err.log`, `.tmp-next-dev.out.log`, `.tmp-next-start.err.log`, `.tmp-next-start.out.log`
+
+Verified baseline:
+
+1. `npm run test` passed: 6 test files, 36 tests
+2. `npm run build` passed with Next.js 16.1.6
+3. Build warning remains: `src/middleware.ts` convention is deprecated in Next 16 and should eventually migrate to `proxy`
+
+Note for future AI sessions:
+
+- If test startup fails with `spawn EPERM` inside the sandbox, rerun `npm run test` outside the sandbox. This was a sandbox/process-spawn issue, not a test failure.
+- Do not print `.env.local` values. It contains JWT, MongoDB, Vercel/OIDC, and project token values.
+
 ## Current Source Of Truth For Leave Logic
 
 - list/review/cancel/create logic: `src/services/leave.domain.ts`
@@ -61,6 +85,8 @@ Rule:
 - `users` is the main personnel collection
 - `leaders` still exists as a compatibility path for password login
 - `admin_root` is still a special-case identity
+- `LeaveRequest.userId` schema is `Mixed` to tolerate legacy data that may be stored as either `ObjectId` or string
+- branch comparisons should be treated case-insensitively where the existing services already do so
 
 This means a bug can be:
 
@@ -97,6 +123,31 @@ Always check all three before assuming only frontend or only database.
 - `src/lib/jwt-auth.ts`
 - `src/lib/api-auth.ts`
 - `src/middleware.ts`
+
+### If leave form or history is wrong
+
+- `src/app/leave/page.tsx`
+- `src/app/leave/_hooks/useLeaveFormController.ts`
+- `src/app/leave/_hooks/useLeaveHistoryController.ts`
+- `src/app/leave/_lib/leaveApiClient.ts`
+- `src/lib/validations/leave.schema.ts`
+
+### If attendance is wrong
+
+- `src/services/attendance.domain.ts`
+- `src/app/api/attendance/route.ts`
+- `src/app/api/attendance/correction/route.ts`
+- `src/app/leader/attendance/page.tsx`
+- `src/app/leader/attendance/hooks/useAttendanceController.ts`
+
+### If tasks are wrong
+
+- `src/services/tasks.domain.ts`
+- `src/app/api/tasks/route.ts`
+- `src/app/api/tasks/[id]/route.ts`
+- `src/app/admin/tasks/page.tsx`
+- `src/app/leader/tasks/page.tsx`
+- `src/app/tasks/page.tsx`
 
 ## Suggested Refactor Targets Later
 

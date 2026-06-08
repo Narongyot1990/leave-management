@@ -13,6 +13,14 @@ export const GET = apiHandler(async ({ req, payload }) => {
 
   const { searchParams } = new URL(req.url);
   const query = LeaveQuerySchema.parse(Object.fromEntries(searchParams));
+
+  if (query.limit !== undefined || query.page !== undefined) {
+    const result = await LeaveService.listPaginated(payload, query);
+    const response = NextResponse.json({ success: true, ...result });
+    response.headers.set("Cache-Control", "no-store, max-age=0");
+    return response;
+  }
+
   const requests = await LeaveService.list(payload, query);
 
   const response = NextResponse.json({ success: true, requests });

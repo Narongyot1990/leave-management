@@ -41,8 +41,34 @@ interface SubstituteRecord {
   description?: string;
 }
 
+interface EmployeeOption {
+  _id: string;
+  lineDisplayName?: string;
+  name?: string;
+  surname?: string;
+  employeeId?: string;
+  branch?: string;
+  role?: string;
+}
+
+interface LeavePagination {
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+}
 
 const BRANCHES = ['AYA', 'CBI', 'RA2', 'KSN', 'BBT'];
+const LEAVE_PAGE_SIZE = 25;
+
+function getEmployeeLabel(employee: EmployeeOption) {
+  const fullName = employee.name && employee.surname
+    ? `${employee.name} ${employee.surname}`
+    : employee.lineDisplayName || 'Unknown';
+  const employeeId = employee.employeeId ? ` (${employee.employeeId})` : '';
+  const branch = employee.branch ? ` - ${employee.branch}` : '';
+  return `${fullName}${employeeId}${branch}`;
+}
 
 function LeaderHistoryContent() {
   const router = useRouter();
@@ -52,7 +78,11 @@ function LeaderHistoryContent() {
   const [leaves, setLeaves] = useState<LeaveRequestRecord[]>([]);
   const [substitutes, setSubstitutes] = useState<SubstituteRecord[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
+  const [leavePagination, setLeavePagination] = useState<LeavePagination | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMoreLeaves, setLoadingMoreLeaves] = useState(false);
   const [activeTab, setActiveTab] = useState('leave');
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [showProfile, setShowProfile] = useState(false);
@@ -88,40 +118,77 @@ function LeaderHistoryContent() {
     }
   }, [searchParams]);
 
+  const buildScopedParams = useCallback(() => {
+    const queryParams = new URLSearchParams();
+    if (role === 'admin' && selectedBranch !== 'all') {
+      queryParams.set('branch', selectedBranch);
+    } else if (role === 'leader' && user?.branch) {
+      queryParams.set('branch', user.branch);
+    }
+    if (selectedEmployeeId !== 'all') {
+      queryParams.set('userId', selectedEmployeeId);
+    }
+    return queryParams;
+  }, [role, selectedBranch, selectedEmployeeId, user?.branch]);
+
+  const fetchEmployees = useCallback(async () => {
+    if (!user) return;
+
+    const queryParams = new URLSearchParams({ activeOnly: 'true' });
+    if (role === 'admin' && selectedBranch !== 'all') {
+      queryParams.set('branch', selectedBranch);
+    } else if (role === 'leader' && user.branch) {
+      queryParams.set('branch', user.branch);
+    }
+
+    const response = await fetch(`/api/users?${queryParams.toString()}`);
+    const data = await response.json();
+    if (data.success) {
+      const targetBranch = role === 'leader' ? user.branch : selectedBranch !== 'all' ? selectedBranch : undefined;
+      const scopedUsers = targetBranch
+        ? data.users.filter((employee: EmployeeOption) => employee.branch?.toLowerCase() === targetBranch.toLowerCase())
+        : data.users;
+      setEmployees(scopedUsers);
+    }
+  }, [role, selectedBranch, user]);
+
+  const fetchLeaves = useCallback(async (page = 1, append = false) => {
+    const queryParams = buildScopedParams();
+    queryParams.set('page', String(page));
+    queryParams.set('limit', String(LEAVE_PAGE_SIZE));
+
+    const response = await fetch(`/api/leave?${queryParams.toString()}`);
+    const data = await response.json();
+    if (data.success) {
+      setLeaves((current) => append ? [...current, ...data.requests] : data.requests);
+      setLeavePagination(data.pagination);
+    }
+  }, [buildScopedParams]);
+
   const fetchData = useCallback(async () => {
     if (!user) return;
     try {
-      let leaveUrl = '/api/leave';
+      setLoading(true);
       let subUrl = '/api/substitute';
       
-      const queryParams = new URLSearchParams();
-      if (role === 'admin' && selectedBranch !== 'all') {
-        queryParams.set('branch', selectedBranch);
-      } else if (role === 'leader' && user?.branch) {
-        queryParams.set('branch', user.branch);
-      }
+      const queryParams = buildScopedParams();
       
       const queryString = queryParams.toString();
       if (queryString) {
-        leaveUrl += `?${queryString}`;
         subUrl += `?${queryString}`;
       }
 
-      const [leaveRes, substituteRes, attendanceRes] = await Promise.all([
-        fetch(leaveUrl),
+      const [substituteRes, attendanceRes] = await Promise.all([
         fetch(subUrl),
         fetch(`/api/attendance?userId=${user.id}`)
       ]);
 
-      const [leaveData, substituteData, attendanceData] = await Promise.all([
-        leaveRes.json(),
+      const [substituteData, attendanceData] = await Promise.all([
         substituteRes.json(),
         attendanceRes.json()
       ]);
 
-      if (leaveData.success) {
-        setLeaves(leaveData.requests);
-      }
+      await fetchLeaves(1, false);
       if (substituteData.success) {
         setSubstitutes(substituteData.records);
       }
@@ -136,11 +203,30 @@ function LeaderHistoryContent() {
     } finally {
       setLoading(false);
     }
-  }, [user, role, selectedBranch]);
+  }, [buildScopedParams, fetchLeaves, user]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
+
+  const handleLoadMoreLeaves = useCallback(async () => {
+    if (!leavePagination?.hasMore) return;
+    setLoadingMoreLeaves(true);
+    try {
+      await fetchLeaves(leavePagination.page + 1, true);
+    } finally {
+      setLoadingMoreLeaves(false);
+    }
+  }, [fetchLeaves, leavePagination]);
+
+  const handleBranchSelect = useCallback((branch: string) => {
+    setSelectedBranch(branch);
+    setSelectedEmployeeId('all');
+  }, []);
 
   const handleLeaveChanged = useCallback(async () => {
     fetchData();
@@ -169,7 +255,7 @@ function LeaderHistoryContent() {
             {role === 'admin' && (
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex overflow-x-auto pb-2 gap-2 scrollbar-hide">
                 <button
-                  onClick={() => setSelectedBranch('all')}
+                  onClick={() => handleBranchSelect('all')}
                   className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedBranch === 'all' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-surface text-muted border border-border'}`}
                 >
                   ทุกสาขา
@@ -177,7 +263,7 @@ function LeaderHistoryContent() {
                 {BRANCHES.map(b => (
                   <button
                     key={b}
-                    onClick={() => setSelectedBranch(b)}
+                    onClick={() => handleBranchSelect(b)}
                     className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedBranch === b ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-surface text-muted border border-border'}`}
                   >
                     สาขา {b}
@@ -186,9 +272,29 @@ function LeaderHistoryContent() {
               </motion.div>
             )}
 
+            {activeTab === 'leave' && (
+              <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-3">
+                <label className="block text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
+                  เลือกพนักงาน
+                </label>
+                <select
+                  value={selectedEmployeeId}
+                  onChange={(event) => setSelectedEmployeeId(event.target.value)}
+                  className="input w-full"
+                >
+                  <option value="all">ทุกคน{role === 'leader' && user.branch ? `ในสาขา ${user.branch}` : selectedBranch !== 'all' ? `ในสาขา ${selectedBranch}` : ''}</option>
+                  {employees.map((employee) => (
+                    <option key={employee._id} value={employee._id}>
+                      {getEmployeeLabel(employee)}
+                    </option>
+                  ))}
+                </select>
+              </motion.div>
+            )}
+
             <div className="flex gap-2">
               {[
-                { key: 'leave', label: `การลา (${leaves.length})` },
+                { key: 'leave', label: `การลา (${leavePagination?.total ?? leaves.length})` },
                 { key: 'substitute', label: `ลงแทน (${substitutes.length})` },
                 { key: 'attendance', label: `ลงเวลา (${attendance.length})` },
               ].map((tab) => (
@@ -302,6 +408,16 @@ function LeaderHistoryContent() {
                       </motion.div>
                     );
                   })}
+                  {leavePagination?.hasMore && (
+                    <button
+                      type="button"
+                      onClick={handleLoadMoreLeaves}
+                      disabled={loadingMoreLeaves}
+                      className="btn btn-ghost w-full"
+                    >
+                      {loadingMoreLeaves ? 'กำลังโหลด...' : `โหลดเพิ่ม (${leaves.length}/${leavePagination.total})`}
+                    </button>
+                  )}
                 </div>
               )
             ) : activeTab === 'substitute' ? (

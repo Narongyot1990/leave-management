@@ -10,6 +10,8 @@ export const LeaveQuerySchema = z.object({
   userId: objectIdOrLiteral.optional(),
   status: LeaveStatusSchema.optional(),
   branch: z.string().trim().min(1).max(100).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
 export const CreateLeaveSchema = z.object({
