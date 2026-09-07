@@ -59,6 +59,31 @@ interface EmployeeOption {
   role?: string;
 }
 
+interface OtRecord {
+  _id: string;
+  userId: {
+    lineDisplayName: string;
+    lineProfileImage?: string;
+    performanceTier?: string;
+    name?: string;
+    surname?: string;
+    employeeId?: string;
+    phone?: string;
+  };
+  date: string;
+  reason: string;
+  status: string;
+  rejectedReason?: string;
+  approvedBy?: {
+    _id: string;
+    name?: string;
+    surname?: string;
+    lineDisplayName?: string;
+    lineProfileImage?: string;
+    performanceTier?: string;
+  };
+}
+
 interface LeavePagination {
   page: number;
   limit: number;
@@ -86,9 +111,12 @@ function AdminHistoryContent() {
   const [leaves, setLeaves] = useState<LeaveRequestRecord[]>([]);
   const [substitutes, setSubstitutes] = useState<SubstituteRecord[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [otRequests, setOtRequests] = useState<OtRecord[]>([]);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
   const [leavePagination, setLeavePagination] = useState<LeavePagination | null>(null);
+  const [otPagination, setOtPagination] = useState<LeavePagination | null>(null);
+  const [loadingMoreOt, setLoadingMoreOt] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMoreLeaves, setLoadingMoreLeaves] = useState(false);
   const [activeTab, setActiveTab] = useState('leave');
@@ -144,6 +172,19 @@ function AdminHistoryContent() {
     }
   }, [buildScopedParams]);
 
+  const fetchOt = useCallback(async (page = 1, append = false) => {
+    const params = buildScopedParams();
+    params.set('page', String(page));
+    params.set('limit', String(LEAVE_PAGE_SIZE));
+
+    const response = await fetch(`/api/ot?${params.toString()}`);
+    const data = await response.json();
+    if (data.success) {
+      setOtRequests((current) => append ? [...current, ...data.requests] : data.requests);
+      setOtPagination(data.pagination);
+    }
+  }, [buildScopedParams]);
+
   const fetchData = useCallback(async () => {
     if (!user) return;
     try {
@@ -166,12 +207,12 @@ function AdminHistoryContent() {
         attendanceRes.json()
       ]);
 
-      await fetchLeaves(1, false);
+      await Promise.all([fetchLeaves(1, false), fetchOt(1, false)]);
       if (substituteData.success) {
         setSubstitutes(substituteData.records);
       }
       if (attendanceData.success) {
-        const sorted = attendanceData.records.sort((a: any, b: any) => 
+        const sorted = attendanceData.records.sort((a: any, b: any) =>
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         );
         setAttendance(sorted);
@@ -181,7 +222,7 @@ function AdminHistoryContent() {
     } finally {
       setLoading(false);
     }
-  }, [buildScopedParams, fetchLeaves, user]);
+  }, [buildScopedParams, fetchLeaves, fetchOt, user]);
 
   useEffect(() => {
     fetchData();
@@ -201,6 +242,16 @@ function AdminHistoryContent() {
     }
   }, [fetchLeaves, leavePagination]);
 
+  const handleLoadMoreOt = useCallback(async () => {
+    if (!otPagination?.hasMore) return;
+    setLoadingMoreOt(true);
+    try {
+      await fetchOt(otPagination.page + 1, true);
+    } finally {
+      setLoadingMoreOt(false);
+    }
+  }, [fetchOt, otPagination]);
+
   const handleLeaveChanged = useCallback(async () => {
     fetchData();
   }, [fetchData]);
@@ -209,6 +260,12 @@ function AdminHistoryContent() {
     { event: 'new-leave-request', callback: handleLeaveChanged },
     { event: 'leave-status-changed', callback: handleLeaveChanged },
     { event: 'leave-cancelled', callback: handleLeaveChanged },
+  ], !!user);
+
+  usePusher('ot-requests', [
+    { event: 'new-ot-request', callback: handleLeaveChanged },
+    { event: 'ot-status-changed', callback: handleLeaveChanged },
+    { event: 'ot-cancelled', callback: handleLeaveChanged },
   ], !!user);
 
   if (!user) {
@@ -233,7 +290,7 @@ function AdminHistoryContent() {
               />
             </motion.div>
 
-            {activeTab === 'leave' && (
+            {(activeTab === 'leave' || activeTab === 'ot') && (
               <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-3">
                 <label className="block text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
                   เลือกพนักงาน
@@ -258,6 +315,7 @@ function AdminHistoryContent() {
               onChange={setActiveTab}
               options={[
                 { key: 'leave', label: `การลา (${leavePagination?.total ?? leaves.length})` },
+                { key: 'ot', label: `OT (${otPagination?.total ?? otRequests.length})` },
                 { key: 'substitute', label: `ลงแทน (${substitutes.length})` },
                 { key: 'attendance', label: `ลงเวลา (${attendance.length})` },
               ]}
@@ -360,6 +418,98 @@ function AdminHistoryContent() {
                       className="btn btn-ghost w-full"
                     >
                       {loadingMoreLeaves ? 'กำลังโหลด...' : `โหลดเพิ่ม (${leaves.length}/${leavePagination.total})`}
+                    </button>
+                  )}
+                </div>
+              )
+            ) : activeTab === 'ot' ? (
+              otRequests.length === 0 ? (
+                <AdminEmptyState icon={Clock} message="ไม่พบประวัติ OT" />
+              ) : (
+                <div className="space-y-2">
+                  {otRequests.map((request, index) => {
+                    const badge = getStatusBadge(request.status);
+
+                    return (
+                      <AdminCardShell
+                        key={request._id}
+                        initial={{ y: 10, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: index * 0.03 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-4 flex items-start gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                          <UserAvatar
+                            imageUrl={request.userId?.lineProfileImage}
+                            displayName={request.userId?.name || request.userId?.lineDisplayName}
+                            tier={request.userId?.performanceTier}
+                            size="md"
+                            onClick={() => { setProfileUser(request.userId as ProfileUser); setShowProfile(true); }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <h3 className="text-fluid-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                                {request.userId?.name && request.userId?.surname
+                                  ? `${request.userId.name} ${request.userId.surname}`
+                                  : request.userId?.lineDisplayName || 'Unknown'}
+                                {request.userId?.employeeId && (
+                                  <span className="text-fluid-xs font-normal" style={{ color: 'var(--text-muted)' }}>({request.userId.employeeId})</span>
+                                )}
+                              </h3>
+                              <span className={`badge ${badge.cls} shrink-0`}>{badge.label}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 mt-0.5">
+                              <p className="text-fluid-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                                @{request.userId?.lineDisplayName}
+                              </p>
+                              {request.userId?.phone && (
+                                <a href={`tel:${request.userId.phone}`} className="shrink-0">
+                                  <Phone className="w-3.5 h-3.5" style={{ color: '#00C853' }} strokeWidth={2} />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-4" style={{ background: 'var(--bg-inset)' }}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} strokeWidth={1.8} />
+                              <span className="text-fluid-sm font-medium" style={{ color: 'var(--accent)' }}>{formatDateThai(request.date)}</span>
+                            </div>
+
+                            {request.approvedBy && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">
+                                  {request.status === 'approved' ? 'Approved By' : 'Rejected By'}
+                                </span>
+                                <UserAvatar
+                                  imageUrl={request.approvedBy.lineProfileImage}
+                                  displayName={request.approvedBy.name || request.approvedBy.lineDisplayName}
+                                  tier={request.approvedBy.performanceTier}
+                                  size="xs"
+                                  onClick={() => { setProfileUser(request.approvedBy as ProfileUser); setShowProfile(true); }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-fluid-xs mt-2" style={{ color: 'var(--text-secondary)' }}>{request.reason}</p>
+                          {request.status === 'rejected' && request.rejectedReason && (
+                            <div className="mt-2 p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+                              <p className="text-[10px] font-bold text-red-500">REASON: {request.rejectedReason}</p>
+                            </div>
+                          )}
+                        </div>
+                      </AdminCardShell>
+                    );
+                  })}
+                  {otPagination?.hasMore && (
+                    <button
+                      type="button"
+                      onClick={handleLoadMoreOt}
+                      disabled={loadingMoreOt}
+                      className="btn btn-ghost w-full"
+                    >
+                      {loadingMoreOt ? 'กำลังโหลด...' : `โหลดเพิ่ม (${otRequests.length}/${otPagination.total})`}
                     </button>
                   )}
                 </div>

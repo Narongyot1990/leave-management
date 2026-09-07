@@ -1,6 +1,7 @@
 import { type QueryFilter } from "mongoose";
 import { AttendanceCorrection, type IAttendanceCorrection } from "@/models/AttendanceCorrection";
 import { LeaveRequest, type ILeaveRequest } from "@/models/LeaveRequest";
+import { OtRequest, type IOtRequest } from "@/models/OtRequest";
 import { Settings, type BranchSetting } from "@/models/Settings";
 import { User, type IUser } from "@/models/User";
 import { badRequest, conflict, notFound } from "@/lib/api-errors";
@@ -24,6 +25,7 @@ const DEFAULT_BRANCHES: BranchSetting[] = [
 type BranchActor = Pick<TokenPayload, "role" | "branch">;
 type DashboardCounts = {
   pendingLeaves: number;
+  pendingOt: number;
   pendingDrivers: number;
   totalLeaders: number;
   activeDrivers: number;
@@ -154,9 +156,10 @@ export class BranchesService {
       return { count: await User.countDocuments(filters.pendingDriverFilter) };
     }
 
-    const [pendingLeaves, pendingDrivers, totalLeaders, activeDrivers, pendingCorrections] =
+    const [pendingLeaves, pendingOt, pendingDrivers, totalLeaders, activeDrivers, pendingCorrections] =
       await Promise.all([
         LeaveRequest.countDocuments(filters.leaveFilter),
+        OtRequest.countDocuments(filters.otFilter),
         User.countDocuments(filters.pendingDriverFilter),
         User.countDocuments({ role: "leader" }),
         User.countDocuments({ role: "driver", status: "active" }),
@@ -165,6 +168,7 @@ export class BranchesService {
 
     const counts: DashboardCounts = {
       pendingLeaves,
+      pendingOt,
       pendingDrivers,
       totalLeaders,
       activeDrivers,
@@ -177,6 +181,7 @@ export class BranchesService {
 
 async function buildDashboardFilters(actor: BranchActor, filterBranch?: string) {
   const leaveFilter: QueryFilter<ILeaveRequest> = { status: "pending" };
+  const otFilter: QueryFilter<IOtRequest> = { status: "pending" };
   let pendingDriverFilter: QueryFilter<IUser> = { role: "driver", status: "pending" };
   const correctionFilter: QueryFilter<IAttendanceCorrection> = { status: "pending" };
 
@@ -185,6 +190,7 @@ async function buildDashboardFilters(actor: BranchActor, filterBranch?: string) 
   if (targetBranch) {
     const branchUserIds = await findBranchUserIds(targetBranch);
     leaveFilter.userId = { $in: branchUserIds };
+    otFilter.userId = { $in: branchUserIds };
     correctionFilter.branch = new RegExp(`^${escapeRegExp(targetBranch)}$`, "i");
     pendingDriverFilter = {
       role: "driver",
@@ -198,7 +204,7 @@ async function buildDashboardFilters(actor: BranchActor, filterBranch?: string) 
     };
   }
 
-  return { leaveFilter, pendingDriverFilter, correctionFilter };
+  return { leaveFilter, otFilter, pendingDriverFilter, correctionFilter };
 }
 
 async function findBranchUserIds(branch: string) {

@@ -3,6 +3,8 @@ import {
   buildDateKey,
   leaveSpansDateKey,
   leaveStartsInMonth,
+  otInMonth,
+  otMatchesDateKey,
   padDatePart,
   toDateKey,
 } from "@/lib/leave-calendar";
@@ -27,5 +29,15 @@ describe("leave-calendar helpers", () => {
   it("filters month exports by leave start month", () => {
     expect(leaveStartsInMonth("2026-04-15T00:00:00.000Z", 2026, 3)).toBe(true);
     expect(leaveStartsInMonth("2026-03-31T00:00:00.000Z", 2026, 3)).toBe(false);
+  });
+
+  it("matches a single OT date by date key", () => {
+    expect(otMatchesDateKey("2026-04-02T00:00:00.000Z", "2026-04-02")).toBe(true);
+    expect(otMatchesDateKey("2026-04-02T00:00:00.000Z", "2026-04-03")).toBe(false);
+  });
+
+  it("filters OT records by month", () => {
+    expect(otInMonth("2026-04-15T00:00:00.000Z", 2026, 3)).toBe(true);
+    expect(otInMonth("2026-03-31T00:00:00.000Z", 2026, 3)).toBe(false);
   });
 });

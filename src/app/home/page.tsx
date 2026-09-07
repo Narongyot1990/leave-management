@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { FileText, History, ClipboardCheck, Umbrella, Thermometer, Briefcase, LogOut, AlertCircle } from 'lucide-react';
+import { FileText, History, ClipboardCheck, Umbrella, Thermometer, Briefcase, LogOut, AlertCircle, Clock } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -18,6 +18,8 @@ const actions = [
   { icon: FileText, label: 'ขอลา', href: '/leave', color: 'var(--accent)' },
   { icon: History, label: 'ประวัติลา', href: '/leave/history', color: 'var(--success)' },
   { icon: ClipboardCheck, label: 'งานที่ได้รับ', href: '/tasks', color: 'var(--warning)' },
+  { icon: Clock, label: 'ขอ OT', href: '/ot', color: 'var(--accent)' },
+  { icon: History, label: 'ประวัติ OT', href: '/leave/history?tab=ot', color: 'var(--success)' },
 ];
 
 export default function DriverHomePage() {

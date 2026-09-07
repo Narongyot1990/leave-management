@@ -17,6 +17,8 @@ interface DatePickerModalProps {
   initialDate?: Date;
   mode?: 'range' | 'single';
   allowPast?: boolean;
+  fromDate?: Date;
+  toDate?: Date;
   title?: string;
 }
 
@@ -25,7 +27,7 @@ const THAI_MONTHS = [
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
 ];
 
-export default function DatePickerModal({ open, onClose, onConfirm, onConfirmSingle, initialRange, initialDate, mode = 'range', allowPast = false, title }: DatePickerModalProps) {
+export default function DatePickerModal({ open, onClose, onConfirm, onConfirmSingle, initialRange, initialDate, mode = 'range', allowPast = false, fromDate, toDate, title }: DatePickerModalProps) {
   const [range, setRange] = useState<DateRange | undefined>(initialRange);
   const [singleDate, setSingleDate] = useState<Date | undefined>(initialDate);
   const [selectedText, setSelectedText] = useState('');
@@ -123,7 +125,8 @@ export default function DatePickerModal({ open, onClose, onConfirm, onConfirmSin
                     setSingleDate(date || undefined);
                     if (date) setSelectedText(dayjs(date).format('D MMM YYYY'));
                   }}
-                  {...(!allowPast ? { fromDate: today } : {})}
+                  {...(!allowPast ? { fromDate: today } : fromDate ? { fromDate } : {})}
+                  {...(toDate ? { toDate } : {})}
                   numberOfMonths={1}
                   month={currentMonth}
                   onMonthChange={setCurrentMonth}

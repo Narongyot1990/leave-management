@@ -16,6 +16,7 @@ export default function LeaderHomePage() {
   const [user, setUser] = useState<any>(null);
   const [role, setRole] = useState<'leader' | 'admin'>('leader');
   const [pendingLeave, setPendingLeave] = useState(0);
+  const [pendingOt, setPendingOt] = useState(0);
   const [pendingDriver, setPendingDriver] = useState(0);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function LeaderHomePage() {
       const data = await res.json();
       if (data.success) {
         setPendingLeave(data.counts.pendingLeaves);
+        setPendingOt(data.counts.pendingOt);
         setPendingDriver(data.counts.pendingDrivers);
       }
     } catch { /* ignore */ }
@@ -58,6 +60,11 @@ export default function LeaderHomePage() {
       { event: 'new-leave-request', callback: fetchCounts },
       { event: 'leave-status-changed', callback: fetchCounts },
       { event: 'leave-cancelled', callback: fetchCounts },
+    ]},
+    { channel: 'ot-requests', bindings: [
+      { event: 'new-ot-request', callback: fetchCounts },
+      { event: 'ot-status-changed', callback: fetchCounts },
+      { event: 'ot-cancelled', callback: fetchCounts },
     ]},
     { channel: 'users', bindings: [
       { event: 'new-driver', callback: fetchCounts },
@@ -137,18 +144,25 @@ export default function LeaderHomePage() {
             <div className="space-y-3">
                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 px-1">Management</h3>
                <div className="grid grid-cols-2 gap-3">
-                  <MenuButton 
-                    label="อนุมัติลา" 
-                    icon={CheckSquare} 
-                    href="/leader/approve" 
-                    color="var(--success)" 
+                  <MenuButton
+                    label="อนุมัติลา"
+                    icon={CheckSquare}
+                    href="/leader/approve"
+                    color="var(--success)"
                     badge={pendingLeave}
                   />
-                  <MenuButton 
-                    label="ประวัติ" 
-                    icon={ClipboardList} 
-                    href="/leader/history" 
-                    color="var(--info)" 
+                  <MenuButton
+                    label="อนุมัติ OT"
+                    icon={Clock}
+                    href="/leader/approve-ot"
+                    color="var(--success)"
+                    badge={pendingOt}
+                  />
+                  <MenuButton
+                    label="ประวัติ"
+                    icon={ClipboardList}
+                    href="/leader/history"
+                    color="var(--info)"
                   />
                   <MenuButton 
                     label="พนักงาน" 

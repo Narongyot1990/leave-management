@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { CheckSquare, Users, Clock, CalendarDays, ClipboardCheck, MapPin, User, Shield, LogOut, ChevronRight, MessageSquare } from 'lucide-react';
+import { CheckSquare, Users, Clock, Timer, CalendarDays, ClipboardCheck, MapPin, User, Shield, LogOut, ChevronRight, MessageSquare } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -33,6 +33,7 @@ export default function AdminHomePage() {
   const [user, setUser] = useState<AdminSessionUser | null>(null);
   const [counts, setCounts] = useState({
     pendingLeaves: 0,
+    pendingOt: 0,
     pendingDrivers: 0,
     totalLeaders: 0,
     pendingCorrections: 0,
@@ -70,6 +71,10 @@ export default function AdminHomePage() {
     { channel: 'leave-requests', bindings: [
       { event: 'new-leave-request', callback: fetchCounts },
       { event: 'leave-status-changed', callback: fetchCounts },
+    ]},
+    { channel: 'ot-requests', bindings: [
+      { event: 'new-ot-request', callback: fetchCounts },
+      { event: 'ot-status-changed', callback: fetchCounts },
     ]},
     { channel: 'users', bindings: [
       { event: 'new-driver', callback: fetchCounts },
@@ -178,6 +183,7 @@ export default function AdminHomePage() {
                 </div>
                 <div className="grid grid-cols-5 gap-1.5">
                   <MenuCard label="อนุมัติลา" icon={CheckSquare} href="/admin/approve" color="var(--success)" desc="Leaves" />
+                  <MenuCard label="อนุมัติ OT" icon={Timer} href="/admin/approve-ot" color="var(--success)" desc="OT" badge={counts.pendingOt} />
                   <MenuCard label="แก้เวลา" icon={MessageSquare} href="/admin/attendance/corrections" color="var(--amber-500)" desc="Correction" badge={counts.pendingCorrections} />
                   <MenuCard label="ประวัติ" icon={Clock} href="/admin/history" color="var(--text-muted)" desc="History" />
                   <MenuCard label="พนักงาน" icon={Users} href="/admin/drivers" color="var(--accent)" desc="Drivers" />

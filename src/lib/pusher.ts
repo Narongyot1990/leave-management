@@ -11,6 +11,7 @@ export const pusher = new Pusher({
 export const CHANNELS = {
   CAR_WASH: 'car-wash-feed',
   LEAVE_REQUESTS: 'leave-requests',
+  OT_REQUESTS: 'ot-requests',
   USERS: 'users',
   TASKS: 'tasks',
   DASHBOARD: 'dashboard',
@@ -26,6 +27,10 @@ export const EVENTS = {
   NEW_LEAVE: 'new-leave-request',
   LEAVE_STATUS_CHANGED: 'leave-status-changed',
   LEAVE_CANCELLED: 'leave-cancelled',
+  // OT
+  NEW_OT: 'new-ot-request',
+  OT_STATUS_CHANGED: 'ot-status-changed',
+  OT_CANCELLED: 'ot-cancelled',
   // Users / Drivers
   DRIVER_ACTIVATED: 'driver-activated',
   DRIVER_UPDATED: 'driver-updated',

@@ -23,3 +23,11 @@ export function leaveSpansDateKey(startDate: string, endDate: string, dateKey: s
 export function leaveStartsInMonth(startDate: string, year: number, month: number) {
   return toDateKey(startDate).startsWith(`${year}-${padDatePart(month + 1)}`);
 }
+
+export function otMatchesDateKey(otDate: string | Date, dateKey: string) {
+  return toDateKey(otDate) === dateKey;
+}
+
+export function otInMonth(otDate: string | Date, year: number, month: number) {
+  return toDateKey(otDate).startsWith(`${year}-${padDatePart(month + 1)}`);
+}
