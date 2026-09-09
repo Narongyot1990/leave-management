@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, XCircle, Clock, Phone, ImageIcon } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Phone, ImageIcon, History } from 'lucide-react';
 import AdminCardShell from '@/components/AdminCardShell';
 import UserAvatar from '@/components/UserAvatar';
 import ImageViewerModal from '@/components/ImageViewerModal';
+import OtPersonHistoryModal from '@/components/OtPersonHistoryModal';
 import { formatDateThai } from '@/lib/date-utils';
 
 export interface OtApproveRequest {
@@ -44,6 +45,7 @@ export default function OtApproveRequestCard({
   onReject,
 }: OtApproveRequestCardProps) {
   const [showPhoto, setShowPhoto] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   return (
     <AdminCardShell
@@ -78,11 +80,22 @@ export default function OtApproveRequestCard({
             <p className="text-fluid-xs truncate" style={{ color: 'var(--text-muted)' }}>
               @{request.userId?.lineDisplayName}
             </p>
-            {request.userId?.phone && (
-              <a href={`tel:${request.userId.phone}`} className="shrink-0">
-                <Phone className="w-3.5 h-3.5" style={{ color: '#00C853' }} strokeWidth={2} />
-              </a>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowHistory(true)}
+                className="flex items-center gap-1 text-fluid-xs"
+                style={{ color: 'var(--accent)' }}
+              >
+                <History className="w-3.5 h-3.5" />
+                ดูประวัติ
+              </button>
+              {request.userId?.phone && (
+                <a href={`tel:${request.userId.phone}`} className="shrink-0">
+                  <Phone className="w-3.5 h-3.5" style={{ color: '#00C853' }} strokeWidth={2} />
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -134,6 +147,15 @@ export default function OtApproveRequestCard({
       </div>
 
       <ImageViewerModal imageUrl={showPhoto ? request.photoUrl ?? null : null} onClose={() => setShowPhoto(false)} />
+      <OtPersonHistoryModal
+        userId={showHistory ? request.userId._id : null}
+        displayName={
+          request.userId?.name && request.userId?.surname
+            ? `${request.userId.name} ${request.userId.surname}`
+            : request.userId?.lineDisplayName
+        }
+        onClose={() => setShowHistory(false)}
+      />
     </AdminCardShell>
   );
 }

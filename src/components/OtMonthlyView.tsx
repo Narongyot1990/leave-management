@@ -16,6 +16,7 @@ export interface OtMonthlyRecord {
   _id: string;
   date: string | Date;
   status: string;
+  reason?: string;
   photoUrl?: string;
 }
 
@@ -80,28 +81,33 @@ export default function OtMonthlyView({ records, onViewPhoto, loading }: OtMonth
             return (
               <div
                 key={day}
-                className="flex items-center justify-between px-3.5 py-2.5"
+                className="px-3.5 py-2.5"
                 style={index < daysInMonth - 1 ? { borderBottom: '1px solid var(--border)' } : undefined}
               >
-                <span className="text-fluid-sm" style={{ color: record ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-                  {day} {weekday}
-                </span>
-                <div className="flex items-center gap-2">
-                  {badge ? (
-                    <span className={`badge ${badge.cls}`}>{badge.label}</span>
-                  ) : (
-                    <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>–</span>
-                  )}
-                  {record?.photoUrl && (
-                    <button
-                      type="button"
-                      onClick={() => onViewPhoto(record.photoUrl as string)}
-                      className="btn btn-ghost w-7 h-7 p-0 min-h-0 min-w-0"
-                    >
-                      <ImageIcon className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
-                    </button>
-                  )}
+                <div className="flex items-center justify-between">
+                  <span className="text-fluid-sm" style={{ color: record ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                    {day} {weekday}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {badge ? (
+                      <span className={`badge ${badge.cls}`}>{badge.label}</span>
+                    ) : (
+                      <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>–</span>
+                    )}
+                    {record?.photoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => onViewPhoto(record.photoUrl as string)}
+                        className="btn btn-ghost w-7 h-7 p-0 min-h-0 min-w-0"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+                      </button>
+                    )}
+                  </div>
                 </div>
+                {record?.reason && (
+                  <p className="text-fluid-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{record.reason}</p>
+                )}
               </div>
             );
           })
