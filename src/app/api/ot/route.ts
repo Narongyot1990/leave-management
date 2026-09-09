@@ -33,8 +33,17 @@ export const POST = apiHandler(async ({ req, payload }) => {
     throw badRequest("Missing auth payload");
   }
 
-  const body = await req.json();
-  const input = CreateOtSchema.parse(body);
-  const result = await OtService.create(payload, input);
+  const formData = await req.formData();
+  const photo = formData.get("photo");
+  if (!(photo instanceof File)) {
+    throw badRequest("Photo is required", { code: "PHOTO_REQUIRED" });
+  }
+
+  const input = CreateOtSchema.parse({
+    userId: formData.get("userId"),
+    date: formData.get("date"),
+    reason: formData.get("reason"),
+  });
+  const result = await OtService.create(payload, input, photo);
   return NextResponse.json({ success: true, ...result });
 });

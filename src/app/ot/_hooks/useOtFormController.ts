@@ -18,6 +18,32 @@ function formatLocalYmd(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+function resizeImage(file: File, maxDimension = 800, quality = 0.8): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) { height = Math.round((height * maxDimension) / width); width = maxDimension; }
+          else { width = Math.round((width * maxDimension) / height); height = maxDimension; }
+        }
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas context error'));
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Blob conversion error'))), 'image/jpeg', quality);
+      };
+      img.onerror = () => reject(new Error('Image load error'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error('File read error'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function useOtFormController(targetUserId: string | null) {
   const router = useRouter();
   const [authUser, setAuthUser] = useState<SessionUser | null>(null);
@@ -30,6 +56,8 @@ export function useOtFormController(targetUserId: string | null) {
   const [success, setSuccess] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [photoFile, setPhotoFile] = useState<Blob | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const submitUserId = useMemo(() => {
     if (!authUser) return null;
@@ -90,6 +118,28 @@ export function useOtFormController(targetUserId: string | null) {
     setDate(formatLocalYmd(selected));
   }, []);
 
+  const handlePhotoSelect = useCallback(async (file: File) => {
+    setError("");
+    try {
+      const resized = await resizeImage(file);
+      setPhotoFile(resized);
+      setPhotoPreview((previous) => {
+        if (previous) URL.revokeObjectURL(previous);
+        return URL.createObjectURL(resized);
+      });
+    } catch {
+      setError("ไม่สามารถประมวลผลรูปภาพได้");
+    }
+  }, []);
+
+  const removePhoto = useCallback(() => {
+    setPhotoPreview((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return null;
+    });
+    setPhotoFile(null);
+  }, []);
+
   const submit = useCallback(
     async (event: React.FormEvent) => {
       event.preventDefault();
@@ -105,12 +155,18 @@ export function useOtFormController(targetUserId: string | null) {
         return;
       }
 
+      if (!photoFile) {
+        setError("กรุณาแนบรูปใบงาน");
+        return;
+      }
+
       setLoading(true);
       try {
         await createOtRequest({
           userId: submitUserId,
           date,
           reason: reason.trim(),
+          photo: photoFile,
         });
         setSuccess(true);
         window.setTimeout(() => {
@@ -126,7 +182,7 @@ export function useOtFormController(targetUserId: string | null) {
         setLoading(false);
       }
     },
-    [submitUserId, date, reason, router],
+    [submitUserId, date, reason, photoFile, router],
   );
 
   return {
@@ -140,9 +196,12 @@ export function useOtFormController(targetUserId: string | null) {
     success,
     showDatePicker,
     isPending,
+    photoPreview,
     setReason,
     setShowDatePicker,
     handleDateSelect,
+    handlePhotoSelect,
+    removePhoto,
     submit,
   };
 }

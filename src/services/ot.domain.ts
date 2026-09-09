@@ -1,4 +1,5 @@
 import mongoose, { type QueryFilter } from "mongoose";
+import { put } from "@vercel/blob";
 import { conflict, forbidden, notFound, badRequest } from "@/lib/api-errors";
 import type { TokenPayload } from "@/lib/jwt-auth";
 import type {
@@ -43,6 +44,7 @@ type OtRecord = {
   userId: string;
   date: Date;
   reason: string;
+  photoUrl: string;
   status: OtStatus;
   approvedBy?: string | mongoose.Types.ObjectId;
   approvedAt?: Date;
@@ -101,7 +103,7 @@ class OtRepository {
     return request ? mapOtRequest(request) : null;
   }
 
-  async create(input: { userId: string; date: Date; reason: string }) {
+  async create(input: { userId: string; date: Date; reason: string; photoUrl: string }) {
     const request = await OtRequest.create({
       ...input,
       status: "pending",
@@ -174,7 +176,7 @@ export class OtService {
     };
   }
 
-  static async create(actor: OtActor, input: CreateOtInput) {
+  static async create(actor: OtActor, input: CreateOtInput, photo: File) {
     const resolvedActor = await resolveActorAccess(actor);
     await assertCanSubmitOt(resolvedActor, input.userId);
 
@@ -209,10 +211,18 @@ export class OtService {
       throw conflict("Cannot request OT on a day you have approved leave", { code: "OT_ON_LEAVE_DAY" });
     }
 
+    const filename = `ot/${input.userId}/${Date.now()}-${photo.name}`;
+    const blob = await put(filename, photo, {
+      access: "private",
+      addRandomSuffix: true,
+      token: process.env.itl_READ_WRITE_TOKEN,
+    });
+
     const request = await otRepository.create({
       userId: input.userId,
       date,
       reason: input.reason,
+      photoUrl: blob.url,
     });
 
     await triggerPusher(CHANNELS.OT_REQUESTS, EVENTS.NEW_OT, {
@@ -549,6 +559,7 @@ function mapOtRequest(record: Partial<IOtRequest> & { _id?: mongoose.Types.Objec
     userId: String(record.userId),
     date: new Date(record.date as Date),
     reason: String(record.reason),
+    photoUrl: String(record.photoUrl),
     status: record.status as OtStatus,
     approvedBy: record.approvedBy,
     approvedAt: record.approvedAt ? new Date(record.approvedAt) : undefined,
@@ -565,6 +576,7 @@ function mapPopulatedOtRequest(record: unknown): PopulatedOtRecord {
     userId: mapReference(source.userId),
     date: new Date(source.date as Date),
     reason: String(source.reason),
+    photoUrl: String(source.photoUrl),
     status: source.status as OtStatus,
     approvedBy: mapOptionalReference(source.approvedBy),
     approvedAt: source.approvedAt ? new Date(source.approvedAt as Date) : undefined,

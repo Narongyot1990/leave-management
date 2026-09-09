@@ -5,7 +5,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
-import { FileText, ClipboardList, CalendarDays, Phone, Clock } from 'lucide-react';
+import { FileText, ClipboardList, CalendarDays, Phone, Clock, ImageIcon } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -14,6 +14,7 @@ import AdminCardShell from '@/components/AdminCardShell';
 import AdminTabChips from '@/components/AdminTabChips';
 import { AdminEmptyState, AdminLoadingState } from '@/components/AdminPageStates';
 import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
+import ImageViewerModal from '@/components/ImageViewerModal';
 import UserAvatar from '@/components/UserAvatar';
 import { getLeaveTypeMeta, getRecordTypeLabel, getStatusBadge } from '@/lib/leave-types';
 import { formatDateThai, getLeaveDays } from '@/lib/date-utils';
@@ -72,6 +73,7 @@ interface OtRecord {
   };
   date: string;
   reason: string;
+  photoUrl?: string;
   status: string;
   rejectedReason?: string;
   approvedBy?: {
@@ -122,6 +124,7 @@ function AdminHistoryContent() {
   const [activeTab, setActiveTab] = useState('leave');
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [viewingPhotoUrl, setViewingPhotoUrl] = useState<string | null>(null);
   const { selectedBranch, setSelectedBranch, appendBranchToParams } = useAdminBranchScope();
 
   const handleBranchSelect = useCallback((branch: string) => {
@@ -492,7 +495,19 @@ function AdminHistoryContent() {
                               </div>
                             )}
                           </div>
-                          <p className="text-fluid-xs mt-2" style={{ color: 'var(--text-secondary)' }}>{request.reason}</p>
+                          <div className="flex items-center justify-between gap-2 mt-2">
+                            <p className="text-fluid-xs" style={{ color: 'var(--text-secondary)' }}>{request.reason}</p>
+                            {request.photoUrl && (
+                              <button
+                                type="button"
+                                onClick={() => setViewingPhotoUrl(request.photoUrl ?? null)}
+                                className="btn btn-ghost px-2.5 py-1 min-h-0 text-fluid-xs shrink-0"
+                              >
+                                <ImageIcon className="w-3.5 h-3.5" />
+                                ดูภาพ
+                              </button>
+                            )}
+                          </div>
                           {request.status === 'rejected' && request.rejectedReason && (
                             <div className="mt-2 p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
                               <p className="text-[10px] font-bold text-red-500">REASON: {request.rejectedReason}</p>
@@ -622,6 +637,7 @@ function AdminHistoryContent() {
       </div>
 
       <ProfileModal user={profileUser} open={showProfile} onClose={() => setShowProfile(false)} />
+      <ImageViewerModal imageUrl={viewingPhotoUrl} onClose={() => setViewingPhotoUrl(null)} />
       <BottomNav role={role} />
     </div>
   );

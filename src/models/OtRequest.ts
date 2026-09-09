@@ -6,6 +6,7 @@ export interface IOtRequest extends Document {
   userId: mongoose.Types.ObjectId;
   date: Date;
   reason: string;
+  photoUrl: string;
   status: OtStatus;
   approvedBy?: string | mongoose.Types.ObjectId;
   approvedAt?: Date;
@@ -19,6 +20,7 @@ const OtRequestSchema = new Schema<IOtRequest>(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     date: { type: Date, required: true },
     reason: { type: String, required: true, trim: true, maxlength: 500 },
+    photoUrl: { type: String, required: true },
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected', 'cancelled'],

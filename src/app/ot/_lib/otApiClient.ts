@@ -20,6 +20,7 @@ const otRequestSchema = z.object({
   _id: z.string(),
   date: z.union([z.string(), z.date()]),
   reason: z.string(),
+  photoUrl: z.string(),
   status: z.string(),
   rejectedReason: z.string().optional(),
   approvedAt: z.union([z.string(), z.date()]).optional(),
@@ -59,6 +60,7 @@ export type CreateOtPayload = {
   userId: string;
   date: string;
   reason: string;
+  photo: Blob;
 };
 
 export type OtHistoryItem = z.infer<typeof otRequestSchema>;
@@ -99,10 +101,22 @@ export async function getCurrentSessionUser(): Promise<SessionUser | null> {
 }
 
 export async function createOtRequest(payload: CreateOtPayload): Promise<void> {
-  const json = await fetchJson("/api/ot", {
+  const formData = new FormData();
+  formData.append("userId", payload.userId);
+  formData.append("date", payload.date);
+  formData.append("reason", payload.reason);
+  formData.append("photo", payload.photo, "ot-photo.jpg");
+
+  const response = await fetch("/api/ot", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: formData,
   });
+
+  const json = await response.json();
+  if (!response.ok) {
+    const parsed = apiErrorSchema.safeParse(json);
+    throw new OtApiClientError(parsed.success ? parsed.data.error ?? "Request failed" : "Request failed");
+  }
 
   const parsed = createOtSuccessSchema.safeParse(json);
   if (!parsed.success) {

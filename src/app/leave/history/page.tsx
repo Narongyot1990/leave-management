@@ -3,13 +3,14 @@
 import { Suspense, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
-import { FileText, X, AlertCircle, Clock } from 'lucide-react';
+import { FileText, X, AlertCircle, Clock, ImageIcon } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
 import UserAvatar from '@/components/UserAvatar';
 import AdminTabChips from '@/components/AdminTabChips';
+import ImageViewerModal from '@/components/ImageViewerModal';
 import { getLeaveTypeMeta, getStatusBadge, LEAVE_TYPE_LIST } from '@/lib/leave-types';
 import { formatDateThai } from '@/lib/date-utils';
 import { usePusher } from '@/hooks/usePusher';
@@ -22,6 +23,7 @@ type LeaveBalanceKey = 'vacationDays' | 'sickDays' | 'personalDays';
 function LeaveHistoryContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'ot' ? 'ot' : 'leave');
+  const [viewingPhotoUrl, setViewingPhotoUrl] = useState<string | null>(null);
 
   const {
     user,
@@ -387,17 +389,28 @@ function LeaveHistoryContent() {
                             {formatDateThai(String(request.createdAt))}
                           </p>
 
-                          {request.status === 'pending' && (
-                            <button
-                              onClick={() => handleCancelOt(request._id)}
-                              disabled={otCancellingId === request._id}
-                              className="btn btn-ghost px-3 py-1.5 min-h-0 text-fluid-xs"
-                              style={{ color: 'var(--danger)' }}
-                            >
-                              <X className="w-3.5 h-3.5" />
-                              {otCancellingId === request._id ? 'กำลังยกเลิก...' : 'ยกเลิกคำขอ'}
-                            </button>
-                          )}
+                          <div className="flex items-center gap-1.5">
+                            {request.photoUrl && (
+                              <button
+                                onClick={() => setViewingPhotoUrl(request.photoUrl ?? null)}
+                                className="btn btn-ghost px-3 py-1.5 min-h-0 text-fluid-xs"
+                              >
+                                <ImageIcon className="w-3.5 h-3.5" />
+                                ดูภาพ
+                              </button>
+                            )}
+                            {request.status === 'pending' && (
+                              <button
+                                onClick={() => handleCancelOt(request._id)}
+                                disabled={otCancellingId === request._id}
+                                className="btn btn-ghost px-3 py-1.5 min-h-0 text-fluid-xs"
+                                style={{ color: 'var(--danger)' }}
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                {otCancellingId === request._id ? 'กำลังยกเลิก...' : 'ยกเลิกคำขอ'}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </motion.div>
                     );
@@ -412,6 +425,7 @@ function LeaveHistoryContent() {
       </div>
 
       <ProfileModal user={profileUser} open={showProfile} onClose={() => setShowProfile(false)} />
+      <ImageViewerModal imageUrl={viewingPhotoUrl} onClose={() => setViewingPhotoUrl(null)} />
       <BottomNav role="driver" />
     </div>
   );

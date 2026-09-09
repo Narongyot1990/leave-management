@@ -1,8 +1,10 @@
 'use client';
 
-import { CheckCircle2, XCircle, Clock, Phone } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, XCircle, Clock, Phone, ImageIcon } from 'lucide-react';
 import AdminCardShell from '@/components/AdminCardShell';
 import UserAvatar from '@/components/UserAvatar';
+import ImageViewerModal from '@/components/ImageViewerModal';
 import { formatDateThai } from '@/lib/date-utils';
 
 export interface OtApproveRequest {
@@ -19,6 +21,7 @@ export interface OtApproveRequest {
   };
   date: string;
   reason: string;
+  photoUrl?: string;
   status: string;
   createdAt: string;
 }
@@ -40,6 +43,8 @@ export default function OtApproveRequestCard({
   onApprove,
   onReject,
 }: OtApproveRequestCardProps) {
+  const [showPhoto, setShowPhoto] = useState(false);
+
   return (
     <AdminCardShell
       key={request._id}
@@ -83,9 +88,21 @@ export default function OtApproveRequestCard({
       </div>
 
       <div className="p-4" style={{ background: 'var(--bg-inset)' }}>
-        <div className="flex items-center gap-2 mb-2">
-          <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} strokeWidth={1.8} />
-          <span className="text-fluid-sm font-medium" style={{ color: 'var(--accent)' }}>{formatDateThai(request.date)}</span>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} strokeWidth={1.8} />
+            <span className="text-fluid-sm font-medium" style={{ color: 'var(--accent)' }}>{formatDateThai(request.date)}</span>
+          </div>
+          {request.photoUrl && (
+            <button
+              type="button"
+              onClick={() => setShowPhoto(true)}
+              className="btn btn-ghost px-2.5 py-1 min-h-0 text-fluid-xs shrink-0"
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+              ดูภาพ
+            </button>
+          )}
         </div>
         <p className="text-fluid-xs mt-2" style={{ color: 'var(--text-secondary)' }}>{request.reason}</p>
       </div>
@@ -115,6 +132,8 @@ export default function OtApproveRequestCard({
           ไม่อนุมัติ
         </button>
       </div>
+
+      <ImageViewerModal imageUrl={showPhoto ? request.photoUrl ?? null : null} onClose={() => setShowPhoto(false)} />
     </AdminCardShell>
   );
 }

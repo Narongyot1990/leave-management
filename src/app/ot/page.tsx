@@ -1,10 +1,10 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import dayjs from 'dayjs';
-import { AlertCircle, CheckCircle2, Send, Calendar, Clock } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Send, Calendar, Clock, Camera, X } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -18,6 +18,7 @@ const OT_BACKDATE_LIMIT_DAYS = 7;
 function OtContent() {
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('userId');
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const {
     authUser,
@@ -30,9 +31,12 @@ function OtContent() {
     success,
     showDatePicker,
     isPending,
+    photoPreview,
     setReason,
     setShowDatePicker,
     handleDateSelect,
+    handlePhotoSelect,
+    removePhoto,
     submit,
   } = useOtFormController(targetUserId);
 
@@ -125,6 +129,48 @@ function OtContent() {
               </button>
             </motion.div>
 
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }} className="card p-3.5">
+              <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
+                รูปใบงาน
+              </label>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handlePhotoSelect(file);
+                  if (photoInputRef.current) photoInputRef.current.value = '';
+                }}
+              />
+              {photoPreview ? (
+                <div className="relative w-32 aspect-square rounded-[var(--radius-md)] overflow-hidden" style={{ background: 'var(--bg-inset)' }}>
+                  <img src={photoPreview} alt="รูปใบงาน" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={removePhoto}
+                    className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full"
+                    style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  className="w-full flex flex-col items-center justify-center gap-2 p-6 rounded-[var(--radius-md)] border-2 border-dashed transition-colors"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+                >
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'var(--bg-inset)' }}>
+                    <Camera className="w-5 h-5" />
+                  </div>
+                  <span className="text-fluid-xs">ถ่ายรูป / แนบรูปใบงาน</span>
+                </button>
+              )}
+            </motion.div>
+
             <motion.form
               onSubmit={submit}
               initial={{ y: 20, opacity: 0 }}
@@ -149,7 +195,7 @@ function OtContent() {
                 />
               </div>
 
-              <button type="submit" disabled={loading} className="btn btn-primary w-full mt-2">
+              <button type="submit" disabled={loading || !photoPreview} className="btn btn-primary w-full mt-2">
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
