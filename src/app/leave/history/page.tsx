@@ -11,6 +11,7 @@ import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
 import UserAvatar from '@/components/UserAvatar';
 import AdminTabChips from '@/components/AdminTabChips';
 import ImageViewerModal from '@/components/ImageViewerModal';
+import OtMonthlyView from '@/components/OtMonthlyView';
 import { getLeaveTypeMeta, getStatusBadge, LEAVE_TYPE_LIST } from '@/lib/leave-types';
 import { formatDateThai } from '@/lib/date-utils';
 import { usePusher } from '@/hooks/usePusher';
@@ -23,6 +24,7 @@ type LeaveBalanceKey = 'vacationDays' | 'sickDays' | 'personalDays';
 function LeaveHistoryContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'ot' ? 'ot' : 'leave');
+  const [otSubView, setOtSubView] = useState('list');
   const [viewingPhotoUrl, setViewingPhotoUrl] = useState<string | null>(null);
 
   const {
@@ -280,6 +282,19 @@ function LeaveHistoryContent() {
 
             {activeTab === 'ot' && (
             <>
+            <AdminTabChips
+              activeKey={otSubView}
+              onChange={setOtSubView}
+              options={[
+                { key: 'list', label: 'รายการ' },
+                { key: 'monthly', label: 'รายเดือน' },
+              ]}
+            />
+
+            {otSubView === 'monthly' ? (
+              <OtMonthlyView records={otRequests} onViewPhoto={setViewingPhotoUrl} loading={otLoading} />
+            ) : (
+            <>
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center p-2.5 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
@@ -417,6 +432,8 @@ function LeaveHistoryContent() {
                   })}
                 </AnimatePresence>
               </div>
+            )}
+            </>
             )}
             </>
             )}

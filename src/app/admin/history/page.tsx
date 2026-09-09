@@ -15,6 +15,7 @@ import AdminTabChips from '@/components/AdminTabChips';
 import { AdminEmptyState, AdminLoadingState } from '@/components/AdminPageStates';
 import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
 import ImageViewerModal from '@/components/ImageViewerModal';
+import OtMonthlyView from '@/components/OtMonthlyView';
 import UserAvatar from '@/components/UserAvatar';
 import { getLeaveTypeMeta, getRecordTypeLabel, getStatusBadge } from '@/lib/leave-types';
 import { formatDateThai, getLeaveDays } from '@/lib/date-utils';
@@ -122,6 +123,9 @@ function AdminHistoryContent() {
   const [loading, setLoading] = useState(true);
   const [loadingMoreLeaves, setLoadingMoreLeaves] = useState(false);
   const [activeTab, setActiveTab] = useState('leave');
+  const [otSubView, setOtSubView] = useState('list');
+  const [otMonthlyRecords, setOtMonthlyRecords] = useState<OtRecord[]>([]);
+  const [otMonthlyLoading, setOtMonthlyLoading] = useState(false);
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [viewingPhotoUrl, setViewingPhotoUrl] = useState<string | null>(null);
@@ -187,6 +191,29 @@ function AdminHistoryContent() {
       setOtPagination(data.pagination);
     }
   }, [buildScopedParams]);
+
+  const fetchOtMonthly = useCallback(async () => {
+    if (selectedEmployeeId === 'all') {
+      setOtMonthlyRecords([]);
+      return;
+    }
+    setOtMonthlyLoading(true);
+    try {
+      const response = await fetch(`/api/ot?userId=${encodeURIComponent(selectedEmployeeId)}`);
+      const data = await response.json();
+      if (data.success) {
+        setOtMonthlyRecords(data.requests);
+      }
+    } finally {
+      setOtMonthlyLoading(false);
+    }
+  }, [selectedEmployeeId]);
+
+  useEffect(() => {
+    if (activeTab === 'ot' && otSubView === 'monthly') {
+      fetchOtMonthly();
+    }
+  }, [activeTab, otSubView, fetchOtMonthly]);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -324,6 +351,17 @@ function AdminHistoryContent() {
               ]}
             />
 
+            {activeTab === 'ot' && (
+              <AdminTabChips
+                activeKey={otSubView}
+                onChange={setOtSubView}
+                options={[
+                  { key: 'list', label: 'รายการ' },
+                  { key: 'monthly', label: 'รายเดือน' },
+                ]}
+              />
+            )}
+
             <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
             {loading ? (
               <AdminLoadingState />
@@ -424,6 +462,12 @@ function AdminHistoryContent() {
                     </button>
                   )}
                 </div>
+              )
+            ) : activeTab === 'ot' && otSubView === 'monthly' ? (
+              selectedEmployeeId === 'all' ? (
+                <AdminEmptyState icon={Clock} message="กรุณาเลือกพนักงานเพื่อดูรายเดือน" />
+              ) : (
+                <OtMonthlyView records={otMonthlyRecords} onViewPhoto={setViewingPhotoUrl} loading={otMonthlyLoading} />
               )
             ) : activeTab === 'ot' ? (
               otRequests.length === 0 ? (
