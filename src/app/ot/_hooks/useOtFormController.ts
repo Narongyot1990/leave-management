@@ -49,6 +49,7 @@ export function useOtFormController(targetUserId: string | null) {
   const [authUser, setAuthUser] = useState<SessionUser | null>(null);
   const [monthApprovedCount, setMonthApprovedCount] = useState(0);
   const [date, setDate] = useState(() => formatLocalYmd(new Date()));
+  const [claimType, setClaimType] = useState("ot");
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
@@ -150,7 +151,7 @@ export function useOtFormController(targetUserId: string | null) {
         return;
       }
 
-      if (!date || !reason.trim()) {
+      if (!date || !claimType || !reason.trim()) {
         setError("กรุณากรอกข้อมูลให้ครบถ้วน");
         return;
       }
@@ -165,6 +166,7 @@ export function useOtFormController(targetUserId: string | null) {
         await createOtRequest({
           userId: submitUserId,
           date,
+          claimType,
           reason: reason.trim(),
           photo: photoFile,
         });
@@ -176,19 +178,20 @@ export function useOtFormController(targetUserId: string | null) {
         if (err instanceof OtApiClientError) {
           setError(err.message);
         } else {
-          setError("ไม่สามารถส่งคำขอ OT ได้");
+          setError("ไม่สามารถส่งคำขอได้");
         }
       } finally {
         setLoading(false);
       }
     },
-    [submitUserId, date, reason, photoFile, router],
+    [submitUserId, date, claimType, reason, photoFile, router],
   );
 
   return {
     authUser,
     monthApprovedCount,
     date,
+    claimType,
     reason,
     loading,
     initializing,
@@ -197,6 +200,7 @@ export function useOtFormController(targetUserId: string | null) {
     showDatePicker,
     isPending,
     photoPreview,
+    setClaimType,
     setReason,
     setShowDatePicker,
     handleDateSelect,

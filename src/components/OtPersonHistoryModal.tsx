@@ -54,7 +54,7 @@ export default function OtPersonHistoryModal({ userId, displayName, onClose }: O
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-fluid-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                ประวัติ OT{displayName ? ` - ${displayName}` : ''}
+                ประวัติรายได้พิเศษ{displayName ? ` - ${displayName}` : ''}
               </h3>
               <button onClick={onClose} className="btn btn-ghost w-7 h-7 p-0 min-h-0 min-w-0">
                 <X className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />

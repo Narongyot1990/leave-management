@@ -152,7 +152,7 @@ export default function LeaderHomePage() {
                     badge={pendingLeave}
                   />
                   <MenuButton
-                    label="อนุมัติ OT"
+                    label="อนุมัติรายได้พิเศษ"
                     icon={Clock}
                     href="/leader/approve-ot"
                     color="var(--success)"

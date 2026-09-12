@@ -18,6 +18,7 @@ import ImageViewerModal from '@/components/ImageViewerModal';
 import OtMonthlyView from '@/components/OtMonthlyView';
 import UserAvatar from '@/components/UserAvatar';
 import { getLeaveTypeMeta, getRecordTypeLabel, getStatusBadge } from '@/lib/leave-types';
+import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
 import { formatDateThai, getLeaveDays } from '@/lib/date-utils';
 import type { LeaveRequestRecord } from '@/lib/app-types';
 import { useAdminSession } from '@/hooks/useAdminSession';
@@ -73,6 +74,7 @@ interface OtRecord {
     phone?: string;
   };
   date: string;
+  claimType: string;
   reason: string;
   photoUrl?: string;
   status: string;
@@ -345,7 +347,7 @@ function AdminHistoryContent() {
               onChange={setActiveTab}
               options={[
                 { key: 'leave', label: `การลา (${leavePagination?.total ?? leaves.length})` },
-                { key: 'ot', label: `OT (${otPagination?.total ?? otRequests.length})` },
+                { key: 'ot', label: `รายได้พิเศษ (${otPagination?.total ?? otRequests.length})` },
                 { key: 'substitute', label: `ลงแทน (${substitutes.length})` },
                 { key: 'attendance', label: `ลงเวลา (${attendance.length})` },
               ]}
@@ -471,7 +473,7 @@ function AdminHistoryContent() {
               )
             ) : activeTab === 'ot' ? (
               otRequests.length === 0 ? (
-                <AdminEmptyState icon={Clock} message="ไม่พบประวัติ OT" />
+                <AdminEmptyState icon={Clock} message="ไม่พบประวัติรายได้พิเศษ" />
               ) : (
                 <div className="space-y-2">
                   {otRequests.map((request, index) => {
@@ -519,9 +521,21 @@ function AdminHistoryContent() {
                         </div>
                         <div className="p-4" style={{ background: 'var(--bg-inset)' }}>
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} strokeWidth={1.8} />
-                              <span className="text-fluid-sm font-medium" style={{ color: 'var(--accent)' }}>{formatDateThai(request.date)}</span>
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} strokeWidth={1.8} />
+                                <span className="text-fluid-sm font-medium" style={{ color: 'var(--accent)' }}>{formatDateThai(request.date)}</span>
+                              </div>
+                              {(() => {
+                                const typeMeta = getIncomeClaimTypeMeta(request.claimType);
+                                const TypeIcon = typeMeta.icon;
+                                return (
+                                  <div className="flex items-center gap-1">
+                                    <TypeIcon className="w-3.5 h-3.5" style={{ color: typeMeta.color }} strokeWidth={1.8} />
+                                    <span className="text-fluid-xs" style={{ color: typeMeta.color }}>{typeMeta.label}</span>
+                                  </div>
+                                );
+                              })()}
                             </div>
 
                             {request.approvedBy && (

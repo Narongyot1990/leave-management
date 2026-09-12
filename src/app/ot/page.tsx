@@ -4,13 +4,12 @@ import { Suspense, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import dayjs from 'dayjs';
-import { AlertCircle, CheckCircle2, Send, Calendar, Clock, Camera, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Send, Calendar, Wallet, Camera, X, Check } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import DatePickerModal from '@/components/DatePickerModal';
-import ReasonChips from '@/components/ReasonChips';
-import { OT_REASON_SUGGESTIONS } from '@/lib/ot-types';
+import { INCOME_CLAIM_TYPE_LIST } from '@/lib/ot-types';
 import { useOtFormController } from '@/app/ot/_hooks/useOtFormController';
 
 const OT_BACKDATE_LIMIT_DAYS = 7;
@@ -24,6 +23,7 @@ function OtContent() {
     authUser,
     monthApprovedCount,
     date,
+    claimType,
     reason,
     loading,
     initializing,
@@ -32,6 +32,7 @@ function OtContent() {
     showDatePicker,
     isPending,
     photoPreview,
+    setClaimType,
     setReason,
     setShowDatePicker,
     handleDateSelect,
@@ -72,14 +73,14 @@ function OtContent() {
       <Sidebar role={authUser.role || 'driver'} />
 
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
-        <PageHeader title="ขอ OT" backHref={authUser.role === 'driver' ? '/home' : authUser.role === 'leader' ? '/leader/home' : '/admin/home'} />
+        <PageHeader title="ขอรายได้พิเศษ" backHref={authUser.role === 'driver' ? '/home' : authUser.role === 'leader' ? '/leader/home' : '/admin/home'} />
 
         <div className="px-4 lg:px-8 py-3">
           <div className="max-w-2xl mx-auto space-y-4">
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-4 text-center">
-              <Clock className="w-5 h-5 mx-auto mb-1" style={{ color: 'var(--accent)' }} />
+              <Wallet className="w-5 h-5 mx-auto mb-1" style={{ color: 'var(--accent)' }} />
               <p className="text-fluid-sm" style={{ color: 'var(--text-muted)' }}>
-                เดือนนี้คุณทำ OT สำเร็จแล้ว <span className="font-bold" style={{ color: 'var(--accent)' }}>{monthApprovedCount}</span> วัน
+                เดือนนี้คุณมีรายการรายได้พิเศษสำเร็จแล้ว <span className="font-bold" style={{ color: 'var(--accent)' }}>{monthApprovedCount}</span> รายการ
               </p>
             </motion.div>
 
@@ -94,7 +95,7 @@ function OtContent() {
                   <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: 'var(--success-light)' }}>
                     <CheckCircle2 className="w-7 h-7" style={{ color: 'var(--success)' }} />
                   </div>
-                  <p className="text-fluid-lg font-bold" style={{ color: 'var(--text-primary)' }}>ส่งคำขอ OT สำเร็จ</p>
+                  <p className="text-fluid-lg font-bold" style={{ color: 'var(--text-primary)' }}>ส่งคำขอสำเร็จ</p>
                   <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>กำลังไปหน้าประวัติ...</p>
                 </motion.div>
               )}
@@ -114,7 +115,38 @@ function OtContent() {
 
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-3.5">
               <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
-                วันที่ทำ OT
+                ประเภทรายได้พิเศษ
+              </label>
+              <div className="space-y-1.5">
+                {INCOME_CLAIM_TYPE_LIST.map((type) => {
+                  const Icon = type.icon;
+                  const isSelected = claimType === type.value;
+
+                  return (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => setClaimType(type.value)}
+                      className="w-full min-h-[44px] py-3 px-4 rounded-[var(--radius-md)] text-fluid-sm transition-all flex items-center gap-3"
+                      style={{
+                        background: isSelected ? 'var(--accent-light)' : 'var(--bg-inset)',
+                        color: isSelected ? 'var(--accent)' : 'var(--text-primary)',
+                        border: isSelected ? '1.5px solid var(--accent)' : '1.5px solid transparent',
+                        fontWeight: isSelected ? 600 : 500,
+                      }}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" style={{ color: type.color }} strokeWidth={1.8} />
+                      <span className="flex-1 text-left">{type.label}</span>
+                      {isSelected && <Check className="w-4 h-4" style={{ color: 'var(--accent)' }} />}
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.03 }} className="card p-3.5">
+              <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
+                วันที่ทำ
               </label>
               <button
                 type="button"
@@ -182,9 +214,6 @@ function OtContent() {
                 <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
                   เหตุผล / งานที่ทำ
                 </label>
-                <div className="mb-2.5">
-                  <ReasonChips options={OT_REASON_SUGGESTIONS} onSelect={setReason} />
-                </div>
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -204,7 +233,7 @@ function OtContent() {
                 ) : (
                   <span className="flex items-center gap-2">
                     <Send className="w-4 h-4" />
-                    ส่งคำขอ OT
+                    ส่งคำขอ
                   </span>
                 )}
               </button>
@@ -223,7 +252,7 @@ function OtContent() {
         allowPast
         fromDate={earliestDate}
         toDate={latestDate}
-        title="เลือกวันที่ทำ OT"
+        title="เลือกวันที่"
       />
 
       <BottomNav role={authUser.role || 'driver'} />

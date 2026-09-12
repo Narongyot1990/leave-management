@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 import { getStatusBadge } from '@/lib/leave-types';
+import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
 import { buildDateKey, otMatchesDateKey } from '@/lib/leave-calendar';
 
 const THAI_MONTHS = [
@@ -15,6 +16,7 @@ const THAI_WEEKDAYS_SHORT = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', '�
 export interface OtMonthlyRecord {
   _id: string;
   date: string | Date;
+  claimType: string;
   status: string;
   reason?: string;
   photoUrl?: string;
@@ -33,16 +35,18 @@ export default function OtMonthlyView({ records, onViewPhoto, loading }: OtMonth
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const recordsByDay = useMemo(() => {
-    const map = new Map<number, OtMonthlyRecord>();
+    const map = new Map<number, OtMonthlyRecord[]>();
     for (let day = 1; day <= daysInMonth; day++) {
       const dateKey = buildDateKey(year, month, day);
-      const match = records.find((r) => r.status !== 'cancelled' && otMatchesDateKey(r.date, dateKey));
-      if (match) map.set(day, match);
+      const matches = records.filter((r) => r.status !== 'cancelled' && otMatchesDateKey(r.date, dateKey));
+      if (matches.length > 0) map.set(day, matches);
     }
     return map;
   }, [records, year, month, daysInMonth]);
 
-  const approvedCount = Array.from(recordsByDay.values()).filter((r) => r.status === 'approved').length;
+  const approvedCount = Array.from(recordsByDay.values())
+    .flat()
+    .filter((r) => r.status === 'approved').length;
 
   const goToPrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const goToNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
@@ -63,7 +67,7 @@ export default function OtMonthlyView({ records, onViewPhoto, loading }: OtMonth
 
       <div className="card p-3 text-center">
         <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>
-          ทำ OT เดือนนี้ <span className="font-bold" style={{ color: 'var(--accent)' }}>{approvedCount}</span> วัน
+          รายการอนุมัติแล้วเดือนนี้ <span className="font-bold" style={{ color: 'var(--accent)' }}>{approvedCount}</span> รายการ
         </p>
       </div>
 
@@ -74,9 +78,8 @@ export default function OtMonthlyView({ records, onViewPhoto, loading }: OtMonth
           </div>
         ) : (
           Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day, index) => {
-            const record = recordsByDay.get(day);
+            const dayRecords = recordsByDay.get(day);
             const weekday = THAI_WEEKDAYS_SHORT[new Date(year, month, day).getDay()];
-            const badge = record ? getStatusBadge(record.status) : null;
 
             return (
               <div
@@ -85,28 +88,47 @@ export default function OtMonthlyView({ records, onViewPhoto, loading }: OtMonth
                 style={index < daysInMonth - 1 ? { borderBottom: '1px solid var(--border)' } : undefined}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-fluid-sm" style={{ color: record ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                  <span className="text-fluid-sm" style={{ color: dayRecords ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                     {day} {weekday}
                   </span>
-                  <div className="flex items-center gap-2">
-                    {badge ? (
-                      <span className={`badge ${badge.cls}`}>{badge.label}</span>
-                    ) : (
-                      <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>–</span>
-                    )}
-                    {record?.photoUrl && (
-                      <button
-                        type="button"
-                        onClick={() => onViewPhoto(record.photoUrl as string)}
-                        className="btn btn-ghost w-7 h-7 p-0 min-h-0 min-w-0"
-                      >
-                        <ImageIcon className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
-                      </button>
-                    )}
-                  </div>
+                  {!dayRecords && (
+                    <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>–</span>
+                  )}
                 </div>
-                {record?.reason && (
-                  <p className="text-fluid-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{record.reason}</p>
+                {dayRecords && (
+                  <div className="mt-1.5 space-y-1.5 pl-1">
+                    {dayRecords.map((record) => {
+                      const typeMeta = getIncomeClaimTypeMeta(record.claimType);
+                      const TypeIcon = typeMeta.icon;
+                      const badge = getStatusBadge(record.status);
+
+                      return (
+                        <div key={record._id} className="rounded-[var(--radius-sm)] p-2" style={{ background: 'var(--bg-inset)' }}>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <TypeIcon className="w-3.5 h-3.5 shrink-0" style={{ color: typeMeta.color }} strokeWidth={1.8} />
+                              <span className="text-fluid-xs font-medium truncate" style={{ color: typeMeta.color }}>{typeMeta.label}</span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className={`badge ${badge.cls}`}>{badge.label}</span>
+                              {record.photoUrl && (
+                                <button
+                                  type="button"
+                                  onClick={() => onViewPhoto(record.photoUrl as string)}
+                                  className="btn btn-ghost w-7 h-7 p-0 min-h-0 min-w-0"
+                                >
+                                  <ImageIcon className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          {record.reason && (
+                            <p className="text-fluid-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{record.reason}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             );

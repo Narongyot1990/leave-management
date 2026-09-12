@@ -183,7 +183,7 @@ export default function AdminHomePage() {
                 </div>
                 <div className="grid grid-cols-5 gap-1.5">
                   <MenuCard label="อนุมัติลา" icon={CheckSquare} href="/admin/approve" color="var(--success)" desc="Leaves" />
-                  <MenuCard label="อนุมัติ OT" icon={Timer} href="/admin/approve-ot" color="var(--success)" desc="OT" badge={counts.pendingOt} />
+                  <MenuCard label="อนุมัติรายได้พิเศษ" icon={Timer} href="/admin/approve-ot" color="var(--success)" desc="Extra Income" badge={counts.pendingOt} />
                   <MenuCard label="แก้เวลา" icon={MessageSquare} href="/admin/attendance/corrections" color="var(--amber-500)" desc="Correction" badge={counts.pendingCorrections} />
                   <MenuCard label="ประวัติ" icon={Clock} href="/admin/history" color="var(--text-muted)" desc="History" />
                   <MenuCard label="พนักงาน" icon={Users} href="/admin/drivers" color="var(--accent)" desc="Drivers" />

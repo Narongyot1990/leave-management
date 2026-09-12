@@ -73,7 +73,7 @@ export default function AdminApproveOtPage() {
   const handleNewOt = useCallback((data: { userName?: string }) => {
     setNewRequestAlert(true);
     fetchPending();
-    showToast('notification', `คำขอ OT ใหม่จาก ${data?.userName || 'พนักงาน'}`);
+    showToast('notification', `คำขอรายได้พิเศษใหม่จาก ${data?.userName || 'พนักงาน'}`);
     const audio = new Audio('/notification.mp3');
     audio.play().catch(() => {});
     setTimeout(() => setNewRequestAlert(false), 5000);
@@ -149,7 +149,7 @@ export default function AdminApproveOtPage() {
 
   const handleApproveAll = async () => {
     if (!user || requests.length === 0) return;
-    if (!window.confirm(`ยืนยันอนุมัติ OT ทั้งหมด ${requests.length} รายการ?`)) {
+    if (!window.confirm(`ยืนยันอนุมัติทั้งหมด ${requests.length} รายการ?`)) {
       return;
     }
 
@@ -192,14 +192,14 @@ export default function AdminApproveOtPage() {
             style={{ background: 'var(--success)', color: 'white' }}
           >
             <Bell className="w-4 h-4" />
-            <span className="text-fluid-sm font-semibold">มีคำขอ OT ใหม่!</span>
+            <span className="text-fluid-sm font-semibold">มีคำขอรายได้พิเศษใหม่!</span>
           </motion.div>
         )}
       </AnimatePresence>
 
       <div className="lg:pl-[240px] pb-[72px] lg:pb-6">
         <PageHeader
-          title="อนุมัติ OT"
+          title="อนุมัติรายได้พิเศษ"
           backHref="/admin/home"
           rightContent={
             <span className="badge badge-accent">{requests.length} รายการ</span>

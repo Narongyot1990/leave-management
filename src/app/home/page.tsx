@@ -18,8 +18,8 @@ const actions = [
   { icon: FileText, label: 'ขอลา', href: '/leave', color: 'var(--accent)' },
   { icon: History, label: 'ประวัติลา', href: '/leave/history', color: 'var(--success)' },
   { icon: ClipboardCheck, label: 'งานที่ได้รับ', href: '/tasks', color: 'var(--warning)' },
-  { icon: Clock, label: 'ขอ OT', href: '/ot', color: 'var(--accent)' },
-  { icon: History, label: 'ประวัติ OT', href: '/leave/history?tab=ot', color: 'var(--success)' },
+  { icon: Clock, label: 'ขอรายได้พิเศษ', href: '/ot', color: 'var(--accent)' },
+  { icon: History, label: 'ประวัติรายได้พิเศษ', href: '/leave/history?tab=ot', color: 'var(--success)' },
 ];
 
 export default function DriverHomePage() {

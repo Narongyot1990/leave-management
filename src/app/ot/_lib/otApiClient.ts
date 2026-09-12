@@ -19,6 +19,7 @@ const createOtSuccessSchema = z.object({
 const otRequestSchema = z.object({
   _id: z.string(),
   date: z.union([z.string(), z.date()]),
+  claimType: z.string(),
   reason: z.string(),
   photoUrl: z.string(),
   status: z.string(),
@@ -59,6 +60,7 @@ export type SessionUser = z.infer<typeof authMeResponseSchema>["user"];
 export type CreateOtPayload = {
   userId: string;
   date: string;
+  claimType: string;
   reason: string;
   photo: Blob;
 };
@@ -104,6 +106,7 @@ export async function createOtRequest(payload: CreateOtPayload): Promise<void> {
   const formData = new FormData();
   formData.append("userId", payload.userId);
   formData.append("date", payload.date);
+  formData.append("claimType", payload.claimType);
   formData.append("reason", payload.reason);
   formData.append("photo", payload.photo, "ot-photo.jpg");
 

@@ -4,10 +4,12 @@ const objectIdOrLiteral = z.string().trim().min(1);
 const calendarDateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
 export const OtStatusSchema = z.enum(["pending", "approved", "rejected", "cancelled"]);
+export const OtClaimTypeSchema = z.enum(["ot", "holiday_work", "extra_trip", "night_shift"]);
 
 export const OtQuerySchema = z.object({
   userId: objectIdOrLiteral.optional(),
   status: OtStatusSchema.optional(),
+  claimType: OtClaimTypeSchema.optional(),
   branch: z.string().trim().min(1).max(100).optional(),
   page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
@@ -16,6 +18,7 @@ export const OtQuerySchema = z.object({
 export const CreateOtSchema = z.object({
   userId: objectIdOrLiteral,
   date: calendarDateString,
+  claimType: OtClaimTypeSchema,
   reason: z.string().trim().min(3).max(500),
 });
 

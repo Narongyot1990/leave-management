@@ -13,6 +13,7 @@ import AdminTabChips from '@/components/AdminTabChips';
 import ImageViewerModal from '@/components/ImageViewerModal';
 import OtMonthlyView from '@/components/OtMonthlyView';
 import { getLeaveTypeMeta, getStatusBadge, LEAVE_TYPE_LIST } from '@/lib/leave-types';
+import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
 import { formatDateThai } from '@/lib/date-utils';
 import { usePusher } from '@/hooks/usePusher';
 import { useToast } from '@/components/Toast';
@@ -60,7 +61,7 @@ function LeaveHistoryContent() {
 
   const handleOtChanged = useCallback(async () => {
     await refreshOtHistory();
-    showToast('info', 'สถานะคำขอ OT มีการอัปเดต');
+    showToast('info', 'สถานะคำขอรายได้พิเศษมีการอัปเดต');
   }, [refreshOtHistory, showToast]);
 
   usePusher(
@@ -82,17 +83,17 @@ function LeaveHistoryContent() {
   );
 
   const handleCancelOt = async (otId: string) => {
-    if (!window.confirm('ต้องการยกเลิกคำขอ OT นี้ใช่หรือไม่?')) {
+    if (!window.confirm('ต้องการยกเลิกคำขอนี้ใช่หรือไม่?')) {
       return;
     }
 
     const ok = await cancelOtRequest(otId);
     if (!ok) {
-      showToast('error', 'ไม่สามารถยกเลิกคำขอ OT ได้');
+      showToast('error', 'ไม่สามารถยกเลิกคำขอได้');
       return;
     }
 
-    showToast('success', 'ยกเลิกคำขอ OT เรียบร้อย');
+    showToast('success', 'ยกเลิกคำขอเรียบร้อย');
   };
 
   const handleCancel = async (leaveId: string) => {
@@ -142,7 +143,7 @@ function LeaveHistoryContent() {
                 onChange={setActiveTab}
                 options={[
                   { key: 'leave', label: '🍃 ประวัติการลา' },
-                  { key: 'ot', label: '⏰ ประวัติ OT' },
+                  { key: 'ot', label: '⏰ รายได้พิเศษ' },
                 ]}
               />
             </motion.div>
@@ -331,7 +332,7 @@ function LeaveHistoryContent() {
                 <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--bg-inset)' }}>
                   <Clock className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />
                 </div>
-                <p className="text-fluid-sm font-medium" style={{ color: 'var(--text-muted)' }}>ยังไม่มีประวัติ OT</p>
+                <p className="text-fluid-sm font-medium" style={{ color: 'var(--text-muted)' }}>ยังไม่มีประวัติรายได้พิเศษ</p>
               </motion.div>
             ) : (
               <div className="space-y-2">
@@ -350,13 +351,22 @@ function LeaveHistoryContent() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0" style={{ background: 'var(--bg-inset)' }}>
-                              <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} strokeWidth={1.8} />
-                            </div>
+                            {(() => {
+                              const typeMeta = getIncomeClaimTypeMeta(request.claimType);
+                              const TypeIcon = typeMeta.icon;
+                              return (
+                                <div className="w-9 h-9 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0" style={{ background: 'var(--bg-inset)' }}>
+                                  <TypeIcon className="w-4 h-4" style={{ color: typeMeta.color }} strokeWidth={1.8} />
+                                </div>
+                              );
+                            })()}
                             <div>
-                              <h3 className="text-fluid-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                {formatDateThai(String(request.date))}
+                              <h3 className="text-fluid-sm font-semibold" style={{ color: getIncomeClaimTypeMeta(request.claimType).color }}>
+                                {getIncomeClaimTypeMeta(request.claimType).label}
                               </h3>
+                              <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>
+                                {formatDateThai(String(request.date))}
+                              </p>
                             </div>
                           </div>
 

@@ -7,6 +7,7 @@ import UserAvatar from '@/components/UserAvatar';
 import ImageViewerModal from '@/components/ImageViewerModal';
 import OtPersonHistoryModal from '@/components/OtPersonHistoryModal';
 import { formatDateThai } from '@/lib/date-utils';
+import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
 
 export interface OtApproveRequest {
   _id: string;
@@ -21,6 +22,7 @@ export interface OtApproveRequest {
     phone?: string;
   };
   date: string;
+  claimType: string;
   reason: string;
   photoUrl?: string;
   status: string;
@@ -101,10 +103,22 @@ export default function OtApproveRequestCard({
       </div>
 
       <div className="p-4" style={{ background: 'var(--bg-inset)' }}>
+        <div className="flex items-center gap-2 mb-2">
+          {(() => {
+            const typeMeta = getIncomeClaimTypeMeta(request.claimType);
+            const TypeIcon = typeMeta.icon;
+            return (
+              <>
+                <TypeIcon className="w-4 h-4" style={{ color: typeMeta.color }} strokeWidth={1.8} />
+                <span className="text-fluid-sm font-medium" style={{ color: typeMeta.color }}>{typeMeta.label}</span>
+              </>
+            );
+          })()}
+        </div>
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} strokeWidth={1.8} />
-            <span className="text-fluid-sm font-medium" style={{ color: 'var(--accent)' }}>{formatDateThai(request.date)}</span>
+            <Clock className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} strokeWidth={1.8} />
+            <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>{formatDateThai(request.date)}</span>
           </div>
           {request.photoUrl && (
             <button

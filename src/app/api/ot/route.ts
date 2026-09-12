@@ -42,6 +42,7 @@ export const POST = apiHandler(async ({ req, payload }) => {
   const input = CreateOtSchema.parse({
     userId: formData.get("userId"),
     date: formData.get("date"),
+    claimType: formData.get("claimType"),
     reason: formData.get("reason"),
   });
   const result = await OtService.create(payload, input, photo);

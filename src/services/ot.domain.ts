@@ -9,7 +9,7 @@ import type {
   OtQueryInput,
   ReviewOtInput,
 } from "@/lib/validations/ot.schema";
-import { OtRequest, type IOtRequest, type OtStatus } from "@/models/OtRequest";
+import { OtRequest, type IOtRequest, type OtClaimType, type OtStatus } from "@/models/OtRequest";
 import { LeaveRequest } from "@/models/LeaveRequest";
 import { User } from "@/models/User";
 import { Leader } from "@/models/Leader";
@@ -43,6 +43,7 @@ type OtRecord = {
   _id: string;
   userId: string;
   date: Date;
+  claimType: OtClaimType;
   reason: string;
   photoUrl: string;
   status: OtStatus;
@@ -93,17 +94,18 @@ class OtRepository {
     return request ? request : null;
   }
 
-  async findActiveByUserAndDate(userId: string, date: Date) {
+  async findActiveByUserAndDate(userId: string, date: Date, claimType: OtClaimType) {
     const request = await OtRequest.findOne({
       userId,
       date,
+      claimType,
       status: { $in: ["pending", "approved"] },
     }).lean();
 
     return request ? mapOtRequest(request) : null;
   }
 
-  async create(input: { userId: string; date: Date; reason: string; photoUrl: string }) {
+  async create(input: { userId: string; date: Date; claimType: OtClaimType; reason: string; photoUrl: string }) {
     const request = await OtRequest.create({
       ...input,
       status: "pending",
@@ -196,9 +198,9 @@ export class OtService {
     const date = parseLocalDate(input.date);
     assertWithinBackdateWindow(date);
 
-    const existing = await otRepository.findActiveByUserAndDate(input.userId, date);
+    const existing = await otRepository.findActiveByUserAndDate(input.userId, date, input.claimType);
     if (existing) {
-      throw conflict("You already have an OT request for this date", { code: "DUPLICATE_OT" });
+      throw conflict("You already have a claim of this type for this date", { code: "DUPLICATE_OT" });
     }
 
     const approvedLeave = await LeaveRequest.findOne({
@@ -208,7 +210,7 @@ export class OtService {
       endDate: { $gte: date },
     }).lean();
     if (approvedLeave) {
-      throw conflict("Cannot request OT on a day you have approved leave", { code: "OT_ON_LEAVE_DAY" });
+      throw conflict("Cannot request extra income on a day you have approved leave", { code: "OT_ON_LEAVE_DAY" });
     }
 
     const filename = `ot/${input.userId}/${Date.now()}-${photo.name}`;
@@ -221,6 +223,7 @@ export class OtService {
     const request = await otRepository.create({
       userId: input.userId,
       date,
+      claimType: input.claimType,
       reason: input.reason,
       photoUrl: blob.url,
     });
@@ -330,6 +333,9 @@ export class OtService {
 
 async function buildOtScope(actor: OtActor, query: OtQueryInput) {
   const filter: QueryFilter<IOtRequest> = {};
+  if (query.claimType) {
+    filter.claimType = query.claimType;
+  }
 
   if (actor.role === "driver") {
     filter.userId = actor.userId;
@@ -558,6 +564,7 @@ function mapOtRequest(record: Partial<IOtRequest> & { _id?: mongoose.Types.Objec
     _id: String(record._id),
     userId: String(record.userId),
     date: new Date(record.date as Date),
+    claimType: (record.claimType as OtClaimType) || "ot",
     reason: String(record.reason),
     photoUrl: String(record.photoUrl),
     status: record.status as OtStatus,
@@ -575,6 +582,7 @@ function mapPopulatedOtRequest(record: unknown): PopulatedOtRecord {
     _id: String(source._id),
     userId: mapReference(source.userId),
     date: new Date(source.date as Date),
+    claimType: (source.claimType as OtClaimType) || "ot",
     reason: String(source.reason),
     photoUrl: String(source.photoUrl),
     status: source.status as OtStatus,

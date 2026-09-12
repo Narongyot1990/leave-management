@@ -11,6 +11,7 @@ import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
 import UserAvatar from '@/components/UserAvatar';
 import { getHolidayMap, getHolidaysForMonth } from '@/lib/thai-holidays';
 import { getLeaveTypeMeta, LEAVE_TYPE_LIST } from '@/lib/leave-types';
+import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
 import { formatDateThai as formatDateThaiUtil, getLeaveDays as getLeaveDaysUtil } from '@/lib/date-utils';
 import { buildDateKey, leaveSpansDateKey, leaveStartsInMonth, otMatchesDateKey } from '@/lib/leave-calendar';
 import type { AppRole, LeavePersonSummary, LeaveRequestRecord, SessionUser } from '@/lib/app-types';
@@ -21,6 +22,7 @@ interface OtRecord {
   _id: string;
   userId: LeavePersonSummary;
   date: string;
+  claimType: string;
   reason: string;
   status: string;
   approvedBy?: LeavePersonSummary;
@@ -406,7 +408,7 @@ function DashboardContent() {
                               <div
                                 className="w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center text-white font-bold bg-violet-500 mt-0.5"
                                 style={{ fontSize: '8px', borderColor: 'var(--bg-surface)' }}
-                                title="OT"
+                                title="รายได้พิเศษ"
                               >
                                 {dayOt.length}
                               </div>
@@ -448,7 +450,7 @@ function DashboardContent() {
             ))}
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-violet-500" />
-              <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>OT</span>
+              <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>รายได้พิเศษ</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#ef4444', opacity: 0.5 }} />
@@ -574,7 +576,7 @@ function DashboardContent() {
 
                 {selectedDay.ot.length > 0 && (
                   <p className="text-[10px] font-bold uppercase tracking-wider px-1 pt-2" style={{ color: 'var(--text-muted)' }}>
-                    ⏰ ทำ OT ({selectedDay.ot.length} คน)
+                    ⏰ รายได้พิเศษ ({selectedDay.ot.length} คน)
                   </p>
                 )}
                 {selectedDay.ot.map((ot) => (
@@ -603,8 +605,11 @@ function DashboardContent() {
                         )}
                       </div>
                       <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>@{ot.userId?.lineDisplayName}</p>
+                      <p className="text-fluid-xs mt-1 font-medium" style={{ color: getIncomeClaimTypeMeta(ot.claimType).color }}>
+                        {getIncomeClaimTypeMeta(ot.claimType).label}
+                      </p>
                       {ot.reason && (
-                        <p className="text-fluid-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{ot.reason}</p>
+                        <p className="text-fluid-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{ot.reason}</p>
                       )}
                     </div>
                   </div>
