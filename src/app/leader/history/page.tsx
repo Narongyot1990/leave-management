@@ -1,15 +1,22 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FileText, ClipboardList, CalendarDays, Phone, Clock } from 'lucide-react';
+import { FileText, ClipboardList, CalendarDays, Phone, Clock, ImageIcon } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
+import AdminTabChips from '@/components/AdminTabChips';
+import { AdminEmptyState, AdminLoadingState } from '@/components/AdminPageStates';
 import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
+import ImageViewerModal from '@/components/ImageViewerModal';
+import OtMonthlyView from '@/components/OtMonthlyView';
 import UserAvatar from '@/components/UserAvatar';
 import { getLeaveTypeMeta, getRecordTypeLabel, getStatusBadge } from '@/lib/leave-types';
+import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
 import { formatDateThai, getLeaveDays } from '@/lib/date-utils';
 import type { AppRole, LeaveRequestRecord, SessionUser } from '@/lib/app-types';
 import { usePusher } from '@/hooks/usePusher';
@@ -51,6 +58,33 @@ interface EmployeeOption {
   role?: string;
 }
 
+interface OtRecord {
+  _id: string;
+  userId: {
+    lineDisplayName: string;
+    lineProfileImage?: string;
+    performanceTier?: string;
+    name?: string;
+    surname?: string;
+    employeeId?: string;
+    phone?: string;
+  };
+  date: string;
+  claimType: string;
+  reason: string;
+  photoUrl?: string;
+  status: string;
+  rejectedReason?: string;
+  approvedBy?: {
+    _id: string;
+    name?: string;
+    surname?: string;
+    lineDisplayName?: string;
+    lineProfileImage?: string;
+    performanceTier?: string;
+  };
+}
+
 interface LeavePagination {
   page: number;
   limit: number;
@@ -78,14 +112,21 @@ function LeaderHistoryContent() {
   const [leaves, setLeaves] = useState<LeaveRequestRecord[]>([]);
   const [substitutes, setSubstitutes] = useState<SubstituteRecord[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [otRequests, setOtRequests] = useState<OtRecord[]>([]);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
   const [leavePagination, setLeavePagination] = useState<LeavePagination | null>(null);
+  const [otPagination, setOtPagination] = useState<LeavePagination | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMoreLeaves, setLoadingMoreLeaves] = useState(false);
+  const [loadingMoreOt, setLoadingMoreOt] = useState(false);
   const [activeTab, setActiveTab] = useState('leave');
+  const [otSubView, setOtSubView] = useState('list');
+  const [otMonthlyRecords, setOtMonthlyRecords] = useState<OtRecord[]>([]);
+  const [otMonthlyLoading, setOtMonthlyLoading] = useState(false);
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [viewingPhotoUrl, setViewingPhotoUrl] = useState<string | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
 
   useEffect(() => {
@@ -165,6 +206,42 @@ function LeaderHistoryContent() {
     }
   }, [buildScopedParams]);
 
+  const fetchOt = useCallback(async (page = 1, append = false) => {
+    const queryParams = buildScopedParams();
+    queryParams.set('page', String(page));
+    queryParams.set('limit', String(LEAVE_PAGE_SIZE));
+
+    const response = await fetch(`/api/ot?${queryParams.toString()}`);
+    const data = await response.json();
+    if (data.success) {
+      setOtRequests((current) => append ? [...current, ...data.requests] : data.requests);
+      setOtPagination(data.pagination);
+    }
+  }, [buildScopedParams]);
+
+  const fetchOtMonthly = useCallback(async () => {
+    if (selectedEmployeeId === 'all') {
+      setOtMonthlyRecords([]);
+      return;
+    }
+    setOtMonthlyLoading(true);
+    try {
+      const response = await fetch(`/api/ot?userId=${encodeURIComponent(selectedEmployeeId)}`);
+      const data = await response.json();
+      if (data.success) {
+        setOtMonthlyRecords(data.requests);
+      }
+    } finally {
+      setOtMonthlyLoading(false);
+    }
+  }, [selectedEmployeeId]);
+
+  useEffect(() => {
+    if (activeTab === 'ot' && otSubView === 'monthly') {
+      fetchOtMonthly();
+    }
+  }, [activeTab, otSubView, fetchOtMonthly]);
+
   const fetchData = useCallback(async () => {
     if (!user) return;
     try {
@@ -188,7 +265,7 @@ function LeaderHistoryContent() {
         attendanceRes.json()
       ]);
 
-      await fetchLeaves(1, false);
+      await Promise.all([fetchLeaves(1, false), fetchOt(1, false)]);
       if (substituteData.success) {
         setSubstitutes(substituteData.records);
       }
@@ -203,7 +280,7 @@ function LeaderHistoryContent() {
     } finally {
       setLoading(false);
     }
-  }, [buildScopedParams, fetchLeaves, user]);
+  }, [buildScopedParams, fetchLeaves, fetchOt, user]);
 
   useEffect(() => {
     fetchData();
@@ -223,19 +300,42 @@ function LeaderHistoryContent() {
     }
   }, [fetchLeaves, leavePagination]);
 
+  const handleLoadMoreOt = useCallback(async () => {
+    if (!otPagination?.hasMore) return;
+    setLoadingMoreOt(true);
+    try {
+      await fetchOt(otPagination.page + 1, true);
+    } finally {
+      setLoadingMoreOt(false);
+    }
+  }, [fetchOt, otPagination]);
+
   const handleBranchSelect = useCallback((branch: string) => {
     setSelectedBranch(branch);
     setSelectedEmployeeId('all');
   }, []);
 
   const handleLeaveChanged = useCallback(async () => {
-    fetchData();
-  }, [fetchData]);
+    fetchLeaves(1, false);
+  }, [fetchLeaves]);
+
+  const handleOtChanged = useCallback(async () => {
+    fetchOt(1, false);
+    if (otSubView === 'monthly') {
+      fetchOtMonthly();
+    }
+  }, [fetchOt, fetchOtMonthly, otSubView]);
 
   usePusher('leave-requests', [
     { event: 'new-leave-request', callback: handleLeaveChanged },
     { event: 'leave-status-changed', callback: handleLeaveChanged },
     { event: 'leave-cancelled', callback: handleLeaveChanged },
+  ], !!user);
+
+  usePusher('ot-requests', [
+    { event: 'new-ot-request', callback: handleOtChanged },
+    { event: 'ot-status-changed', callback: handleOtChanged },
+    { event: 'ot-cancelled', callback: handleOtChanged },
   ], !!user);
 
   if (!user) {
@@ -272,7 +372,7 @@ function LeaderHistoryContent() {
               </motion.div>
             )}
 
-            {activeTab === 'leave' && (
+            {(activeTab === 'leave' || activeTab === 'ot') && (
               <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-3">
                 <label className="block text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
                   เลือกพนักงาน
@@ -292,39 +392,34 @@ function LeaderHistoryContent() {
               </motion.div>
             )}
 
-            <div className="flex gap-2">
-              {[
+            <AdminTabChips
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              options={[
                 { key: 'leave', label: `การลา (${leavePagination?.total ?? leaves.length})` },
+                { key: 'ot', label: `รายได้พิเศษ (${otPagination?.total ?? otRequests.length})` },
                 { key: 'substitute', label: `ลงแทน (${substitutes.length})` },
                 { key: 'attendance', label: `ลงเวลา (${attendance.length})` },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className="btn text-fluid-sm"
-                  style={{
-                    background: activeTab === tab.key ? 'var(--accent)' : 'var(--bg-surface)',
-                    color: activeTab === tab.key ? 'white' : 'var(--text-secondary)',
-                    border: activeTab === tab.key ? 'none' : '1px solid var(--border)',
-                    boxShadow: activeTab === tab.key ? 'var(--shadow-accent)' : 'none',
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+              ]}
+            />
+
+            {activeTab === 'ot' && (
+              <AdminTabChips
+                activeKey={otSubView}
+                onChange={setOtSubView}
+                options={[
+                  { key: 'list', label: 'รายการ' },
+                  { key: 'monthly', label: 'รายเดือน' },
+                ]}
+              />
+            )}
 
             <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
             {loading ? (
-              <div className="flex justify-center py-16">
-                <div className="w-10 h-10 rounded-full border-[3px] animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
-              </div>
+              <AdminLoadingState />
             ) : activeTab === 'leave' ? (
               leaves.length === 0 ? (
-                <div className="card p-12 text-center">
-                  <FileText className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
-                  <p className="text-fluid-sm" style={{ color: 'var(--text-muted)' }}>ไม่มีประวัติการลา</p>
-                </div>
+                <AdminEmptyState icon={FileText} message="ไม่พบประวัติการลา" />
               ) : (
                 <div className="space-y-2">
                   {leaves.map((request, index) => {
@@ -420,12 +515,131 @@ function LeaderHistoryContent() {
                   )}
                 </div>
               )
+            ) : activeTab === 'ot' && otSubView === 'monthly' ? (
+              selectedEmployeeId === 'all' ? (
+                <AdminEmptyState icon={Clock} message="กรุณาเลือกพนักงานเพื่อดูรายเดือน" />
+              ) : (
+                <OtMonthlyView records={otMonthlyRecords} onViewPhoto={setViewingPhotoUrl} loading={otMonthlyLoading} />
+              )
+            ) : activeTab === 'ot' ? (
+              otRequests.length === 0 ? (
+                <AdminEmptyState icon={Clock} message="ไม่พบประวัติรายได้พิเศษ" />
+              ) : (
+                <div className="space-y-2">
+                  {otRequests.map((request, index) => {
+                    const badge = getStatusBadge(request.status);
+
+                    return (
+                      <motion.div
+                        key={request._id}
+                        initial={{ y: 10, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: index * 0.03 }}
+                        className="card overflow-hidden"
+                      >
+                        <div className="p-4 flex items-start gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                          <UserAvatar
+                            imageUrl={request.userId?.lineProfileImage}
+                            displayName={request.userId?.name || request.userId?.lineDisplayName}
+                            tier={request.userId?.performanceTier}
+                            size="md"
+                            onClick={() => { setProfileUser(request.userId as ProfileUser); setShowProfile(true); }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <h3 className="text-fluid-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                                {request.userId?.name && request.userId?.surname
+                                  ? `${request.userId.name} ${request.userId.surname}`
+                                  : request.userId?.lineDisplayName || 'Unknown'}
+                                {request.userId?.employeeId && (
+                                  <span className="text-fluid-xs font-normal" style={{ color: 'var(--text-muted)' }}>({request.userId.employeeId})</span>
+                                )}
+                              </h3>
+                              <span className={`badge ${badge.cls} shrink-0`}>{badge.label}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 mt-0.5">
+                              <p className="text-fluid-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                                @{request.userId?.lineDisplayName}
+                              </p>
+                              {request.userId?.phone && (
+                                <a href={`tel:${request.userId.phone}`} className="shrink-0">
+                                  <Phone className="w-3.5 h-3.5" style={{ color: '#00C853' }} strokeWidth={2} />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-4" style={{ background: 'var(--bg-inset)' }}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} strokeWidth={1.8} />
+                                <span className="text-fluid-sm font-medium" style={{ color: 'var(--accent)' }}>{formatDateThai(request.date)}</span>
+                              </div>
+                              {(() => {
+                                const typeMeta = getIncomeClaimTypeMeta(request.claimType);
+                                const TypeIcon = typeMeta.icon;
+                                return (
+                                  <div className="flex items-center gap-1">
+                                    <TypeIcon className="w-3.5 h-3.5" style={{ color: typeMeta.color }} strokeWidth={1.8} />
+                                    <span className="text-fluid-xs" style={{ color: typeMeta.color }}>{typeMeta.label}</span>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+
+                            {request.approvedBy && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">
+                                  {request.status === 'approved' ? 'Approved By' : 'Rejected By'}
+                                </span>
+                                <UserAvatar
+                                  imageUrl={request.approvedBy.lineProfileImage}
+                                  displayName={request.approvedBy.name || request.approvedBy.lineDisplayName}
+                                  tier={request.approvedBy.performanceTier}
+                                  size="xs"
+                                  onClick={() => { setProfileUser(request.approvedBy as ProfileUser); setShowProfile(true); }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between gap-2 mt-2">
+                            <p className="text-fluid-xs" style={{ color: 'var(--text-secondary)' }}>{request.reason}</p>
+                            {request.photoUrl && (
+                              <button
+                                type="button"
+                                onClick={() => setViewingPhotoUrl(request.photoUrl ?? null)}
+                                className="btn btn-ghost px-2.5 py-1 min-h-0 text-fluid-xs shrink-0"
+                              >
+                                <ImageIcon className="w-3.5 h-3.5" />
+                                ดูภาพ
+                              </button>
+                            )}
+                          </div>
+                          {request.status === 'rejected' && request.rejectedReason && (
+                            <div className="mt-2 p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+                              <p className="text-[10px] font-bold text-red-500">REASON: {request.rejectedReason}</p>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                  {otPagination?.hasMore && (
+                    <button
+                      type="button"
+                      onClick={handleLoadMoreOt}
+                      disabled={loadingMoreOt}
+                      className="btn btn-ghost w-full"
+                    >
+                      {loadingMoreOt ? 'กำลังโหลด...' : `โหลดเพิ่ม (${otRequests.length}/${otPagination.total})`}
+                    </button>
+                  )}
+                </div>
+              )
             ) : activeTab === 'substitute' ? (
               substitutes.length === 0 ? (
-                <div className="card p-12 text-center">
-                  <ClipboardList className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
-                  <p className="text-fluid-sm" style={{ color: 'var(--text-muted)' }}>ไม่มีประวัติลงแทน</p>
-                </div>
+                <AdminEmptyState icon={ClipboardList} message="ไม่พบประวัติลงแทน" />
               ) : (
                 <div className="space-y-2">
                   {substitutes.map((record, index) => (
@@ -487,10 +701,7 @@ function LeaderHistoryContent() {
               )
             ) : activeTab === 'attendance' ? (
               attendance.length === 0 ? (
-                <div className="card p-12 text-center">
-                  <Clock className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
-                  <p className="text-fluid-sm" style={{ color: 'var(--text-muted)' }}>ไม่มีประวัติการลงเวลา</p>
-                </div>
+                <AdminEmptyState icon={Clock} message="ไม่มีประวัติการลงเวลา" />
               ) : (
                 <div className="space-y-4">
                   {attendance.map((rec, index) => (
@@ -534,6 +745,7 @@ function LeaderHistoryContent() {
       </div>
 
       <ProfileModal user={profileUser} open={showProfile} onClose={() => setShowProfile(false)} />
+      <ImageViewerModal imageUrl={viewingPhotoUrl} onClose={() => setViewingPhotoUrl(null)} />
       <BottomNav role="leader" />
     </div>
   );
