@@ -10,11 +10,12 @@ import Sidebar from '@/components/Sidebar';
 import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
 import UserAvatar from '@/components/UserAvatar';
 import { getHolidayMap, getHolidaysForMonth } from '@/lib/thai-holidays';
-import { getLeaveTypeMeta, LEAVE_TYPE_LIST } from '@/lib/leave-types';
+import { getLeaveTypeMeta, getStatusBadge, LEAVE_TYPE_LIST } from '@/lib/leave-types';
 import { getIncomeClaimTypeMeta, INCOME_CLAIM_TYPE_LIST } from '@/lib/ot-types';
 import { getWorkDurationLabel } from '@/lib/ot-duration';
 import { formatDateThai as formatDateThaiUtil, getLeaveDays as getLeaveDaysUtil } from '@/lib/date-utils';
-import { buildDateKey, leaveSpansDateKey, leaveStartsInMonth, otMatchesDateKey } from '@/lib/leave-calendar';
+import { buildDateKey, leaveSpansDateKey, leaveStartsInMonth, otInMonth, otMatchesDateKey } from '@/lib/leave-calendar';
+import { downloadCsv } from '@/lib/csv-export';
 import type { AppRole, LeavePersonSummary, LeaveRequestRecord, SessionUser } from '@/lib/app-types';
 import { usePusher } from '@/hooks/usePusher';
 import { useBranches } from '@/hooks/useBranches';
@@ -29,6 +30,7 @@ interface OtRecord {
   reason: string;
   status: string;
   approvedBy?: LeavePersonSummary;
+  approvedAt?: string;
 }
 
 interface DayData {
@@ -223,34 +225,76 @@ function DashboardContent() {
   };
 
 
-  const exportToCSV = () => {
-    const monthLeaves = leaves.filter(leave => {
-      return leaveStartsInMonth(leave.startDate, year, month);
-    });
+  const personName = (p?: LeavePersonSummary) =>
+    p ? (`${p.name || ''} ${p.surname || ''}`.trim() || p.lineDisplayName || '') : '';
 
+  const exportLeaveCsv = () => {
+    const monthLeaves = leaves.filter(leave => leaveStartsInMonth(leave.startDate, year, month));
     if (monthLeaves.length === 0) {
       alert('ไม่มีข้อมูลการลาในเดือนนี้');
-      return;
+      return false;
     }
 
-    const headers = ['วันที่', 'ชื่อ-นามสกุล', 'ประเภทการลา', 'วันที่เริ่ม', 'วันที่สิ้นสุด', 'สถานะ'];
+    const headers = ['รหัสพนักงาน', 'ชื่อ-นามสกุล', 'สาขา', 'ประเภทการลา', 'วันที่เริ่ม', 'วันที่สิ้นสุด', 'จำนวนวัน', 'สถานะ', 'ผู้อนุมัติ', 'วันที่อนุมัติ'];
     const rows = monthLeaves.map(leave => [
-      formatDateThaiUtil(leave.createdAt),
-      `${leave.userId?.name || ''} ${leave.userId?.surname || ''}`,
+      leave.userId?.employeeId || '',
+      personName(leave.userId),
+      leave.userId?.branch || '',
       getLeaveTypeMeta(leave.leaveType).label,
       formatDateThaiUtil(leave.startDate),
       formatDateThaiUtil(leave.endDate),
-      'อนุมัติ'
+      getLeaveDaysUtil(leave.startDate, leave.endDate),
+      getStatusBadge(leave.status).label,
+      personName(leave.approvedBy),
+      leave.approvedAt ? formatDateThaiUtil(leave.approvedAt) : '',
     ]);
 
-    const csvContent = '\uFEFF' + [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `leave_report_${year}_${month + 1}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(`leave_report_${year}_${month + 1}.csv`, headers, rows);
+    return true;
+  };
+
+  const exportOtCsv = () => {
+    const monthOt = otRecords.filter(ot => otInMonth(ot.date, year, month));
+    if (monthOt.length === 0) {
+      alert('ไม่มีข้อมูลรายได้พิเศษในเดือนนี้');
+      return false;
+    }
+
+    const headers = ['รหัสพนักงาน', 'ชื่อ-นามสกุล', 'สาขา', 'ประเภทรายได้พิเศษ', 'วันที่', 'เวลาเริ่ม', 'เวลาจบ', 'รวมเวลาทำงาน', 'เหตุผล', 'สถานะ', 'ผู้อนุมัติ', 'วันที่อนุมัติ'];
+    const rows = monthOt.map(ot => [
+      ot.userId?.employeeId || '',
+      personName(ot.userId),
+      ot.userId?.branch || '',
+      getIncomeClaimTypeMeta(ot.claimType).label,
+      formatDateThaiUtil(ot.date),
+      ot.startTime || '',
+      ot.endTime || '',
+      getWorkDurationLabel(ot.startTime, ot.endTime) || '',
+      ot.reason,
+      getStatusBadge(ot.status).label,
+      personName(ot.approvedBy),
+      ot.approvedAt ? formatDateThaiUtil(ot.approvedAt) : '',
+    ]);
+
+    downloadCsv(`income_report_${year}_${month + 1}.csv`, headers, rows);
+    return true;
+  };
+
+  const exportToCSV = () => {
+    if (viewMode === 'leave') {
+      exportLeaveCsv();
+      return;
+    }
+    if (viewMode === 'income') {
+      exportOtCsv();
+      return;
+    }
+
+    const leaveExported = exportLeaveCsv();
+    const otExported = exportOtCsv();
+    if (!leaveExported && !otExported) {
+      alert('ไม่มีข้อมูลในเดือนนี้');
+    }
   };
 
   if (!user) {
@@ -297,7 +341,7 @@ function DashboardContent() {
               onClick={exportToCSV}
               className="btn btn-ghost w-12 h-12 p-0 rounded-full"
               style={{ background: 'var(--accent-light)' }}
-              title="Export CSV"
+              title={viewMode === 'leave' ? 'Export CSV (ลา)' : viewMode === 'income' ? 'Export CSV (รายได้พิเศษ)' : 'Export CSV (ลา + รายได้พิเศษ)'}
             >
               <Download className="w-7 h-7" strokeWidth={2.5} style={{ color: 'var(--accent)' }} />
             </button>

@@ -5,7 +5,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FileText, ClipboardList, CalendarDays, Phone, Clock, ImageIcon } from 'lucide-react';
+import { FileText, ClipboardList, CalendarDays, Phone, Clock, ImageIcon, Download } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -18,6 +18,7 @@ import UserAvatar from '@/components/UserAvatar';
 import { getLeaveTypeMeta, getRecordTypeLabel, getStatusBadge } from '@/lib/leave-types';
 import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
 import { formatDateThai, getLeaveDays } from '@/lib/date-utils';
+import { exportLeaveHistoryCsv, exportOtHistoryCsv } from '@/lib/history-export';
 import type { AppRole, LeaveRequestRecord, SessionUser } from '@/lib/app-types';
 import { usePusher } from '@/hooks/usePusher';
 
@@ -68,9 +69,12 @@ interface OtRecord {
     surname?: string;
     employeeId?: string;
     phone?: string;
+    branch?: string;
   };
   date: string;
   claimType: string;
+  startTime?: string;
+  endTime?: string;
   reason: string;
   photoUrl?: string;
   status: string;
@@ -83,6 +87,7 @@ interface OtRecord {
     lineProfileImage?: string;
     performanceTier?: string;
   };
+  approvedAt?: string;
 }
 
 interface LeavePagination {
@@ -124,6 +129,8 @@ function LeaderHistoryContent() {
   const [otSubView, setOtSubView] = useState('list');
   const [otMonthlyRecords, setOtMonthlyRecords] = useState<OtRecord[]>([]);
   const [otMonthlyLoading, setOtMonthlyLoading] = useState(false);
+  const [exportingLeave, setExportingLeave] = useState(false);
+  const [exportingOt, setExportingOt] = useState(false);
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [viewingPhotoUrl, setViewingPhotoUrl] = useState<string | null>(null);
@@ -315,6 +322,51 @@ function LeaderHistoryContent() {
     setSelectedEmployeeId('all');
   }, []);
 
+  const exportScopeLabel = useCallback(() => {
+    const branchPart = role === 'leader' ? (user?.branch || 'all') : selectedBranch;
+    const employee = employees.find((e) => e._id === selectedEmployeeId);
+    const personPart = employee ? (employee.employeeId || employee._id) : 'all';
+    return `${branchPart}_${personPart}`;
+  }, [role, user?.branch, selectedBranch, selectedEmployeeId, employees]);
+
+  const handleExportLeave = useCallback(async () => {
+    setExportingLeave(true);
+    try {
+      const params = buildScopedParams();
+      params.set('status', 'approved');
+      const response = await fetch(`/api/leave?${params.toString()}`);
+      const data = await response.json();
+      if (data.success) {
+        const exported = exportLeaveHistoryCsv(data.requests, `leave_${exportScopeLabel()}.csv`);
+        if (!exported) alert('ไม่มีข้อมูลการลาที่อนุมัติแล้วตามเงื่อนไขที่เลือก');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('ไม่สามารถดาวน์โหลดข้อมูลได้');
+    } finally {
+      setExportingLeave(false);
+    }
+  }, [buildScopedParams, exportScopeLabel]);
+
+  const handleExportOt = useCallback(async () => {
+    setExportingOt(true);
+    try {
+      const params = buildScopedParams();
+      params.set('status', 'approved');
+      const response = await fetch(`/api/ot?${params.toString()}`);
+      const data = await response.json();
+      if (data.success) {
+        const exported = exportOtHistoryCsv(data.requests, `income_${exportScopeLabel()}.csv`);
+        if (!exported) alert('ไม่มีข้อมูลรายได้พิเศษที่อนุมัติแล้วตามเงื่อนไขที่เลือก');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('ไม่สามารถดาวน์โหลดข้อมูลได้');
+    } finally {
+      setExportingOt(false);
+    }
+  }, [buildScopedParams, exportScopeLabel]);
+
   const handleLeaveChanged = useCallback(async () => {
     fetchLeaves(1, false);
   }, [fetchLeaves]);
@@ -389,6 +441,38 @@ function LeaderHistoryContent() {
                     </option>
                   ))}
                 </select>
+                <p className="text-[10px] mt-2" style={{ color: 'var(--text-muted)' }}>
+                  Export CSV จะดึงเฉพาะรายการที่อนุมัติแล้ว ตามสาขา/พนักงานที่เลือกไว้ด้านบน
+                </p>
+                {activeTab === 'leave' ? (
+                  <button
+                    type="button"
+                    onClick={handleExportLeave}
+                    disabled={exportingLeave}
+                    className="btn btn-secondary w-full mt-2 text-fluid-sm"
+                  >
+                    {exportingLeave ? (
+                      <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    Export CSV (การลา)
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleExportOt}
+                    disabled={exportingOt}
+                    className="btn btn-secondary w-full mt-2 text-fluid-sm"
+                  >
+                    {exportingOt ? (
+                      <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    Export CSV (รายได้พิเศษ)
+                  </button>
+                )}
               </motion.div>
             )}
 
