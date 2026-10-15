@@ -1,13 +1,14 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  User as UserIcon, Calendar, Award, Star, 
-  MapPin, Phone, Shield, Zap, TrendingUp, 
-  MessageSquare, ChevronRight, Briefcase, 
-  Umbrella, Thermometer, CheckCircle2, ShieldAlert
+import {
+  User as UserIcon, Calendar, Award, Star,
+  MapPin, Phone, Zap, TrendingUp,
+  MessageSquare, ChevronRight, Briefcase,
+  Umbrella, Thermometer, CheckCircle2, ShieldAlert, Wallet
 } from "lucide-react";
 import { normalizePerformanceTier, PERFORMANCE_TIER_CONFIG, PerformanceTier } from "@/lib/profile-tier";
+import { INCOME_CLAIM_TYPE_LIST } from "@/lib/ot-types";
 
 interface ProfileUserData {
   id?: string;
@@ -86,6 +87,8 @@ export default function DriverProfile({ user, isMe = false, onEditClick, onClose
   const [loadingScores, setLoadingScores] = useState(false);
   const [activityStats, setActivityStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [carWashApprovedCount, setCarWashApprovedCount] = useState(0);
+  const [otSummary, setOtSummary] = useState<{ monthApproved: number; pending: number; byType: Record<string, number> } | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'performance' | 'attendance' | 'contact'>('overview');
 
   useEffect(() => {
@@ -97,16 +100,42 @@ export default function DriverProfile({ user, isMe = false, onEditClick, onClose
       setLoadingScores(true);
       setLoadingStats(true);
       try {
-        const [scoresRes, statsRes] = await Promise.all([
+        const [scoresRes, statsRes, carWashCountRes, otRes] = await Promise.all([
           fetch(`/api/tasks/scores?userId=${userId}`),
-          fetch(`/api/profile/stats?userId=${userId}`)
+          fetch(`/api/profile/stats?userId=${userId}`),
+          fetch(`/api/car-wash?userId=${userId}&marked=true&countOnly=true`).catch(() => null),
+          fetch(`/api/ot?userId=${userId}`).catch(() => null),
         ]);
-        
+
         const scoresData = await scoresRes.json();
         const statsData = await statsRes.json();
 
         if (scoresData.success) setTaskScores(scoresData.data);
         if (statsData.success) setActivityStats(statsData.stats);
+
+        if (carWashCountRes) {
+          const countData = await carWashCountRes.json();
+          setCarWashApprovedCount(countData.total ?? 0);
+        }
+
+        if (otRes) {
+          const otData = await otRes.json();
+          if (otData.success) {
+            const now = new Date();
+            const requests: Array<{ status: string; date: string; claimType: string }> = otData.requests ?? [];
+            const approvedThisMonth = requests.filter((r) => {
+              if (r.status !== 'approved') return false;
+              const d = new Date(r.date);
+              return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+            });
+            const pending = requests.filter((r) => r.status === 'pending').length;
+            const byType = approvedThisMonth.reduce<Record<string, number>>((acc, r) => {
+              acc[r.claimType] = (acc[r.claimType] ?? 0) + 1;
+              return acc;
+            }, {});
+            setOtSummary({ monthApproved: approvedThisMonth.length, pending, byType });
+          }
+        }
       } catch (err) {
         console.error("Failed to fetch profile data", err);
       } finally {
@@ -339,14 +368,14 @@ export default function DriverProfile({ user, isMe = false, onEditClick, onClose
 
               <BentoCard className="p-5 flex flex-col justify-between aspect-square" delay={0.2}>
                 <div className="flex items-center justify-between mb-4">
-                  <Shield className="w-4 h-4 text-violet-500" />
-                  <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Rank</span>
+                  <Wallet className="w-4 h-4 text-fuchsia-600" />
+                  <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Income</span>
                 </div>
                 <div>
-                  <div className="text-3xl font-black tracking-tighter mb-1">
-                    Lvl <span className="text-violet-500">{user.performanceLevel || 1}</span>
+                  <div className="text-3xl font-black tracking-tighter mb-1 text-fuchsia-600">
+                    {otSummary?.monthApproved ?? 0}
                   </div>
-                  <p className="text-[10px] font-black text-[var(--text-secondary)] uppercase">Driver Level</p>
+                  <p className="text-[10px] font-black text-[var(--text-secondary)] uppercase">รายได้พิเศษเดือนนี้</p>
                 </div>
               </BentoCard>
 
@@ -382,6 +411,23 @@ export default function DriverProfile({ user, isMe = false, onEditClick, onClose
                 </div>
                 <ChevronRight className="w-4 h-4 text-[var(--text-muted)] opacity-50" />
               </BentoCard>
+
+              {isMe && (
+                <BentoCard className="col-span-2 p-0 overflow-hidden" delay={0.45}>
+                  <a href="/leave/history?tab=ot" className="flex items-center gap-4 p-5 active:scale-[0.98] transition-transform">
+                    <div className="w-10 h-10 rounded-xl bg-fuchsia-600/5 flex items-center justify-center shrink-0 border border-fuchsia-600/10">
+                      <Wallet className="w-5 h-5 text-fuchsia-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-black truncate">ประวัติรายได้พิเศษ</p>
+                      <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
+                        {otSummary ? `รออนุมัติ ${otSummary.pending} รายการ` : 'OT / ทำงานวันหยุด / วิ่งรอบพิเศษ / กะดึก'}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[var(--text-muted)] opacity-50" />
+                  </a>
+                </BentoCard>
+              )}
             </div>
           )}
 
@@ -425,19 +471,27 @@ export default function DriverProfile({ user, isMe = false, onEditClick, onClose
               </BentoCard>
 
               <BentoCard className="col-span-2 p-5" delay={0.2}>
-                <div className="flex items-center gap-2 mb-6">
-                  <TrendingUp className="w-4 h-4 text-violet-500" />
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">XP & Progression</h4>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Wallet className="w-4 h-4 text-fuchsia-600" />
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">รายได้พิเศษเดือนนี้</h4>
+                  </div>
+                  <span className="text-xl font-black text-fuchsia-600">{otSummary?.monthApproved ?? 0}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 rounded-xl bg-violet-500/5 border border-violet-500/10">
-                    <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase mb-1">Points</p>
-                    <p className="text-xl font-black">{user.performancePoints || 0}</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-violet-500/5 border border-violet-500/10">
-                    <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase mb-1">Level</p>
-                    <p className="text-xl font-black">{user.performanceLevel || 1}</p>
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {INCOME_CLAIM_TYPE_LIST.map((ct) => {
+                    const Icon = ct.icon;
+                    const count = otSummary?.byType?.[ct.value] ?? 0;
+                    return (
+                      <div key={ct.value} className="p-3 rounded-xl border border-[var(--border)]" style={{ background: 'var(--bg-inset)' }}>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Icon className="w-3.5 h-3.5" style={{ color: ct.color }} />
+                          <p className="text-[8px] font-bold text-[var(--text-muted)] uppercase truncate">{ct.label}</p>
+                        </div>
+                        <p className="text-xl font-black" style={{ color: ct.color }}>{count}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               </BentoCard>
 
@@ -521,18 +575,18 @@ export default function DriverProfile({ user, isMe = false, onEditClick, onClose
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 </div>
                 <div>
-                  <div className="text-3xl font-black leading-none mb-1">{user.approvedCount || 0}</div>
-                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">Approved</p>
+                  <div className="text-3xl font-black leading-none mb-1">{carWashApprovedCount}</div>
+                  <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">ล้างรถอนุมัติแล้ว</p>
                 </div>
               </BentoCard>
 
               <BentoCard className="p-5 flex flex-col justify-between" delay={0.3}>
-                 <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4 border border-amber-500/20">
-                  <Calendar className="w-4 h-4 text-amber-500" />
+                 <div className="w-8 h-8 rounded-lg bg-fuchsia-600/10 flex items-center justify-center mb-4 border border-fuchsia-600/20">
+                  <Wallet className="w-4 h-4 text-fuchsia-600" />
                 </div>
                 <div>
-                  <div className="text-3xl font-black leading-none mb-1">---</div>
-                   <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">Next Leave</p>
+                  <div className="text-3xl font-black leading-none mb-1">{otSummary?.pending ?? 0}</div>
+                   <p className="text-[10px] font-black text-[var(--text-muted)] uppercase">รายได้พิเศษรออนุมัติ</p>
                 </div>
               </BentoCard>
             </div>

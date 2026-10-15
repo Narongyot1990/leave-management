@@ -15,20 +15,24 @@ export interface IncomeClaimTypeMeta {
   textClass: string;
 }
 
+// Deliberately NOT reusing var(--accent)/var(--warning)/var(--info) etc. —
+// those are already claimed by the 4 leave types (vacation/sick/personal/unpaid)
+// in leave-types.ts, and this calendar shows both leave and income dots side
+// by side, so each income type gets its own hard-coded, non-overlapping hue.
 export const INCOME_CLAIM_TYPES: Record<string, IncomeClaimTypeMeta> = {
   ot: {
     value: 'ot',
     label: 'OT (เหมาจ่ายรายวัน)',
     icon: Clock,
-    color: 'var(--accent)',
-    bgClass: 'bg-indigo-500',
-    textClass: 'text-indigo-500',
+    color: '#C026D3',
+    bgClass: 'bg-fuchsia-600',
+    textClass: 'text-fuchsia-600',
   },
   holiday_work: {
     value: 'holiday_work',
     label: 'ทำงานวันหยุด',
     icon: CalendarOff,
-    color: 'var(--warning)',
+    color: '#F59E0B',
     bgClass: 'bg-amber-500',
     textClass: 'text-amber-500',
   },
@@ -36,7 +40,7 @@ export const INCOME_CLAIM_TYPES: Record<string, IncomeClaimTypeMeta> = {
     value: 'extra_trip',
     label: 'วิ่งรอบพิเศษ / ทางไกล',
     icon: Truck,
-    color: 'var(--info)',
+    color: '#0EA5E9',
     bgClass: 'bg-sky-500',
     textClass: 'text-sky-500',
   },
@@ -44,9 +48,9 @@ export const INCOME_CLAIM_TYPES: Record<string, IncomeClaimTypeMeta> = {
     value: 'night_shift',
     label: 'กะดึก',
     icon: Moon,
-    color: '#8b5cf6',
-    bgClass: 'bg-violet-500',
-    textClass: 'text-violet-500',
+    color: '#1E3A8A',
+    bgClass: 'bg-blue-900',
+    textClass: 'text-blue-900',
   },
 };
 

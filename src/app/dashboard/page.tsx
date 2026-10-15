@@ -11,7 +11,7 @@ import ProfileModal, { type ProfileUser } from '@/components/ProfileModal';
 import UserAvatar from '@/components/UserAvatar';
 import { getHolidayMap, getHolidaysForMonth } from '@/lib/thai-holidays';
 import { getLeaveTypeMeta, LEAVE_TYPE_LIST } from '@/lib/leave-types';
-import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
+import { getIncomeClaimTypeMeta, INCOME_CLAIM_TYPE_LIST } from '@/lib/ot-types';
 import { getWorkDurationLabel } from '@/lib/ot-duration';
 import { formatDateThai as formatDateThaiUtil, getLeaveDays as getLeaveDaysUtil } from '@/lib/date-utils';
 import { buildDateKey, leaveSpansDateKey, leaveStartsInMonth, otMatchesDateKey } from '@/lib/leave-calendar';
@@ -287,19 +287,19 @@ function DashboardContent() {
             <button
               onClick={() => { fetchLeaves(); fetchOt(); }}
               disabled={loading}
-              className="btn btn-ghost w-11 h-11 p-0 rounded-full"
-              style={{ background: 'var(--bg-inset)' }}
+              className="btn btn-ghost w-12 h-12 p-0 rounded-full"
+              style={{ background: 'var(--accent-light)' }}
               title="รีเฟรช"
             >
-              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} strokeWidth={2.2} style={{ color: 'var(--text-secondary)' }} />
+              <RefreshCw className={`w-7 h-7 ${loading ? 'animate-spin' : ''}`} strokeWidth={2.5} style={{ color: 'var(--accent)' }} />
             </button>
             <button
               onClick={exportToCSV}
-              className="btn btn-ghost w-11 h-11 p-0 rounded-full"
-              style={{ background: 'var(--bg-inset)' }}
+              className="btn btn-ghost w-12 h-12 p-0 rounded-full"
+              style={{ background: 'var(--accent-light)' }}
               title="Export CSV"
             >
-              <Download className="w-5 h-5" strokeWidth={2.2} style={{ color: 'var(--text-secondary)' }} />
+              <Download className="w-7 h-7" strokeWidth={2.5} style={{ color: 'var(--accent)' }} />
             </button>
           </div>
         }
@@ -312,20 +312,20 @@ function DashboardContent() {
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-2.5 flex items-center gap-2">
             <button
               onClick={goToPrevMonth}
-              className="btn btn-ghost w-10 h-10 p-0 rounded-full shrink-0"
-              style={{ background: 'var(--bg-inset)' }}
+              className="btn btn-ghost w-12 h-12 p-0 rounded-full shrink-0"
+              style={{ background: 'var(--accent-light)' }}
             >
-              <ChevronLeft className="w-6 h-6" strokeWidth={2.5} style={{ color: 'var(--text-primary)' }} />
+              <ChevronLeft className="w-7 h-7" strokeWidth={3} style={{ color: 'var(--accent)' }} />
             </button>
             <h2 className="flex-1 min-w-0 text-center text-fluid-base font-bold truncate" style={{ color: 'var(--text-primary)' }}>
               {THAI_MONTHS[month]} {year + 543}
             </h2>
             <button
               onClick={goToNextMonth}
-              className="btn btn-ghost w-10 h-10 p-0 rounded-full shrink-0"
-              style={{ background: 'var(--bg-inset)' }}
+              className="btn btn-ghost w-12 h-12 p-0 rounded-full shrink-0"
+              style={{ background: 'var(--accent-light)' }}
             >
-              <ChevronRight className="w-6 h-6" strokeWidth={2.5} style={{ color: 'var(--text-primary)' }} />
+              <ChevronRight className="w-7 h-7" strokeWidth={3} style={{ color: 'var(--accent)' }} />
             </button>
 
             <div className="w-px h-6 shrink-0" style={{ background: 'var(--border)' }} />
@@ -437,15 +437,29 @@ function DashboardContent() {
                                 </div>
                               );
                             })()}
-                            {hasOt && (
-                              <div
-                                className="w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center text-white font-bold bg-violet-500 mt-0.5"
-                                style={{ fontSize: '8px', borderColor: 'var(--bg-surface)' }}
-                                title="รายได้พิเศษ"
-                              >
-                                {dayOt.length}
-                              </div>
-                            )}
+                            {hasOt && (() => {
+                              const claimTypes = Array.from(new Set(dayOt.map(o => o.claimType)));
+                              return (
+                                <div className="flex items-center mt-0.5" style={{ gap: claimTypes.length > 1 ? '-2px' : '0' }}>
+                                  {claimTypes.slice(0, 3).map((claimType, i) => (
+                                    <div
+                                      key={claimType}
+                                      className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center text-white font-bold ${getIncomeClaimTypeMeta(claimType).bgClass}`}
+                                      style={{
+                                        fontSize: '8px',
+                                        marginLeft: i > 0 ? '-4px' : '0',
+                                        borderColor: 'var(--bg-surface)',
+                                        zIndex: 3 - i,
+                                        position: 'relative',
+                                      }}
+                                      title={getIncomeClaimTypeMeta(claimType).label}
+                                    >
+                                      {i === 0 ? dayOt.length : ''}
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                             {holiday && !hasLeaves && !hasOt && (
                               <div className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ background: '#ef4444', opacity: 0.5 }} />
                             )}
@@ -494,12 +508,12 @@ function DashboardContent() {
                 <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>{lt.label}</span>
               </div>
             ))}
-            {viewMode !== 'leave' && (
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-violet-500" />
-                <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>รายได้พิเศษ</span>
+            {viewMode !== 'leave' && INCOME_CLAIM_TYPE_LIST.map((ct) => (
+              <div key={ct.value} className="flex items-center gap-1.5">
+                <div className={`w-2.5 h-2.5 rounded-full ${ct.bgClass}`} />
+                <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>{ct.label}</span>
               </div>
-            )}
+            ))}
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#ef4444', opacity: 0.5 }} />
               <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>วันหยุดบริษัท</span>

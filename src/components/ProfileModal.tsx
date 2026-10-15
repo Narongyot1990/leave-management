@@ -45,20 +45,14 @@ export default function ProfileModal({ user, open, onClose }: ProfileModalProps)
       setLoading(true);
       try {
         const userId = user.id || user._id;
-        const [userRes, countRes] = await Promise.all([
-          fetch(`/api/users/${userId}`),
-          fetch(`/api/car-wash?userId=${userId}&marked=true&countOnly=true`).catch(() => null),
-        ]);
+        // approvedCount (car-wash) and OT/income summary are fetched by
+        // DriverProfile itself now, for any userId it's given.
+        const userRes = await fetch(`/api/users/${userId}`);
         const userData = await userRes.json();
-        let approvedCount = 0;
-        if (countRes) {
-          const countData = await countRes.json();
-          approvedCount = countData.total ?? 0;
-        }
         if (userData.success && userData.user) {
-          setFullUser({ ...userData.user, id: userData.user._id, approvedCount });
+          setFullUser({ ...userData.user, id: userData.user._id });
         } else {
-          setFullUser({ ...user, id: userId as string, approvedCount });
+          setFullUser({ ...user, id: userId as string });
         }
       } catch {
         setFullUser(user);
