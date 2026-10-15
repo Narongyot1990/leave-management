@@ -19,6 +19,7 @@ import OtMonthlyView from '@/components/OtMonthlyView';
 import UserAvatar from '@/components/UserAvatar';
 import { getLeaveTypeMeta, getRecordTypeLabel, getStatusBadge } from '@/lib/leave-types';
 import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
+import { getWorkDurationLabel } from '@/lib/ot-duration';
 import { formatDateThai, getLeaveDays } from '@/lib/date-utils';
 import type { LeaveRequestRecord } from '@/lib/app-types';
 import { useAdminSession } from '@/hooks/useAdminSession';
@@ -75,6 +76,8 @@ interface OtRecord {
   };
   date: string;
   claimType: string;
+  startTime?: string;
+  endTime?: string;
   reason: string;
   photoUrl?: string;
   status: string;
@@ -553,6 +556,14 @@ function AdminHistoryContent() {
                               </div>
                             )}
                           </div>
+                          {(() => {
+                            const durationLabel = getWorkDurationLabel(request.startTime, request.endTime);
+                            return durationLabel ? (
+                              <p className="text-fluid-xs mt-1 font-medium" style={{ color: 'var(--accent)' }}>
+                                {request.startTime}–{request.endTime} ({durationLabel})
+                              </p>
+                            ) : null;
+                          })()}
                           <div className="flex items-center justify-between gap-2 mt-2">
                             <p className="text-fluid-xs" style={{ color: 'var(--text-secondary)' }}>{request.reason}</p>
                             {request.photoUrl && (

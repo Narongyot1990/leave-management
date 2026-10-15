@@ -14,6 +14,7 @@ import ImageViewerModal from '@/components/ImageViewerModal';
 import OtMonthlyView from '@/components/OtMonthlyView';
 import { getLeaveTypeMeta, getStatusBadge, LEAVE_TYPE_LIST } from '@/lib/leave-types';
 import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
+import { getWorkDurationLabel } from '@/lib/ot-duration';
 import { formatDateThai } from '@/lib/date-utils';
 import { usePusher } from '@/hooks/usePusher';
 import { useToast } from '@/components/Toast';
@@ -367,6 +368,14 @@ function LeaveHistoryContent() {
                               <p className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>
                                 {formatDateThai(String(request.date))}
                               </p>
+                              {(() => {
+                                const durationLabel = getWorkDurationLabel(request.startTime, request.endTime);
+                                return durationLabel ? (
+                                  <p className="text-fluid-xs font-medium" style={{ color: 'var(--accent)' }}>
+                                    {request.startTime}–{request.endTime} ({durationLabel})
+                                  </p>
+                                ) : null;
+                              })()}
                             </div>
                           </div>
 

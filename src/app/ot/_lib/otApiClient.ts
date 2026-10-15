@@ -20,6 +20,8 @@ const otRequestSchema = z.object({
   _id: z.string(),
   date: z.union([z.string(), z.date()]),
   claimType: z.string(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
   reason: z.string(),
   photoUrl: z.string(),
   status: z.string(),
@@ -61,6 +63,8 @@ export type CreateOtPayload = {
   userId: string;
   date: string;
   claimType: string;
+  startTime?: string;
+  endTime?: string;
   reason: string;
   photo: Blob;
 };
@@ -107,6 +111,8 @@ export async function createOtRequest(payload: CreateOtPayload): Promise<void> {
   formData.append("userId", payload.userId);
   formData.append("date", payload.date);
   formData.append("claimType", payload.claimType);
+  if (payload.startTime) formData.append("startTime", payload.startTime);
+  if (payload.endTime) formData.append("endTime", payload.endTime);
   formData.append("reason", payload.reason);
   formData.append("photo", payload.photo, "ot-photo.jpg");
 

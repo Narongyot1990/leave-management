@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 import { getStatusBadge } from '@/lib/leave-types';
 import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
+import { getWorkDurationLabel } from '@/lib/ot-duration';
 import { buildDateKey, otMatchesDateKey } from '@/lib/leave-calendar';
 
 const THAI_MONTHS = [
@@ -17,6 +18,8 @@ export interface OtMonthlyRecord {
   _id: string;
   date: string | Date;
   claimType: string;
+  startTime?: string;
+  endTime?: string;
   status: string;
   reason?: string;
   photoUrl?: string;
@@ -101,6 +104,7 @@ export default function OtMonthlyView({ records, onViewPhoto, loading }: OtMonth
                       const typeMeta = getIncomeClaimTypeMeta(record.claimType);
                       const TypeIcon = typeMeta.icon;
                       const badge = getStatusBadge(record.status);
+                      const durationLabel = getWorkDurationLabel(record.startTime, record.endTime);
 
                       return (
                         <div key={record._id} className="rounded-[var(--radius-sm)] p-2" style={{ background: 'var(--bg-inset)' }}>
@@ -122,6 +126,11 @@ export default function OtMonthlyView({ records, onViewPhoto, loading }: OtMonth
                               )}
                             </div>
                           </div>
+                          {durationLabel && (
+                            <p className="text-fluid-xs mt-1 font-medium" style={{ color: 'var(--accent)' }}>
+                              {record.startTime}–{record.endTime} ({durationLabel})
+                            </p>
+                          )}
                           {record.reason && (
                             <p className="text-fluid-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{record.reason}</p>
                           )}

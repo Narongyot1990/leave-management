@@ -7,6 +7,8 @@ export interface IOtRequest extends Document {
   userId: mongoose.Types.ObjectId;
   date: Date;
   claimType: OtClaimType;
+  startTime?: string;
+  endTime?: string;
   reason: string;
   photoUrl: string;
   status: OtStatus;
@@ -27,6 +29,8 @@ const OtRequestSchema = new Schema<IOtRequest>(
       required: true,
       default: 'ot',
     },
+    startTime: { type: String },
+    endTime: { type: String },
     reason: { type: String, required: true, trim: true, maxlength: 500 },
     photoUrl: { type: String, required: true },
     status: {

@@ -44,6 +44,8 @@ type OtRecord = {
   userId: string;
   date: Date;
   claimType: OtClaimType;
+  startTime?: string;
+  endTime?: string;
   reason: string;
   photoUrl: string;
   status: OtStatus;
@@ -105,7 +107,15 @@ class OtRepository {
     return request ? mapOtRequest(request) : null;
   }
 
-  async create(input: { userId: string; date: Date; claimType: OtClaimType; reason: string; photoUrl: string }) {
+  async create(input: {
+    userId: string;
+    date: Date;
+    claimType: OtClaimType;
+    startTime?: string;
+    endTime?: string;
+    reason: string;
+    photoUrl: string;
+  }) {
     const request = await OtRequest.create({
       ...input,
       status: "pending",
@@ -224,6 +234,8 @@ export class OtService {
       userId: input.userId,
       date,
       claimType: input.claimType,
+      startTime: input.startTime,
+      endTime: input.endTime,
       reason: input.reason,
       photoUrl: blob.url,
     });
@@ -565,6 +577,8 @@ function mapOtRequest(record: Partial<IOtRequest> & { _id?: mongoose.Types.Objec
     userId: String(record.userId),
     date: new Date(record.date as Date),
     claimType: (record.claimType as OtClaimType) || "ot",
+    startTime: record.startTime,
+    endTime: record.endTime,
     reason: String(record.reason),
     photoUrl: String(record.photoUrl),
     status: record.status as OtStatus,
@@ -583,6 +597,8 @@ function mapPopulatedOtRequest(record: unknown): PopulatedOtRecord {
     userId: mapReference(source.userId),
     date: new Date(source.date as Date),
     claimType: (source.claimType as OtClaimType) || "ot",
+    startTime: typeof source.startTime === "string" ? source.startTime : undefined,
+    endTime: typeof source.endTime === "string" ? source.endTime : undefined,
     reason: String(source.reason),
     photoUrl: String(source.photoUrl),
     status: source.status as OtStatus,

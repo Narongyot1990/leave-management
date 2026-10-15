@@ -10,6 +10,7 @@ import {
   type OtHistoryItem,
   type SessionUser,
 } from "@/app/ot/_lib/otApiClient";
+import { getWorkDurationLabel } from "@/lib/ot-duration";
 
 function formatLocalYmd(date: Date) {
   const year = date.getFullYear();
@@ -50,6 +51,8 @@ export function useOtFormController(targetUserId: string | null) {
   const [monthApprovedCount, setMonthApprovedCount] = useState(0);
   const [date, setDate] = useState(() => formatLocalYmd(new Date()));
   const [claimType, setClaimType] = useState("ot");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
@@ -59,6 +62,8 @@ export function useOtFormController(targetUserId: string | null) {
   const [isPending, setIsPending] = useState(false);
   const [photoFile, setPhotoFile] = useState<Blob | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const durationLabel = useMemo(() => getWorkDurationLabel(startTime, endTime), [startTime, endTime]);
 
   const submitUserId = useMemo(() => {
     if (!authUser) return null;
@@ -161,12 +166,19 @@ export function useOtFormController(targetUserId: string | null) {
         return;
       }
 
+      if (Boolean(startTime) !== Boolean(endTime)) {
+        setError("กรุณากรอกเวลาเริ่มและเวลาจบให้ครบ");
+        return;
+      }
+
       setLoading(true);
       try {
         await createOtRequest({
           userId: submitUserId,
           date,
           claimType,
+          startTime: startTime || undefined,
+          endTime: endTime || undefined,
           reason: reason.trim(),
           photo: photoFile,
         });
@@ -184,7 +196,7 @@ export function useOtFormController(targetUserId: string | null) {
         setLoading(false);
       }
     },
-    [submitUserId, date, claimType, reason, photoFile, router],
+    [submitUserId, date, claimType, startTime, endTime, reason, photoFile, router],
   );
 
   return {
@@ -192,6 +204,9 @@ export function useOtFormController(targetUserId: string | null) {
     monthApprovedCount,
     date,
     claimType,
+    startTime,
+    endTime,
+    durationLabel,
     reason,
     loading,
     initializing,
@@ -201,6 +216,8 @@ export function useOtFormController(targetUserId: string | null) {
     isPending,
     photoPreview,
     setClaimType,
+    setStartTime,
+    setEndTime,
     setReason,
     setShowDatePicker,
     handleDateSelect,

@@ -4,7 +4,7 @@ import { Suspense, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import dayjs from 'dayjs';
-import { AlertCircle, CheckCircle2, Send, Calendar, Wallet, Camera, X, Check } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Send, Calendar, Clock, Wallet, Camera, X, Check } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -24,6 +24,9 @@ function OtContent() {
     monthApprovedCount,
     date,
     claimType,
+    startTime,
+    endTime,
+    durationLabel,
     reason,
     loading,
     initializing,
@@ -33,6 +36,8 @@ function OtContent() {
     isPending,
     photoPreview,
     setClaimType,
+    setStartTime,
+    setEndTime,
     setReason,
     setShowDatePicker,
     handleDateSelect,
@@ -159,6 +164,45 @@ function OtContent() {
                   {dayjs(date).format('D MMM YYYY')}
                 </span>
               </button>
+            </motion.div>
+
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.04 }} className="card p-3.5">
+              <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
+                เวลาเริ่มงาน - จบงาน (ไม่บังคับ)
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="block text-fluid-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>เริ่มงาน</span>
+                  <div className="flex items-center gap-2 px-3 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
+                    <Clock className="w-4 h-4 shrink-0" style={{ color: 'var(--accent)' }} />
+                    <input
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="w-full bg-transparent py-3 text-fluid-base outline-none"
+                      style={{ color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <span className="block text-fluid-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>จบงาน</span>
+                  <div className="flex items-center gap-2 px-3 rounded-[var(--radius-md)]" style={{ background: 'var(--bg-inset)' }}>
+                    <Clock className="w-4 h-4 shrink-0" style={{ color: 'var(--accent)' }} />
+                    <input
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="w-full bg-transparent py-3 text-fluid-base outline-none"
+                      style={{ color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                </div>
+              </div>
+              {durationLabel && (
+                <p className="text-fluid-sm font-semibold mt-3" style={{ color: 'var(--accent)' }}>
+                  รวมเวลาทำงาน: {durationLabel}
+                </p>
+              )}
             </motion.div>
 
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }} className="card p-3.5">

@@ -12,6 +12,7 @@ import UserAvatar from '@/components/UserAvatar';
 import { getHolidayMap, getHolidaysForMonth } from '@/lib/thai-holidays';
 import { getLeaveTypeMeta, LEAVE_TYPE_LIST } from '@/lib/leave-types';
 import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
+import { getWorkDurationLabel } from '@/lib/ot-duration';
 import { formatDateThai as formatDateThaiUtil, getLeaveDays as getLeaveDaysUtil } from '@/lib/date-utils';
 import { buildDateKey, leaveSpansDateKey, leaveStartsInMonth, otMatchesDateKey } from '@/lib/leave-calendar';
 import type { AppRole, LeavePersonSummary, LeaveRequestRecord, SessionUser } from '@/lib/app-types';
@@ -23,6 +24,8 @@ interface OtRecord {
   userId: LeavePersonSummary;
   date: string;
   claimType: string;
+  startTime?: string;
+  endTime?: string;
   reason: string;
   status: string;
   approvedBy?: LeavePersonSummary;
@@ -608,6 +611,14 @@ function DashboardContent() {
                       <p className="text-fluid-xs mt-1 font-medium" style={{ color: getIncomeClaimTypeMeta(ot.claimType).color }}>
                         {getIncomeClaimTypeMeta(ot.claimType).label}
                       </p>
+                      {(() => {
+                        const durationLabel = getWorkDurationLabel(ot.startTime, ot.endTime);
+                        return durationLabel ? (
+                          <p className="text-fluid-xs" style={{ color: 'var(--accent)' }}>
+                            {ot.startTime}–{ot.endTime} ({durationLabel})
+                          </p>
+                        ) : null;
+                      })()}
                       {ot.reason && (
                         <p className="text-fluid-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{ot.reason}</p>
                       )}

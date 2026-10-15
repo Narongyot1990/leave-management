@@ -8,6 +8,7 @@ import ImageViewerModal from '@/components/ImageViewerModal';
 import OtPersonHistoryModal from '@/components/OtPersonHistoryModal';
 import { formatDateThai } from '@/lib/date-utils';
 import { getIncomeClaimTypeMeta } from '@/lib/ot-types';
+import { getWorkDurationLabel } from '@/lib/ot-duration';
 
 export interface OtApproveRequest {
   _id: string;
@@ -23,6 +24,8 @@ export interface OtApproveRequest {
   };
   date: string;
   claimType: string;
+  startTime?: string;
+  endTime?: string;
   reason: string;
   photoUrl?: string;
   status: string;
@@ -120,6 +123,14 @@ export default function OtApproveRequestCard({
             <Clock className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} strokeWidth={1.8} />
             <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>{formatDateThai(request.date)}</span>
           </div>
+          {(() => {
+            const durationLabel = getWorkDurationLabel(request.startTime, request.endTime);
+            return durationLabel ? (
+              <span className="badge badge-accent shrink-0">
+                {request.startTime}–{request.endTime} ({durationLabel})
+              </span>
+            ) : null;
+          })()}
           {request.photoUrl && (
             <button
               type="button"

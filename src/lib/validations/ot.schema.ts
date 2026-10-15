@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const objectIdOrLiteral = z.string().trim().min(1);
 const calendarDateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
+const timeString = z.string().regex(/^([0-1][0-9]|2[0-3]):([0-5][0-9])$/, "Expected HH:mm");
 
 export const OtStatusSchema = z.enum(["pending", "approved", "rejected", "cancelled"]);
 export const OtClaimTypeSchema = z.enum(["ot", "holiday_work", "extra_trip", "night_shift"]);
@@ -19,7 +20,17 @@ export const CreateOtSchema = z.object({
   userId: objectIdOrLiteral,
   date: calendarDateString,
   claimType: OtClaimTypeSchema,
+  startTime: timeString.optional(),
+  endTime: timeString.optional(),
   reason: z.string().trim().min(3).max(500),
+}).superRefine((data, ctx) => {
+  if (Boolean(data.startTime) !== Boolean(data.endTime)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["endTime"],
+      message: "Both startTime and endTime are required together",
+    });
+  }
 });
 
 export const CancelOtSchema = z.object({

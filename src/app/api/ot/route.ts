@@ -39,10 +39,15 @@ export const POST = apiHandler(async ({ req, payload }) => {
     throw badRequest("Photo is required", { code: "PHOTO_REQUIRED" });
   }
 
+  const startTime = formData.get("startTime");
+  const endTime = formData.get("endTime");
+
   const input = CreateOtSchema.parse({
     userId: formData.get("userId"),
     date: formData.get("date"),
     claimType: formData.get("claimType"),
+    startTime: startTime ? startTime : undefined,
+    endTime: endTime ? endTime : undefined,
     reason: formData.get("reason"),
   });
   const result = await OtService.create(payload, input, photo);
