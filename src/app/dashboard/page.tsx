@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Download, X, Phone, Star, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, RefreshCw, X, Phone, Star, AlertCircle } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
@@ -59,6 +59,7 @@ function DashboardContent() {
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'all' | 'leave' | 'income'>('all');
 
   useEffect(() => {
     const fetchMe = async () => {
@@ -197,6 +198,7 @@ function DashboardContent() {
   };
 
   const getLeavesForDay = (day: number): LeaveRequestRecord[] => {
+    if (viewMode === 'income') return [];
     const dateKey = buildDateKey(year, month, day);
 
     return leaves.filter(leave => {
@@ -205,6 +207,7 @@ function DashboardContent() {
   };
 
   const getOtForDay = (day: number): OtRecord[] => {
+    if (viewMode === 'leave') return [];
     const dateKey = buildDateKey(year, month, day);
 
     return otRecords.filter(ot => otMatchesDateKey(ot.date, dateKey));
@@ -280,17 +283,23 @@ function DashboardContent() {
         title="Dashboard"
         backHref="/home"
         rightContent={
-          <div className="flex items-center gap-1">
-            <button 
-              onClick={() => fetchLeaves()} 
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { fetchLeaves(); fetchOt(); }}
               disabled={loading}
-              className={`btn btn-ghost w-10 h-10 p-0 ${loading ? 'animate-spin' : ''}`} 
+              className="btn btn-ghost w-11 h-11 p-0 rounded-full"
+              style={{ background: 'var(--bg-inset)' }}
               title="รีเฟรช"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} strokeWidth={2.2} style={{ color: 'var(--text-secondary)' }} />
             </button>
-            <button onClick={exportToCSV} className="btn btn-ghost w-10 h-10 p-0" title="Export CSV">
-              <Download className="w-[18px] h-[18px]" style={{ color: 'var(--text-secondary)' }} />
+            <button
+              onClick={exportToCSV}
+              className="btn btn-ghost w-11 h-11 p-0 rounded-full"
+              style={{ background: 'var(--bg-inset)' }}
+              title="Export CSV"
+            >
+              <Download className="w-5 h-5" strokeWidth={2.2} style={{ color: 'var(--text-secondary)' }} />
             </button>
           </div>
         }
@@ -299,48 +308,69 @@ function DashboardContent() {
       <div className="px-4 lg:px-8 py-3">
         <div className="max-w-3xl mx-auto space-y-4">
 
-          {/* Branch Filter for Admin */}
-          {role === 'admin' && (
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex overflow-x-auto pb-2 gap-2 scrollbar-hide">
-              <button
-                onClick={() => setSelectedBranch('all')}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedBranch === 'all' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-surface text-muted border border-border'}`}
+          {/* Month + Branch, combined into one row */}
+          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-2.5 flex items-center gap-2">
+            <button
+              onClick={goToPrevMonth}
+              className="btn btn-ghost w-10 h-10 p-0 rounded-full shrink-0"
+              style={{ background: 'var(--bg-inset)' }}
+            >
+              <ChevronLeft className="w-6 h-6" strokeWidth={2.5} style={{ color: 'var(--text-primary)' }} />
+            </button>
+            <h2 className="flex-1 min-w-0 text-center text-fluid-base font-bold truncate" style={{ color: 'var(--text-primary)' }}>
+              {THAI_MONTHS[month]} {year + 543}
+            </h2>
+            <button
+              onClick={goToNextMonth}
+              className="btn btn-ghost w-10 h-10 p-0 rounded-full shrink-0"
+              style={{ background: 'var(--bg-inset)' }}
+            >
+              <ChevronRight className="w-6 h-6" strokeWidth={2.5} style={{ color: 'var(--text-primary)' }} />
+            </button>
+
+            <div className="w-px h-6 shrink-0" style={{ background: 'var(--border)' }} />
+
+            {role === 'admin' ? (
+              <select
+                value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+                className="input shrink-0 py-2 px-2 text-fluid-xs font-bold"
+                style={{ width: '104px' }}
               >
-                ทุกสาขา
-              </button>
-              {(branchesLoading ? [] : branches).map(b => (
-                <button
-                  key={b.code}
-                  onClick={() => setSelectedBranch(b.code)}
-                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedBranch === b.code ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-surface text-muted border border-border'}`}
-                >
-                  สาขา {b.code}
-                </button>
-              ))}
-            </motion.div>
-          )}
+                <option value="all">ทุกสาขา</option>
+                {(branchesLoading ? [] : branches).map((b) => (
+                  <option key={b.code} value={b.code}>สาขา {b.code}</option>
+                ))}
+              </select>
+            ) : user?.branch ? (
+              <span
+                className="shrink-0 text-[11px] font-black px-3 py-2 rounded-full whitespace-nowrap"
+                style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+              >
+                {user.branch}
+              </span>
+            ) : null}
+          </motion.div>
 
-          {/* Current Branch Indicator (Driver/Leader) */}
-          {role !== 'admin' && user?.branch && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-surface/50 border border-border">
-              <span className="text-[11px] font-bold text-muted uppercase tracking-wider">กำลังแสดงข้อมูลสาขา:</span>
-              <span className="text-[11px] font-black text-accent">{user.branch}</span>
-            </motion.div>
-          )}
-
-          {/* Month Selector */}
-          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card p-4">
-            <div className="flex items-center justify-between">
-              <button onClick={goToPrevMonth} className="btn btn-ghost w-10 h-10 p-0">
-                <ChevronLeft className="w-6 h-6" style={{ color: 'var(--text-primary)' }} />
+          {/* View mode: overview / leave only / income only */}
+          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.02 }} className="card p-1.5 flex items-center gap-1">
+            {([
+              { key: 'all', label: 'ภาพรวม' },
+              { key: 'leave', label: 'ลา' },
+              { key: 'income', label: 'รายได้' },
+            ] as const).map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setViewMode(opt.key)}
+                className="flex-1 py-2 rounded-[var(--radius-md)] text-fluid-xs font-bold transition-all"
+                style={{
+                  background: viewMode === opt.key ? 'var(--accent)' : 'transparent',
+                  color: viewMode === opt.key ? 'white' : 'var(--text-muted)',
+                }}
+              >
+                {opt.label}
               </button>
-              <h2 className="text-fluid-base font-bold" style={{ color: 'var(--text-primary)' }}>
-                {THAI_MONTHS[month]} {year + 543}
-              </h2>
-              <button onClick={goToNextMonth} className="btn btn-ghost w-10 h-10 p-0">
-                <ChevronRight className="w-6 h-6" style={{ color: 'var(--text-primary)' }} />
-              </button>
-            </div>
+            ))}
           </motion.div>
 
           {/* Calendar */}
@@ -426,35 +456,50 @@ function DashboardContent() {
                   })}
                 </div>
                 
-                {leaves.length === 0 && (
-                  <div className="p-12 text-center" style={{ background: 'var(--bg-surface)' }}>
-                    <div className="w-16 h-16 rounded-full bg-surface-variant flex items-center justify-center mx-auto mb-4 border border-border">
-                      <AlertCircle className="w-8 h-8 text-muted opacity-30" />
+                {(() => {
+                  const hasLeaveData = leaves.length > 0;
+                  const hasOtData = otRecords.length > 0;
+                  const isEmpty =
+                    viewMode === 'leave' ? !hasLeaveData
+                    : viewMode === 'income' ? !hasOtData
+                    : !hasLeaveData && !hasOtData;
+                  if (!isEmpty) return null;
+
+                  const scopeLabel = role === 'admin' ? selectedBranch : user?.branch;
+                  const dataLabel = viewMode === 'income' ? 'รายได้พิเศษ' : viewMode === 'leave' ? 'การลา' : 'การลาและรายได้พิเศษ';
+
+                  return (
+                    <div className="p-12 text-center" style={{ background: 'var(--bg-surface)' }}>
+                      <div className="w-16 h-16 rounded-full bg-surface-variant flex items-center justify-center mx-auto mb-4 border border-border">
+                        <AlertCircle className="w-8 h-8 text-muted opacity-30" />
+                      </div>
+                      <h4 className="text-[13px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>ไม่พบข้อมูล{dataLabel}</h4>
+                      <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                        {role === 'admin' && selectedBranch === 'all'
+                          ? `ไม่พบข้อมูล${dataLabel}ที่ผ่านการอนุมัติในระบบ`
+                          : `ยังไม่มีการอนุมัติ${dataLabel}ในสาขา ${scopeLabel}`}
+                      </p>
                     </div>
-                    <h4 className="text-[13px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>ไม่พบข้อมูลการลา</h4>
-                    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                      {role === 'admin' && selectedBranch === 'all' 
-                        ? 'ไม่พบข้อมูลการลาที่ผ่านการอนุมัติในระบบ'
-                        : `ยังไม่มีการอนุมัติใบลาในสาขา ${role === 'admin' ? selectedBranch : user?.branch}`}
-                    </p>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             )}
           </motion.div>
 
           {/* Legend */}
           <div className="flex flex-wrap justify-center gap-3">
-            {LEAVE_TYPE_LIST.map((lt) => (
+            {viewMode !== 'income' && LEAVE_TYPE_LIST.map((lt) => (
               <div key={lt.value} className="flex items-center gap-1.5">
                 <div className={`w-2.5 h-2.5 rounded-full ${lt.bgClass}`} />
                 <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>{lt.label}</span>
               </div>
             ))}
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-violet-500" />
-              <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>รายได้พิเศษ</span>
-            </div>
+            {viewMode !== 'leave' && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-violet-500" />
+                <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>รายได้พิเศษ</span>
+              </div>
+            )}
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#ef4444', opacity: 0.5 }} />
               <span className="text-fluid-xs" style={{ color: 'var(--text-muted)' }}>วันหยุดบริษัท</span>
