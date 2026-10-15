@@ -26,13 +26,14 @@ describe("ot-duration helpers", () => {
     expect(getWorkDurationMinutes("22:70", "06:00")).toBeNull();
   });
 
-  it("formats durations", () => {
-    expect(formatWorkDuration(11 * 60)).toBe("11h");
-    expect(formatWorkDuration(15 * 60 + 30)).toBe("15h 30 mins");
+  it("formats durations in Thai", () => {
+    expect(formatWorkDuration(11 * 60)).toBe("11 ชม");
+    expect(formatWorkDuration(15 * 60 + 30)).toBe("15 ชม 30 นาที");
+    expect(formatWorkDuration(45)).toBe("45 นาที");
   });
 
   it("produces a label end-to-end", () => {
-    expect(getWorkDurationLabel("08:00", "19:30")).toBe("11h 30 mins");
+    expect(getWorkDurationLabel("08:00", "19:30")).toBe("11 ชม 30 นาที");
     expect(getWorkDurationLabel(undefined, undefined)).toBeNull();
   });
 });

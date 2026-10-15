@@ -29,7 +29,10 @@ export function getWorkDurationMinutes(startTime?: string, endTime?: string): nu
 export function formatWorkDuration(totalMinutes: number): string {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  return minutes === 0 ? `${hours}h` : `${hours}h ${minutes} mins`;
+
+  if (hours === 0) return `${minutes} นาที`;
+  if (minutes === 0) return `${hours} ชม`;
+  return `${hours} ชม ${minutes} นาที`;
 }
 
 export function getWorkDurationLabel(startTime?: string, endTime?: string): string | null {

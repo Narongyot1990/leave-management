@@ -177,6 +177,7 @@ function OtContent() {
                     <Clock className="w-4 h-4 shrink-0" style={{ color: 'var(--accent)' }} />
                     <input
                       type="time"
+                      step={900}
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
                       className="w-full bg-transparent py-3 text-fluid-base outline-none"
@@ -190,6 +191,7 @@ function OtContent() {
                     <Clock className="w-4 h-4 shrink-0" style={{ color: 'var(--accent)' }} />
                     <input
                       type="time"
+                      step={900}
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
                       className="w-full bg-transparent py-3 text-fluid-base outline-none"
