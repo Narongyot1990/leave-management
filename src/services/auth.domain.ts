@@ -32,6 +32,8 @@ type SessionUser = {
   role: "driver" | "leader" | "admin";
   vacationDays?: number;
   sickDays?: number;
+  personalDays?: number;
+  unpaidDays?: number;
   performanceTier?: string;
 };
 
@@ -196,6 +198,8 @@ export class AuthService {
         role: user.role,
         vacationDays: user.vacationDays,
         sickDays: user.sickDays,
+        personalDays: user.personalDays,
+        unpaidDays: user.unpaidDays,
         performanceTier: user.performanceTier,
       } satisfies SessionUser;
     }

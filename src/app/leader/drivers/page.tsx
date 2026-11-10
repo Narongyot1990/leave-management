@@ -36,6 +36,7 @@ interface Personnel {
   vacationDays?: number;
   sickDays?: number;
   personalDays?: number;
+  unpaidDays?: number;
   lastSeen?: string;
   isOnline?: boolean;
   createdAt?: string;
@@ -188,6 +189,7 @@ function DriverManagementContent() {
         vacationDays: selectedPersonnel.vacationDays,
         sickDays: selectedPersonnel.sickDays,
         personalDays: selectedPersonnel.personalDays,
+        unpaidDays: selectedPersonnel.unpaidDays,
         performanceTier: selectedPersonnel.performanceTier,
         branch: selectedPersonnel.branch,
       };
@@ -667,7 +669,7 @@ function DriverManagementContent() {
                             <CalendarDays className="w-3.5 h-3.5 text-[var(--accent)]" />
                             <span className="text-[10px] font-black uppercase tracking-widest opacity-60">วันลาคงเหลือ (Leave Quota)</span>
                           </div>
-                          <div className="grid grid-cols-3 gap-0 divide-x divide-[var(--border)]">
+                          <div className="grid grid-cols-4 gap-0 divide-x divide-[var(--border)]">
                             <div className="p-3">
                               <label className="block text-[8px] font-black uppercase tracking-widest text-emerald-500 mb-1.5">พักร้อน</label>
                               <input
@@ -701,6 +703,18 @@ function DriverManagementContent() {
                                 value={selectedPersonnel.personalDays ?? 5}
                                 onChange={(e) => setSelectedPersonnel({ ...selectedPersonnel, personalDays: Number(e.target.value) })}
                                 className="w-full text-center text-lg font-black bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-amber-500 rounded-lg p-1"
+                              />
+                              <p className="text-[8px] text-center opacity-30 uppercase tracking-widest">วัน</p>
+                            </div>
+                            <div className="p-3">
+                              <label className="block text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1.5">กิจ (ไม่มีค่าจ้าง)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="365"
+                                value={selectedPersonnel.unpaidDays ?? 3}
+                                onChange={(e) => setSelectedPersonnel({ ...selectedPersonnel, unpaidDays: Number(e.target.value) })}
+                                className="w-full text-center text-lg font-black bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-slate-400 rounded-lg p-1"
                               />
                               <p className="text-[8px] text-center opacity-30 uppercase tracking-widest">วัน</p>
                             </div>

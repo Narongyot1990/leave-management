@@ -21,7 +21,7 @@ import { useToast } from '@/components/Toast';
 import { useLeaveHistoryController } from '@/app/leave/_hooks/useLeaveHistoryController';
 import { useOtHistoryController } from '@/app/ot/_hooks/useOtHistoryController';
 
-type LeaveBalanceKey = 'vacationDays' | 'sickDays' | 'personalDays';
+type LeaveBalanceKey = 'vacationDays' | 'sickDays' | 'personalDays' | 'unpaidDays';
 
 function LeaveHistoryContent() {
   const searchParams = useSearchParams();

@@ -13,7 +13,7 @@ export interface LeaveTypeMeta {
   color: string;
   bgClass: string;
   textClass: string;
-  daysKey: 'vacationDays' | 'sickDays' | 'personalDays' | null;
+  daysKey: 'vacationDays' | 'sickDays' | 'personalDays' | 'unpaidDays' | null;
 }
 
 export const LEAVE_TYPES: Record<string, LeaveTypeMeta> = {
@@ -51,7 +51,7 @@ export const LEAVE_TYPES: Record<string, LeaveTypeMeta> = {
     color: 'var(--text-muted)',
     bgClass: 'bg-slate-400',
     textClass: 'text-slate-400',
-    daysKey: null,
+    daysKey: 'unpaidDays',
   },
 };
 

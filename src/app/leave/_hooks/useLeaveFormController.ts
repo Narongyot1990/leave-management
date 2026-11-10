@@ -64,6 +64,7 @@ export function useLeaveFormController(targetUserId: string | null) {
                 vacationDays: storedUser.vacationDays ?? 10,
                 sickDays: storedUser.sickDays ?? 10,
                 personalDays: storedUser.personalDays ?? 5,
+                unpaidDays: storedUser.unpaidDays ?? 3,
               },
             );
             setIsPending(storedUser.status === "pending");

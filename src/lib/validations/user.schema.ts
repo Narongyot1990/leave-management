@@ -26,6 +26,7 @@ export const UpdateUserSchema = z.object({
   vacationDays: z.number().int().min(0).max(365).optional(),
   sickDays: z.number().int().min(0).max(365).optional(),
   personalDays: z.number().int().min(0).max(365).optional(),
+  unpaidDays: z.number().int().min(0).max(365).optional(),
   performanceTier: z.enum(PERFORMANCE_TIERS).optional(),
 });
 

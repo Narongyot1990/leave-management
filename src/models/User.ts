@@ -21,6 +21,7 @@ export interface IUser extends Document {
   vacationDays: number;
   sickDays: number;
   personalDays: number;
+  unpaidDays: number;
   lastSeen?: Date;
   isOnline?: boolean;
   createdAt: Date;
@@ -46,6 +47,7 @@ const UserSchema = new Schema<IUser>(
     vacationDays: { type: Number, default: 10 },
     sickDays: { type: Number, default: 10 },
     personalDays: { type: Number, default: 5 },
+    unpaidDays: { type: Number, default: 3 },
     lastSeen: { type: Date },
     isOnline: { type: Boolean, default: false },
   },

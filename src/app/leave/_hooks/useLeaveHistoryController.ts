@@ -17,6 +17,7 @@ type QuotaPatch = {
   vacationDays?: number;
   sickDays?: number;
   personalDays?: number;
+  unpaidDays?: number;
 };
 
 function applyQuota(user: LeaveQuotaUser, quota: QuotaPatch | undefined): LeaveQuotaUser {
@@ -26,6 +27,7 @@ function applyQuota(user: LeaveQuotaUser, quota: QuotaPatch | undefined): LeaveQ
     vacationDays: quota.vacationDays ?? user.vacationDays,
     sickDays: quota.sickDays ?? user.sickDays,
     personalDays: quota.personalDays ?? user.personalDays,
+    unpaidDays: quota.unpaidDays ?? user.unpaidDays,
   };
 }
 
@@ -60,6 +62,7 @@ export function useLeaveHistoryController() {
               vacationDays: stored.vacationDays ?? 10,
               sickDays: stored.sickDays ?? 10,
               personalDays: stored.personalDays ?? 5,
+              unpaidDays: stored.unpaidDays ?? 3,
             });
           }
           return;

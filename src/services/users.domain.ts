@@ -27,7 +27,7 @@ export class UsersService {
 
   static async getById(_actor: UserActor, input: UserByIdInput) {
     const user = await User.findById(input.id).select(
-      "lineDisplayName lineProfileImage name surname phone employeeId branch status performanceTier performancePoints performanceLevel vacationDays sickDays personalDays lastSeen isOnline",
+      "lineDisplayName lineProfileImage name surname phone employeeId branch status performanceTier performancePoints performanceLevel vacationDays sickDays personalDays unpaidDays lastSeen isOnline",
     ).lean();
 
     if (!user) {
@@ -52,6 +52,7 @@ export class UsersService {
         input.vacationDays !== undefined ||
         input.sickDays !== undefined ||
         input.personalDays !== undefined ||
+        input.unpaidDays !== undefined ||
         input.performanceTier !== undefined ||
         input.employeeId !== undefined
       ) {
@@ -70,6 +71,7 @@ export class UsersService {
       if (input.vacationDays !== undefined) updateData.vacationDays = input.vacationDays;
       if (input.sickDays !== undefined) updateData.sickDays = input.sickDays;
       if (input.personalDays !== undefined) updateData.personalDays = input.personalDays;
+      if (input.unpaidDays !== undefined) updateData.unpaidDays = input.unpaidDays;
       if (input.performanceTier !== undefined) updateData.performanceTier = input.performanceTier;
       if (input.branch !== undefined) updateData.branch = input.branch ?? undefined;
     }
@@ -127,6 +129,7 @@ export class UsersService {
       vacationDays: user.vacationDays,
       sickDays: user.sickDays,
       personalDays: user.personalDays,
+      unpaidDays: user.unpaidDays,
       performanceTier: user.performanceTier,
       performancePoints: user.performancePoints,
       performanceLevel: user.performanceLevel,
@@ -190,7 +193,7 @@ function buildUserListFilter(actor: UserActor, query: UserListQueryInput): Query
 }
 
 function baseUserSelect() {
-  return "lineUserId linePublicId lineDisplayName lineProfileImage name surname phone employeeId branch status role vacationDays sickDays personalDays performanceTier performancePoints performanceLevel lastSeen isOnline createdAt";
+  return "lineUserId linePublicId lineDisplayName lineProfileImage name surname phone employeeId branch status role vacationDays sickDays personalDays unpaidDays performanceTier performancePoints performanceLevel lastSeen isOnline createdAt";
 }
 
 function escapeRegExp(value: string) {
