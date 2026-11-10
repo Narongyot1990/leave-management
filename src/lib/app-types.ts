@@ -17,6 +17,7 @@ export interface SessionUser {
   vacationDays?: number;
   sickDays?: number;
   personalDays?: number;
+  unpaidDays?: number;
   performanceTier?: string;
   performancePoints?: number;
   performanceLevel?: number;

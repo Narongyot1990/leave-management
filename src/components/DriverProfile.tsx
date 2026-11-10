@@ -5,7 +5,7 @@ import {
   User as UserIcon, Calendar, Award, Star,
   MapPin, Phone, Zap, TrendingUp,
   MessageSquare, ChevronRight, Briefcase,
-  Umbrella, Thermometer, CheckCircle2, ShieldAlert, Wallet
+  Umbrella, Thermometer, CheckCircle2, ShieldAlert, Wallet, Ban
 } from "lucide-react";
 import { normalizePerformanceTier, PERFORMANCE_TIER_CONFIG, PerformanceTier } from "@/lib/profile-tier";
 import { INCOME_CLAIM_TYPE_LIST } from "@/lib/ot-types";
@@ -27,6 +27,7 @@ interface ProfileUserData {
   vacationDays?: number;
   sickDays?: number;
   personalDays?: number;
+  unpaidDays?: number;
   approvedCount?: number;
   lastSeen?: string;
   isOnline?: boolean;
@@ -555,11 +556,12 @@ export default function DriverProfile({ user, isMe = false, onEditClick, onClose
                   <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)]">Remaining Quota</h4>
                   <Calendar className="w-4 h-4 text-[var(--accent)]" />
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 gap-3">
                   {[
                     { label: 'พักร้อน', val: user.vacationDays, icon: Umbrella, color: 'text-sky-500', bg: 'bg-sky-500/5' },
                     { label: 'ป่วย', val: user.sickDays, icon: Thermometer, color: 'text-rose-500', bg: 'bg-rose-500/5' },
-                    { label: 'กิจ', val: user.personalDays, icon: Briefcase, color: 'text-indigo-500', bg: 'bg-indigo-500/5' }
+                    { label: 'กิจ', val: user.personalDays, icon: Briefcase, color: 'text-indigo-500', bg: 'bg-indigo-500/5' },
+                    { label: 'กิจ (ไม่มีค่าจ้าง)', val: user.unpaidDays, icon: Ban, color: 'text-slate-400', bg: 'bg-slate-400/5' }
                   ].map((q) => (
                     <div key={q.label} className={`text-center py-4 rounded-2xl border border-[var(--border)] ${q.bg}`}>
                       <q.icon className={`w-4 h-4 mx-auto mb-2 ${q.color}`} />

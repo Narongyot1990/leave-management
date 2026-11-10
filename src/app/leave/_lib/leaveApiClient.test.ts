@@ -65,6 +65,7 @@ describe("leaveApiClient", () => {
       vacationDays: 5,
       sickDays: 10,
       personalDays: 5,
+      unpaidDays: 3,
     });
   });
 

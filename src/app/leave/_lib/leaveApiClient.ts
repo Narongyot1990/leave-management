@@ -10,6 +10,7 @@ const userSchema = z.object({
   vacationDays: z.number().optional(),
   sickDays: z.number().optional(),
   personalDays: z.number().optional(),
+  unpaidDays: z.number().optional(),
 });
 
 const authMeResponseSchema = z.object({
@@ -30,6 +31,7 @@ const usersListResponseSchema = z.object({
       vacationDays: z.number().optional(),
       sickDays: z.number().optional(),
       personalDays: z.number().optional(),
+      unpaidDays: z.number().optional(),
     }),
   ),
 });
@@ -75,6 +77,7 @@ const cancelLeaveResponseSchema = z.object({
       vacationDays: z.number().optional(),
       sickDays: z.number().optional(),
       personalDays: z.number().optional(),
+      unpaidDays: z.number().optional(),
     })
     .optional(),
 });
@@ -94,6 +97,7 @@ export type LeaveQuotaUser = {
   vacationDays: number;
   sickDays: number;
   personalDays: number;
+  unpaidDays: number;
 };
 
 export type CreateLeavePayload = {
@@ -142,6 +146,7 @@ function mapUser(source: z.infer<typeof usersListResponseSchema>["users"][number
     vacationDays: source.vacationDays ?? 10,
     sickDays: source.sickDays ?? 10,
     personalDays: source.personalDays ?? 5,
+    unpaidDays: source.unpaidDays ?? 3,
   };
 }
 

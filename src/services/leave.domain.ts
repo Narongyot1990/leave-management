@@ -17,7 +17,7 @@ type ResolvedLeaveActor = LeaveActor & {
   role: TokenPayload["role"];
   branch?: string;
 };
-type QuotaKey = "vacationDays" | "sickDays" | "personalDays";
+type QuotaKey = "vacationDays" | "sickDays" | "personalDays" | "unpaidDays";
 type LeaveRecord = {
   _id: string;
   userId: string;
@@ -54,7 +54,7 @@ type PopulatedLeaveRecord = Omit<LeaveRecord, "userId" | "approvedBy"> & {
   approvedBy?: string | UserSummary;
 };
 
-type QuotaSummary = Pick<IUser, "vacationDays" | "sickDays" | "personalDays">;
+type QuotaSummary = Pick<IUser, "vacationDays" | "sickDays" | "personalDays" | "unpaidDays">;
 const USER_SUMMARY_SELECT =
   "lineDisplayName employeeId phone name surname lineProfileImage performanceTier performancePoints performanceLevel branch role status";
 
@@ -637,6 +637,7 @@ function getQuotaSummary(user: Pick<IUser, QuotaKey>): QuotaSummary {
     vacationDays: user.vacationDays,
     sickDays: user.sickDays,
     personalDays: user.personalDays,
+    unpaidDays: user.unpaidDays,
   };
 }
 
@@ -648,6 +649,8 @@ function getQuotaKey(leaveType: LeaveType): QuotaKey | null {
       return "sickDays";
     case "personal":
       return "personalDays";
+    case "unpaid":
+      return "unpaidDays";
     default:
       return null;
   }

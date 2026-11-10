@@ -14,7 +14,7 @@ import { usePusher } from '@/hooks/usePusher';
 import { useToast } from '@/components/Toast';
 import { useLeaveFormController } from '@/app/leave/_hooks/useLeaveFormController';
 
-type LeaveBalanceKey = 'vacationDays' | 'sickDays' | 'personalDays';
+type LeaveBalanceKey = 'vacationDays' | 'sickDays' | 'personalDays' | 'unpaidDays';
 
 function LeaveContent() {
   const router = useRouter();
