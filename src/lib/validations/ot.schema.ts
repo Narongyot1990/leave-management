@@ -20,17 +20,9 @@ export const CreateOtSchema = z.object({
   userId: objectIdOrLiteral,
   date: calendarDateString,
   claimType: OtClaimTypeSchema,
-  startTime: timeString.optional(),
-  endTime: timeString.optional(),
+  startTime: timeString,
+  endTime: timeString,
   reason: z.string().trim().min(3).max(500),
-}).superRefine((data, ctx) => {
-  if (Boolean(data.startTime) !== Boolean(data.endTime)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["endTime"],
-      message: "Both startTime and endTime are required together",
-    });
-  }
 });
 
 export const CancelOtSchema = z.object({

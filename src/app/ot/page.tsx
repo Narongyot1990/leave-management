@@ -12,7 +12,7 @@ import DatePickerModal from '@/components/DatePickerModal';
 import { INCOME_CLAIM_TYPE_LIST } from '@/lib/ot-types';
 import { useOtFormController } from '@/app/ot/_hooks/useOtFormController';
 
-const OT_BACKDATE_LIMIT_DAYS = 7;
+const OT_BACKDATE_LIMIT_DAYS = 35;
 
 function OtContent() {
   const searchParams = useSearchParams();
@@ -168,7 +168,7 @@ function OtContent() {
 
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.04 }} className="card p-3.5">
               <label className="block text-fluid-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
-                เวลาเริ่มงาน - จบงาน (ไม่บังคับ)
+                เวลาเริ่มงาน - จบงาน (บังคับ)
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <div>

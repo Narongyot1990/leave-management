@@ -15,7 +15,7 @@ import { User } from "@/models/User";
 import { Leader } from "@/models/Leader";
 import { CHANNELS, EVENTS, triggerPusher } from "@/lib/pusher";
 
-const OT_BACKDATE_LIMIT_DAYS = 7;
+const OT_BACKDATE_LIMIT_DAYS = 35;
 
 type OtActor = Pick<TokenPayload, "userId" | "role" | "branch">;
 type ResolvedOtActor = OtActor & {
