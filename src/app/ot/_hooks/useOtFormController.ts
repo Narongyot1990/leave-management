@@ -166,7 +166,7 @@ export function useOtFormController(targetUserId: string | null) {
         return;
       }
 
-      if (Boolean(startTime) !== Boolean(endTime)) {
+      if (!startTime || !endTime) {
         setError("กรุณากรอกเวลาเริ่มและเวลาจบให้ครบ");
         return;
       }
@@ -177,8 +177,8 @@ export function useOtFormController(targetUserId: string | null) {
           userId: submitUserId,
           date,
           claimType,
-          startTime: startTime || undefined,
-          endTime: endTime || undefined,
+          startTime,
+          endTime,
           reason: reason.trim(),
           photo: photoFile,
         });
